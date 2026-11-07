@@ -3,6 +3,12 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.5.1 — 2026-11-07
+
+### Fixed
+- Mic: the recording is now uploaded as plain bytes instead of a file reference, which failed with "No internet
+  connection" even when online. Unreadable or too-short recordings get their own short message.
+
 ## v1.5.0 — 2026-11-07
 
 Needs a rebuild (`scripts/install-ios.sh release`): adds the `expo-audio` native module, so `runtimeVersion` is now `2`.

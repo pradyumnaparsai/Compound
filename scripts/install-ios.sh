@@ -7,7 +7,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 MODE="${1:-release}"
-DEVICE_ID="${DEVICE_ID:?set DEVICE_ID to your iPhone UDID (xcrun devicectl list devices)}"
+DEVICE_ID="${DEVICE_ID:-00008140-001455C238A2201C}"
 BUNDLE_ID="com.productivitybooster.app" # keep: changing it makes iOS treat this as a new app (data lost)
 case "$MODE" in
   release) CONFIG=Release ;;
