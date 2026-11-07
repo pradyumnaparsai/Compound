@@ -199,3 +199,23 @@ export const dayTotals = (meals: Meal[]) => ({
   carbsG: r1(meals.reduce((a, m) => a + m.carbsG, 0)),
   fatG: r1(meals.reduce((a, m) => a + m.fatG, 0)),
 });
+
+/** Diary entry for a saved meal logged by hand into the chosen section, stamped now. */
+export function mealFromSaved(tpl: SavedMeal, slot: MealSlot, date: string, now: Date, id: string): Meal {
+  const t = totalsOf(tpl.ingredients);
+  return {
+    id,
+    date,
+    slot,
+    loggedAt: now.toISOString(),
+    title: tpl.title,
+    inputType: 'saved',
+    confidence: 10,
+    ingredients: tpl.ingredients,
+    calories: t.calories,
+    proteinG: t.proteinG,
+    carbsG: t.carbsG,
+    fatG: t.fatG,
+    assumptions: ['Logged from a saved meal.'],
+  };
+}

@@ -4,11 +4,13 @@ import {
   dayTotals,
   mealTitle,
   macroGoals,
+  mealFromSaved,
   normalizeIngredient,
   parseAnalysis,
   slotForTime,
   totalsOf,
   type Meal,
+  type SavedMeal,
 } from '@/domain/meal';
 
 const ing = (over = {}) => ({
@@ -159,5 +161,27 @@ describe('parseAnalysis', () => {
     expect(() => parseAnalysis('{"ingredients":[]}', 'image_only')).toThrow('No ingredients');
     expect(() => parseAnalysis('{"ingredients":[1,null]}', 'image_only')).toThrow('No ingredients');
     expect(() => parseAnalysis('[]', 'image_only')).toThrow();
+  });
+});
+
+describe('mealFromSaved', () => {
+  const tpl: SavedMeal = {
+    id: 'sm1',
+    title: 'Shake',
+    ingredients: [ing({ name: 'Whey', calories: 120, protein_g: 24 }), ing({ name: 'Milk', calories: 80, protein_g: 6 })],
+    calories: 0,
+    proteinG: 0,
+    carbsG: 0,
+    fatG: 0,
+    createdAt: '2026-11-01T00:00:00.000Z',
+  };
+  const now = new Date(2026, 10, 7, 9, 30);
+
+  it('logs into the chosen slot and date with totals recomputed from the items', () => {
+    const m = mealFromSaved(tpl, 'dinner', '2026-11-07', now, 'x1');
+    expect(m).toMatchObject({ id: 'x1', slot: 'dinner', date: '2026-11-07', title: 'Shake', inputType: 'saved', calories: 200 });
+    expect(m.proteinG).toBeCloseTo(30);
+    expect(m.loggedAt).toBe(now.toISOString());
+    expect(m.ingredients).toEqual(tpl.ingredients);
   });
 });
