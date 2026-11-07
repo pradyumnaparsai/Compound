@@ -3,6 +3,22 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.5.0 — 2026-11-07
+
+Needs a rebuild (`scripts/install-ios.sh release`): adds the `expo-audio` native module, so `runtimeVersion` is now `2`.
+
+### Added
+- **Mic button** on the Meals "Describe a meal" box and the food Search box. Tap to speak, tap again to stop.
+  On Meals the transcript is added to the box and analysed straight away ("4 packets of blue Lays, 80 g each" ->
+  calories). On Search it fills the query. Transcription uses your saved Groq key (Whisper).
+
+### Fixed
+- The keyboard no longer covers the text boxes on Meals, Search, Settings, Weight and Backup; the Meals box scrolls
+  into view when focused.
+- Errors are short and calm: a friendly one-line message in a soft card (with Retry) instead of red text with
+  provider/HTTP details. Actions that used to fail silently (saving a meal, task, routine or weight, quick log,
+  delete/move) now say so.
+
 ## v1.4.0 — 2026-11-07
 
 ### Added
