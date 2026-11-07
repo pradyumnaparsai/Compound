@@ -1,4 +1,4 @@
-import { goalLabel, goalProgress, stepFraction } from '@/domain/goal';
+import { defaultMealRoutine, goalLabel, mealFraction, goalProgress, mealGoalMet, MEAL_CALORIE_SLACK, MEAL_PROTEIN_SLACK, stepFraction } from '@/domain/goal';
 import { overdueTasks, taskCounts, tasksOn } from '@/domain/task';
 import type { Task } from '@/domain/types';
 import { weekStart, weeklyAverages } from '@/domain/weight';
@@ -23,6 +23,52 @@ describe('goals', () => {
     expect(goalProgress({ type: 'steps', target: 8000 }, 8100, 0, true)).toBe('8,100 / 8,000 steps');
     expect(goalProgress({ type: 'workout' }, 0, 2, true)).toBe('2 strength workouts logged');
     expect(goalProgress({ type: 'workout' }, 0, 0, true)).toBe('No strength workout logged yet');
+  });
+});
+
+describe('meal goal', () => {
+  const g = { type: 'meal', calories: 2000, proteinG: 150 } as const;
+  const met = (calories: number, proteinG: number) => mealGoalMet(g, { calories, proteinG });
+
+  it('has the agreed slack', () => {
+    expect(MEAL_CALORIE_SLACK).toBe(150);
+    expect(MEAL_PROTEIN_SLACK).toBe(15);
+  });
+
+  it('passes on target, under calories, and over protein', () => {
+    expect(met(2000, 150)).toBe(true);
+    expect(met(1500, 200)).toBe(true);
+  });
+
+  it('allows up to +150 kcal and -15 g protein', () => {
+    expect(met(2150, 150)).toBe(true);
+    expect(met(2000, 135)).toBe(true);
+    expect(met(2150, 135)).toBe(true);
+  });
+
+  it('fails major misses', () => {
+    expect(met(2151, 150)).toBe(false);
+    expect(met(2000, 134)).toBe(false);
+    expect(met(0, 0)).toBe(false); // nothing logged
+  });
+
+  it('builds the default everyday routine from the Meals goals', () => {
+    expect(defaultMealRoutine({ calories: 1900, proteinG: 140, carbsG: 200 })).toEqual({
+      title: 'Hit meal goal',
+      recurrence: { type: 'daily' },
+      goal: { type: 'meal', calories: 1900, proteinG: 140 },
+    });
+  });
+
+  it('clamps protein progress', () => {
+    expect(mealFraction(g, 75)).toBe(0.5);
+    expect(mealFraction(g, 400)).toBe(1);
+    expect(mealFraction({ type: 'steps', target: 1 }, 10)).toBe(0);
+  });
+
+  it('labels and describes progress', () => {
+    expect(goalLabel(g)).toBe('2,000 kcal · 150 g protein');
+    expect(goalProgress(g, 0, 0, false, 120.44, 1850.2)).toBe('1,850 / 2,000 kcal · 120.4 / 150 g protein');
   });
 });
 

@@ -335,6 +335,14 @@ export const sqliteSettingsRepo: SettingsRepository = {
       JSON.stringify(g),
     );
   },
+  async getFlag(key) {
+    const db = await getDb();
+    return !!(await db.getFirstAsync('SELECT 1 FROM settings WHERE key = ?', `flag_${key}`));
+  },
+  async setFlag(key) {
+    const db = await getDb();
+    await db.runAsync("INSERT OR REPLACE INTO settings (key, value) VALUES (?, '1')", `flag_${key}`);
+  },
 };
 
 type FoodRow = {

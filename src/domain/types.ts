@@ -6,7 +6,8 @@ export type Recurrence =
 export type Goal =
   | { type: 'steps'; target: number }
   | { type: 'workout' } // a Traditional Strength Training workout logged that day
-  | { type: 'protein'; target: number }; // grams of protein logged in the Meals tab that day (not Apple Health)
+  | { type: 'protein'; target: number } // grams of protein logged in the Meals tab that day (not Apple Health)
+  | { type: 'meal'; calories: number; proteinG: number }; // calories + protein logged in Meals, judged once the day has ended, with slack (see domain/goal.ts)
 
 export type Routine = {
   id: string;

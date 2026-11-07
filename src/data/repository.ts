@@ -41,6 +41,9 @@ export interface SavedMealRepository {
 export interface SettingsRepository {
   getGoals(): Promise<Goals | null>;
   setGoals(g: Goals | null): Promise<void>;
+  /** One-time markers (e.g. 'a default row was already created'); stored in the settings table. */
+  getFlag(key: string): Promise<boolean>;
+  setFlag(key: string): Promise<void>;
 }
 
 export interface FoodCacheRepository {

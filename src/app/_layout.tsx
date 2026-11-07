@@ -5,7 +5,8 @@ import { AppState } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { startAutoBackup } from '@/services/backup';
 import { refreshHealth } from '@/services/healthSync';
-import { refreshMealGoals } from '@/services/mealGoalSync';
+import { ensureDefaultMealGoal, refreshMealGoals } from '@/services/mealGoalSync';
+import { applyUpdateNow } from '@/services/otaUpdate';
 import { syncWidget } from '@/services/widgetSync';
 import { useMealStore } from '@/store/useMealStore';
 import { useRoutineStore } from '@/store/useRoutineStore';
@@ -37,14 +38,27 @@ export default function RootLayout() {
     };
   }, [ready, goalSignature]);
 
+  // Published updates normally apply only on the second launch; fetch and restart into them right away.
+  useEffect(() => {
+    applyUpdateNow();
+    const sub = AppState.addEventListener('change', (s) => s === 'active' && applyUpdateNow());
+    return () => sub.remove();
+  }, []);
+
   // Cloud backup when the app goes to background (no-op until signed in and the cloud check passed).
   useEffect(() => startAutoBackup(), []);
 
   // Protein-goal routines: re-check whenever meals or routines change.
   const meals = useMealStore((s) => s.meals);
   useEffect(() => {
-    if (ready) refreshMealGoals();
+    if (ready) ensureDefaultMealGoal().then(refreshMealGoals);
   }, [ready, meals, goalSignature]);
+  // Meal goals are judged once the day has ended, so re-check when the app returns to the foreground.
+  useEffect(() => {
+    if (!ready) return;
+    const sub = AppState.addEventListener('change', (s) => s === 'active' && refreshMealGoals());
+    return () => sub.remove();
+  }, [ready]);
 
   // Keep the lock-screen widget in step with every change (and on each app open).
   useEffect(() => {

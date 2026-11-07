@@ -2,18 +2,19 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { Screen } from '@/components/Screen';
-import { DEFAULT_STEP_TARGET } from '@/domain/goal';
+import { DEFAULT_STEP_TARGET, MEAL_CALORIE_SLACK, MEAL_PROTEIN_SLACK } from '@/domain/goal';
 import type { Goal, Recurrence } from '@/domain/types';
 import { useMealStore } from '@/store/useMealStore';
 import { useRoutineStore } from '@/store/useRoutineStore';
 import { radius, useTheme } from '@/theme';
 
-type GoalKind = 'none' | 'steps' | 'workout' | 'protein';
+type GoalKind = 'none' | 'steps' | 'workout' | 'protein' | 'meal';
 const GOAL_OPTIONS: { kind: GoalKind; label: string }[] = [
   { kind: 'none', label: 'Manual' },
   { kind: 'steps', label: 'Steps' },
   { kind: 'workout', label: 'Strength' },
   { kind: 'protein', label: 'Protein' },
+  { kind: 'meal', label: 'Meals' },
 ];
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -42,9 +43,17 @@ export default function RoutineForm() {
   );
   const proteinTarget = Number(proteinText.replace(/[^0-9]/g, ''));
 
+  const mealGoals = useMealStore((s) => s.goals);
+  const existingMeal = existing?.goal?.type === 'meal' ? existing.goal : undefined;
+  const [mealCalText, setMealCalText] = useState(String(existingMeal?.calories ?? mealGoals?.calories ?? ''));
+  const [mealProteinText, setMealProteinText] = useState(String(existingMeal?.proteinG ?? mealGoals?.proteinG ?? ''));
+  const mealCalories = Number(mealCalText.replace(/[^0-9]/g, ''));
+  const mealProtein = Number(mealProteinText.replace(/[^0-9]/g, ''));
+
   const canSave =
     title.trim().length > 0 && (daily || days.length > 0) && (goalKind !== 'steps' || stepTarget >= 100) &&
-    (goalKind !== 'protein' || (proteinTarget >= 10 && proteinTarget <= 500));
+    (goalKind !== 'protein' || (proteinTarget >= 10 && proteinTarget <= 500)) &&
+    (goalKind !== 'meal' || (mealCalories >= 500 && mealCalories <= 10000 && mealProtein >= 10 && mealProtein <= 500));
 
   const save = async () => {
     const recurrence: Recurrence = daily ? { type: 'daily' } : { type: 'weekly', days };
@@ -55,7 +64,9 @@ export default function RoutineForm() {
           ? { type: 'workout' }
           : goalKind === 'protein'
             ? { type: 'protein', target: proteinTarget }
-            : null;
+            : goalKind === 'meal'
+              ? { type: 'meal', calories: mealCalories, proteinG: mealProtein }
+              : null;
     try {
       if (existing) await updateRoutine(existing.id, { title, recurrence, goal });
       else await addRoutine({ title, recurrence, goal });
@@ -114,7 +125,7 @@ export default function RoutineForm() {
               onPress={() => setGoalKind(o.kind)}
               style={[styles.segItem, goalKind === o.kind && { backgroundColor: t.accent }]}
             >
-              <Text style={{ color: goalKind === o.kind ? '#fff' : t.textDim, fontWeight: '700' }}>{o.label}</Text>
+              <Text style={{ color: goalKind === o.kind ? '#fff' : t.textDim, fontWeight: '700', fontSize: 13 }}>{o.label}</Text>
             </Pressable>
           ))}
         </View>
@@ -140,13 +151,37 @@ export default function RoutineForm() {
             />
           </View>
         )}
+        {goalKind === 'meal' && (
+          <>
+            <View style={[styles.switchRow, { backgroundColor: t.surface, borderColor: t.border, marginTop: 12, marginBottom: 8 }]}>
+              <Text style={{ color: t.text, fontSize: 16, fontWeight: '600' }}>Daily calories</Text>
+              <TextInput
+                value={mealCalText}
+                onChangeText={setMealCalText}
+                keyboardType="number-pad"
+                style={{ color: t.text, fontSize: 20, fontWeight: '700', minWidth: 90, textAlign: 'right' }}
+              />
+            </View>
+            <View style={[styles.switchRow, { backgroundColor: t.surface, borderColor: t.border, marginBottom: 0 }]}>
+              <Text style={{ color: t.text, fontSize: 16, fontWeight: '600' }}>Daily protein (g)</Text>
+              <TextInput
+                value={mealProteinText}
+                onChangeText={setMealProteinText}
+                keyboardType="number-pad"
+                style={{ color: t.text, fontSize: 20, fontWeight: '700', minWidth: 90, textAlign: 'right' }}
+              />
+            </View>
+          </>
+        )}
         {goalKind !== 'none' && (
           <Text style={{ color: t.textDim, fontSize: 12, marginTop: 8 }}>
             {goalKind === 'steps'
               ? 'Checks itself off when Apple Health shows you reached the step goal.'
               : goalKind === 'protein'
                 ? 'Checks itself off when the protein you log in the Meals tab reaches this amount for the day.'
-                : 'Checks itself off once a Traditional Strength Training workout is logged in Apple Health that day.'}{' '}
+                : goalKind === 'meal'
+                  ? `Checks itself off the day after, if that day’s logged calories were at most ${MEAL_CALORIE_SLACK} over and protein at most ${MEAL_PROTEIN_SLACK} g under these targets.`
+                  : 'Checks itself off once a Traditional Strength Training workout is logged in Apple Health that day.'}{' '}
             You can’t tick it by hand.
           </Text>
         )}
