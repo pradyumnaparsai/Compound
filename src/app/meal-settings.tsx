@@ -4,12 +4,11 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { notifyError, onFail } from '@/components/notify';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Screen } from '@/components/Screen';
+import { maskKey } from '@/domain/apiKey';
 import { UserError } from '@/domain/errors';
 import {
   clearApiKey,
   clearGroqKey,
-  DEFAULT_GROQ_MODEL,
-  DEFAULT_MODEL,
   getApiKey,
   getGroqKey,
   getGroqModel,
@@ -18,7 +17,10 @@ import {
   setGroqKey,
   setGroqModel,
   setModel,
+  testProvider,
+  type ProviderCheck,
 } from '@/services/mealAnalyzer';
+import { DEFAULT_GROQ_MODEL, DEFAULT_MODEL } from '@/services/mealAnalyzerConstants';
 import { DEFAULT_LIMITS, getLimit, getUsageToday, setLimit, type Provider, type Usage } from '@/services/aiUsage';
 import { useMealStore } from '@/store/useMealStore';
 import { radius, useTheme } from '@/theme';
@@ -27,8 +29,10 @@ export default function MealSettingsScreen() {
   const t = useTheme();
   const { goals, setGoals } = useMealStore();
 
-  const [hasKey, setHasKey] = useState(false);
-  const [hasGroq, setHasGroq] = useState(false);
+  const [savedKey, setSavedKey] = useState<string | null>(null);
+  const [savedGroq, setSavedGroq] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState<Record<Provider, boolean>>({ groq: false, gemini: false });
+  const [tests, setTests] = useState<Partial<Record<Provider, ProviderCheck[] | 'running'>>>({});
   const [keyText, setKeyText] = useState('');
   const [modelText, setModelText] = useState(DEFAULT_MODEL);
   const [groqKeyText, setGroqKeyText] = useState('');
@@ -55,8 +59,8 @@ export default function MealSettingsScreen() {
     (['groq', 'gemini'] as Provider[]).forEach((p) =>
       getLimit(p).then((n) => setLimits((l) => ({ ...l, [p]: String(n) }))).catch(() => {}),
     );
-    getApiKey().then((k) => setHasKey(!!k)).catch(() => {});
-    getGroqKey().then((k) => setHasGroq(!!k)).catch(() => {});
+    getApiKey().then(setSavedKey).catch(() => {});
+    getGroqKey().then(setSavedGroq).catch(() => {});
     getModel().then(setModelText).catch(() => {});
     getGroqModel().then(setGroqModelText).catch(() => {});
   }, []);
@@ -85,6 +89,60 @@ export default function MealSettingsScreen() {
     } catch (e) {
       notifyError(e, 'Could not save', 'Could not save your settings. Please try again.');
     }
+  };
+
+  const runTest = async (p: Provider) => {
+    setTests((x) => ({ ...x, [p]: 'running' }));
+    try {
+      const checks = await testProvider(p, {
+        key: p === 'groq' ? groqKeyText : keyText,
+        model: p === 'groq' ? groqModelText : modelText,
+      });
+      setTests((x) => ({ ...x, [p]: checks }));
+    } catch (e) {
+      setTests((x) => ({ ...x, [p]: [{ label: 'Text', ok: false, detail: e instanceof Error ? e.message : String(e) }] }));
+    }
+    getUsageToday().then(setUsage).catch(() => {});
+  };
+
+  const keyPanel = (p: Provider, saved: string | null, onRemove: () => void) => {
+    const result = tests[p];
+    return (
+      <View style={{ marginTop: 10 }}>
+        {saved ? (
+          <View style={styles.usageHead}>
+            <Text selectable style={{ color: t.text, fontSize: 13, flex: 1, marginRight: 12 }}>
+              Saved: {maskKey(saved, revealed[p])}
+            </Text>
+            <Pressable onPress={() => setRevealed((r) => ({ ...r, [p]: !r[p] }))} hitSlop={8}>
+              <Text style={{ color: t.accent, fontWeight: '600', fontSize: 13 }}>{revealed[p] ? 'Hide' : 'Show'}</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Text style={{ color: t.textDim, fontSize: 13 }}>No key saved</Text>
+        )}
+        <View style={[styles.usageHead, { marginTop: 10, marginBottom: 0 }]}>
+          <Pressable
+            onPress={() => runTest(p)}
+            disabled={result === 'running'}
+            style={[styles.testBtn, { borderColor: t.accent, opacity: result === 'running' ? 0.5 : 1 }]}
+          >
+            <Text style={{ color: t.accent, fontWeight: '600', fontSize: 13 }}>{result === 'running' ? 'Testing…' : 'Test'}</Text>
+          </Pressable>
+          {saved && (
+            <Pressable onPress={onRemove} hitSlop={8}>
+              <Text style={[styles.remove, { color: t.danger, marginTop: 0 }]}>Remove key</Text>
+            </Pressable>
+          )}
+        </View>
+        {Array.isArray(result) &&
+          result.map((c) => (
+            <Text key={c.label} selectable style={{ color: c.ok ? t.success : t.danger, fontSize: 12, marginTop: 6 }}>
+              {c.ok ? '✓' : '✗'} {c.label}: {c.detail}
+            </Text>
+          ))}
+      </View>
+    );
   };
 
   const input = [styles.input, { backgroundColor: t.surfaceAlt, color: t.text }];
@@ -117,7 +175,7 @@ export default function MealSettingsScreen() {
         <TextInput
           value={groqKeyText}
           onChangeText={setGroqKeyText}
-          placeholder={hasGroq ? '•••••••• (saved)' : 'API key'}
+          placeholder={savedGroq ? '•••••••• (saved) — type to replace' : 'API key'}
           placeholderTextColor={t.textDim}
           autoCapitalize="none"
           autoCorrect={false}
@@ -133,17 +191,16 @@ export default function MealSettingsScreen() {
           autoCorrect={false}
           style={[input, { marginTop: 8 }]}
         />
-        {hasGroq && (
-          <Pressable onPress={async () => { await clearGroqKey().catch(onFail()); setHasGroq(false); }} hitSlop={8}>
-            <Text style={[styles.remove, { color: t.danger }]}>Remove key</Text>
-          </Pressable>
-        )}
+        {keyPanel('groq', savedGroq, async () => {
+          await clearGroqKey().catch(onFail());
+          setSavedGroq(null);
+        })}
 
         <Text style={[label, { marginTop: 28 }]}>GEMINI · FALLBACK</Text>
         <TextInput
           value={keyText}
           onChangeText={setKeyText}
-          placeholder={hasKey ? '•••••••• (saved)' : 'API key'}
+          placeholder={savedKey ? '•••••••• (saved) — type to replace' : 'API key'}
           placeholderTextColor={t.textDim}
           autoCapitalize="none"
           autoCorrect={false}
@@ -159,11 +216,10 @@ export default function MealSettingsScreen() {
           autoCorrect={false}
           style={[input, { marginTop: 8 }]}
         />
-        {hasKey && (
-          <Pressable onPress={async () => { await clearApiKey().catch(onFail()); setHasKey(false); }} hitSlop={8}>
-            <Text style={[styles.remove, { color: t.danger }]}>Remove key</Text>
-          </Pressable>
-        )}
+        {keyPanel('gemini', savedKey, async () => {
+          await clearApiKey().catch(onFail());
+          setSavedKey(null);
+        })}
 
         <Text style={[label, { marginTop: 28 }]}>AI USAGE TODAY</Text>
         {(['groq', 'gemini'] as Provider[]).map((p) => {
@@ -215,5 +271,6 @@ const styles = StyleSheet.create({
   btn: { borderRadius: radius.sm, paddingVertical: 14, alignItems: 'center' },
   btnText: { color: '#fff', fontWeight: '700' },
   usageHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  testBtn: { borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: 16, paddingVertical: 8 },
   remove: { fontSize: 13, fontWeight: '600', marginTop: 10 },
 });

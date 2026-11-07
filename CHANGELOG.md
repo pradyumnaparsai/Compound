@@ -3,6 +3,18 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.6.0 — 2026-11-07
+
+### Added
+- Meal settings: saved Groq and Gemini keys are shown masked (last 4 characters) with a Show/Hide toggle.
+- **Test** button per provider: sends a text and a tiny-image request through the same path as meal analysis and
+  shows the exact API error (e.g. wrong key, unknown model, model without image support). Counts toward usage.
+- Every failed provider attempt is now logged, so a silent Groq → Gemini fallback has a visible reason.
+
+### Changed
+- Removed the hard-coded Gemini fallback models; only the selected model is tried per provider.
+- Meal analyzer constants moved to `src/services/mealAnalyzerConstants.ts`.
+
 ## v1.5.1 — 2026-11-07
 
 ### Fixed
