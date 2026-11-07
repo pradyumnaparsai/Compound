@@ -3,6 +3,9 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.8.1 — 2026-11-07
+### Changed
+- Removed the confusing "Grams per unit — your estimate" field from the food editor. Foods with a pack/serving weight (or a known whole-food size like an apple) still show "Number of units".
 ## v1.8.0 — 2026-11-07
 
 ### Added
