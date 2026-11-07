@@ -13,6 +13,8 @@ export type Food = {
   servingG: number | null;
   /** true when only "as prepared" values existed (e.g. powders); may differ from the dry pack */
   prepared?: boolean;
+  /** sold in India (Open Food Facts countries_tags); used to rank search hits */
+  indian?: boolean;
 };
 
 export const foodTitle = (f: Food) => (f.brand && !f.name.toLowerCase().includes(f.brand.toLowerCase()) ? `${f.brand} ${f.name}` : f.name);

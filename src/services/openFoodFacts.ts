@@ -1,9 +1,10 @@
 import type { Food } from '@/domain/food';
+import { buildQueries, rankFoods, sanitizeQuery } from '@/domain/foodSearch';
 
 // Open Food Facts: free, no key. Asks API users to send an identifying User-Agent.
 const UA = 'Compound/1.0 (personal food log; iOS)';
 const TIMEOUT_MS = 15_000;
-const FIELDS = 'code,product_name,brands,quantity,product_quantity,product_quantity_unit,serving_size,serving_quantity,nutriments';
+const FIELDS = 'code,product_name,brands,quantity,product_quantity,product_quantity_unit,serving_size,serving_quantity,nutriments,countries_tags';
 
 type Nutriments = Record<string, number | string | undefined>;
 type Raw = {
@@ -14,6 +15,7 @@ type Raw = {
   product_quantity?: number | string;
   serving_quantity?: number | string;
   nutriments?: Nutriments;
+  countries_tags?: string[];
 };
 
 const n = (v: unknown): number | null => {
@@ -57,6 +59,7 @@ export function toFood(raw: Raw, fallbackCode = ''): Food | null {
     packG: n(raw.product_quantity),
     servingG: n(raw.serving_quantity),
     prepared: kcal.prepared || undefined,
+    indian: raw.countries_tags?.includes('en:india') || undefined,
   };
 }
 
@@ -131,19 +134,27 @@ export async function lookupBarcode(code: string): Promise<Lookup> {
   return partial ?? { kind: 'missing' };
 }
 
-/** Name search (search-a-licious). Returns only hits that have usable nutrition, best first. */
+/**
+ * Name search (search-a-licious). The API matches loosely ("amul pan" returns unrelated
+ * "Pommes de terre"), so we query India-scoped + global in parallel, then filter/rank locally:
+ * every typed word must prefix-match brand/name, Indian products first.
+ */
 export async function searchFoods(query: string, limit = 12, signal?: AbortSignal): Promise<Food[]> {
-  const q = query.trim();
-  if (q.length < 2) return [];
-  const json = (await getJson(
-    `https://search.openfoodfacts.org/search?q=${encodeURIComponent(q)}&page_size=${limit * 2}&fields=${FIELDS}`,
-    signal,
-  )) as { hits?: Raw[] } | null;
-  const out: Food[] = [];
-  for (const h of json?.hits ?? []) {
-    const f = toFood(h);
-    if (f) out.push(f);
-    if (out.length >= limit) break;
+  const clean = sanitizeQuery(query);
+  if (clean.length < 2) return [];
+  const qs = buildQueries(clean);
+  const fetchHits = async (q: string, size: number): Promise<Food[]> => {
+    const json = (await getJson(
+      `https://search.openfoodfacts.org/search?q=${encodeURIComponent(q)}&page_size=${size}&fields=${FIELDS}`,
+      signal,
+    )) as { hits?: Raw[] } | null;
+    return (json?.hits ?? []).map((h) => toFood(h)).filter((f): f is Food => f !== null);
+  };
+  const [india, global] = await Promise.allSettled([fetchHits(qs.india, 40), fetchHits(qs.global, 40)]);
+  if (signal?.aborted) throw new RequestCancelled();
+  if (india.status === 'rejected' && global.status === 'rejected') {
+    throw india.reason instanceof Error ? india.reason : new Error('Search failed.');
   }
-  return out;
+  const lists = [india, global].map((r) => (r.status === 'fulfilled' ? r.value : []));
+  return rankFoods(clean, lists, limit);
 }

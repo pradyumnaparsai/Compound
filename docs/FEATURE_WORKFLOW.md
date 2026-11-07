@@ -42,4 +42,5 @@ Follow every step, in order, for **every** feature request. Tick each box before
 - [ ] `npm audit` — fix or report high/critical findings
 - [ ] `package-lock.json` only references `registry.npmjs.org`: `grep -c "walmart\|npme" package-lock.json` must print `0`
 - [ ] Update `README.md` / `docs/DESIGN.md` if behaviour or setup changed
-- [ ] Commit with a clear message (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`) using the personal git identity
+- [ ] Commit with a clear message (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`) using the personal git identity, a `chore: release v<version>` commit last
+- [ ] Order for every version: tests/tsc/lint -> bump -> OTA update -> CHANGELOG -> commit -> `npm run release`. Do it all automatically; never wait for the user to confirm on the phone first.

@@ -414,7 +414,8 @@ export default function MealsScreen() {
         <View style={styles.actions}>
           <Action t={t} icon="camera-outline" label="Photo" onPress={() => pick('camera')} />
           <Action t={t} icon="images-outline" label="Library" onPress={() => pick('library')} />
-          <Action t={t} icon="barcode-outline" label="Scan" onPress={() => { tap(); router.push(`/scan?slot=${slot}` as Href); }} />
+          <Action t={t} icon="search-outline" label="Search" onPress={() => { tap(); router.push(`/scan?slot=${slot}&mode=search` as Href); }} />
+          <Action t={t} icon="barcode-outline" label="Scan" onPress={() => { tap(); router.push(`/scan?slot=${slot}&mode=scan` as Href); }} />
         </View>
 
         {photo && (

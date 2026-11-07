@@ -17,6 +17,7 @@ import { todayKey } from '@/domain/date';
 import { foodTitle, scaleFood, type Food } from '@/domain/food';
 import { isMealSlot, slotForTime, slotLabel, totalsOf, type Meal } from '@/domain/meal';
 import { sqliteFoodCacheRepo } from '@/data/sqliteRepository';
+import { guessUnitGrams } from '@/domain/unitWeights';
 import { barcodeCandidates, lookupBarcode, RequestCancelled, searchFoods } from '@/services/openFoodFacts';
 import { useMealStore } from '@/store/useMealStore';
 import { radius, useTheme } from '@/theme';
@@ -30,7 +31,7 @@ const parse = (s: string) => {
 
 type Mode = 'scan' | 'search';
 
-const DEBOUNCE_MS = 350;
+const DEBOUNCE_MS = 400;
 const NO_MATCH = 'No matches with nutrition data. Try other words, or scan the barcode.';
 
 export default function ScanScreen() {
@@ -38,11 +39,13 @@ export default function ScanScreen() {
   const { add, saveTemplate } = useMealStore();
   const [perm, requestPerm] = useCameraPermissions();
   const locked = useRef(false);
-  const params = useLocalSearchParams<{ slot?: string | string[] }>();
+  const params = useLocalSearchParams<{ slot?: string | string[]; mode?: string | string[] }>();
   const slotParam = Array.isArray(params.slot) ? params.slot[0] : params.slot;
   const [slot] = useState(() => (isMealSlot(slotParam) ? slotParam : slotForTime(new Date())));
 
-  const [mode, setMode] = useState<Mode>('scan');
+  // Photo / Library / Search / Scan are separate entry points; the route decides which this screen is.
+  const modeParam = Array.isArray(params.mode) ? params.mode[0] : params.mode;
+  const [mode] = useState<Mode>(modeParam === 'search' ? 'search' : 'scan');
   const [manual, setManual] = useState('');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Food[] | null>(null);
@@ -63,6 +66,7 @@ export default function ScanScreen() {
   const [fat, setFat] = useState('');
   const [grams, setGrams] = useState('');
   const [units, setUnits] = useState('');
+  const [unitW, setUnitW] = useState(''); // user-defined grams per unit when the product lists no pack/serving
 
   const select = (f: Food, cached = false, note: string | null = null) => {
     setFood(f);
@@ -72,8 +76,11 @@ export default function ScanScreen() {
     setProt(fmt(f.protein100));
     setCarb(fmt(f.carbs100));
     setFat(fmt(f.fat100));
-    setGrams(fmt(f.packG ?? f.servingG ?? 100));
-    setUnits(f.packG ?? f.servingG ? '1' : '');
+    const known = f.packG ?? f.servingG;
+    const guess = known ? null : guessUnitGrams(f.name);
+    setUnitW(guess ? fmt(guess) : '');
+    setGrams(fmt(known ?? guess ?? 100));
+    setUnits(known || guess ? '1' : '');
     setNotice(note);
   };
 
@@ -158,11 +165,12 @@ export default function ScanScreen() {
     setNotice(null);
     try {
       const r = await searchFoods(trimmed, 12, ctrl.signal);
+      if (abortRef.current !== ctrl) return; // superseded by a newer query: never show stale hits
       cacheRef.current.set(key, r);
       setResults(r); // previous results stay visible until these arrive
       setNotice(r.length === 0 ? NO_MATCH : null);
     } catch (e) {
-      if (e instanceof RequestCancelled) return;
+      if (e instanceof RequestCancelled || abortRef.current !== ctrl) return;
       setNotice(e instanceof Error ? e.message : String(e));
     } finally {
       if (abortRef.current === ctrl) setSearching(false);
@@ -211,7 +219,15 @@ export default function ScanScreen() {
     vals.kcal <= 950; // > ~900 kcal/100 g (pure fat) is almost certainly a typo
 
   // 1 unit = one pack (or one serving if the pack weight is unknown); null → no unit input
-  const unitG = food ? (food.packG ?? food.servingG ?? null) : null;
+  const customW = parse(unitW);
+  const unitG = food ? (food.packG ?? food.servingG ?? (Number.isFinite(customW) && customW > 0 ? customW : null)) : null;
+  const unitKnown = !!food && (food.packG ?? food.servingG) != null;
+  const onUnitW = (v: string) => {
+    setUnitW(v);
+    const w = parse(v);
+    const u = parse(units);
+    if (Number.isFinite(w) && w > 0 && Number.isFinite(u)) setGrams(fmt(u * w));
+  };
   const unitFmt = (n: number) => String(Math.round(n * 100) / 100);
   const onGrams = (v: string) => {
     setGrams(v);
@@ -234,6 +250,7 @@ export default function ScanScreen() {
         carbs100: vals.carb,
         fat100: vals.fat,
         packG: food.packG,
+        servingG: food.servingG ?? (!unitKnown && unitG ? unitG : null), // remember my unit size for next time
       }
     : null;
   const ing = current && valid ? scaleFood(current, g) : null;
@@ -287,7 +304,7 @@ export default function ScanScreen() {
   return (
     <Screen padBottom>
       <View style={styles.head}>
-        <Text style={[styles.title, { color: t.text }]}>{food ? 'Log food' : 'Packaged food'}</Text>
+        <Text style={[styles.title, { color: t.text }]}>{food ? 'Log food' : mode === 'search' ? 'Search food' : 'Scan barcode'}</Text>
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Text style={{ color: t.accent, fontWeight: '600' }}>Close</Text>
         </Pressable>
@@ -296,29 +313,6 @@ export default function ScanScreen() {
       <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         {!food && (
           <>
-            <View style={[styles.seg, { backgroundColor: t.surfaceAlt }]}>
-              {(['scan', 'search'] as Mode[]).map((m) => (
-                <Pressable
-                  key={m}
-                  onPress={() => {
-                    if (m !== 'search') {
-                      abortRef.current?.abort();
-                      abortRef.current = null;
-                      setSearching(false);
-                    }
-                    setMode(m);
-                    setNotice(null);
-                    locked.current = false;
-                  }}
-                  style={[styles.segBtn, mode === m && { backgroundColor: t.accent }]}
-                >
-                  <Text style={{ color: mode === m ? '#fff' : t.textDim, fontWeight: '700' }}>
-                    {m === 'scan' ? 'Scan' : 'Search'}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-
             {mode === 'scan' && (
               <>
                 {!perm ? null : !perm.granted ? (
@@ -371,6 +365,7 @@ export default function ScanScreen() {
                     placeholder="e.g. amul paneer"
                     placeholderTextColor={t.textDim}
                     autoCorrect={false}
+                    autoFocus
                     style={[input, { flex: 1 }]}
                     returnKeyType="search"
                     onSubmitEditing={submitSearch}
@@ -381,7 +376,11 @@ export default function ScanScreen() {
                 </View>
                 {searching && <ActivityIndicator style={{ marginTop: 12 }} color={t.accent} />}
                 {results?.map((f, i) => (
-                  <Pressable key={`${f.barcode}-${i}`} onPress={() => select(f)} style={[styles.hit, { backgroundColor: t.surface, borderColor: t.border }]}>
+                  <Pressable
+                    key={`${f.barcode}-${i}`}
+                    onPress={() => select(f)}
+                    style={[styles.hit, { backgroundColor: t.surface, borderColor: t.border, opacity: searching ? 0.5 : 1 }]}
+                  >
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: t.text, fontSize: 15 }} numberOfLines={2}>
                         {foodTitle(f)}
@@ -416,6 +415,12 @@ export default function ScanScreen() {
 
             <Text style={[styles.label, { color: t.textDim }]}>How much did you eat? (g)</Text>
             <TextInput value={grams} onChangeText={onGrams} keyboardType="decimal-pad" style={input} />
+            {!unitKnown && (
+              <>
+                <Text style={[styles.label, { color: t.textDim }]}>Grams per unit (1 piece / bowl / cup) — your estimate</Text>
+                <TextInput value={unitW} onChangeText={onUnitW} keyboardType="decimal-pad" placeholder="e.g. 180" placeholderTextColor={t.textDim} style={input} />
+              </>
+            )}
             {unitG ? (
               <>
                 <Text style={[styles.label, { color: t.textDim }]}>
@@ -502,8 +507,6 @@ function Chip({ t, label, onPress }: { t: ReturnType<typeof useTheme>; label: st
 const styles = StyleSheet.create({
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   title: { fontSize: 28, fontWeight: '800' },
-  seg: { flexDirection: 'row', borderRadius: radius.sm, padding: 3, marginBottom: 12 },
-  segBtn: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: radius.sm - 2 },
   camWrap: { height: 260, borderRadius: radius.md, overflow: 'hidden', backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' },
   reticle: { width: '78%', height: 110, borderWidth: 2, borderRadius: radius.sm },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, flexWrap: 'wrap' },

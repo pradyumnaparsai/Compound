@@ -43,7 +43,7 @@ npm run bump -- minor        # minor = new feature, patch = fix, major = big UI 
 npm run update -- --message "short description"
 ```
 
-Then publish the release on git (every version): add a `## v<version>` section to `CHANGELOG.md` covering
+Then publish the release on git (every version, automatically and without asking, right after the OTA publish): add a `## v<version>` section to `CHANGELOG.md` covering
 only the changes since the previous release, commit, and run `npm run release` (`--dry-run` previews). It
 pushes `main`, tags `v<version>` and creates the GitHub release with those notes. Needs a one-time
 `gh auth login --hostname github.com` with the personal account.

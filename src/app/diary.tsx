@@ -53,7 +53,7 @@ export default function DiaryScreen() {
 
   const addTo = (s: MealSlot) => {
     tap();
-    router.push(`/scan?slot=${s}` as Href);
+    router.push(`/scan?slot=${s}&mode=search` as Href);
   };
 
   return (
