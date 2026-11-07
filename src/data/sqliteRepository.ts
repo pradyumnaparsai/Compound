@@ -2,12 +2,14 @@ import { todayKey } from '@/domain/date';
 import type { Completion, Goal, Recurrence, Routine, RoutineInput, Task } from '@/domain/types';
 import type { Food } from '@/domain/food';
 import { isMealSlot, normalizeIngredient, slotForTime, type Goals, type Meal, type SavedMeal } from '@/domain/meal';
+import type { MealSchedule } from '@/domain/mealSchedule';
 import type { WeightEntry } from '@/domain/weight';
 import { getDb } from './db';
 import type {
   CompletionRepository,
   FoodCacheRepository,
   MealRepository,
+  MealScheduleRepository,
   RoutineRepository,
   SavedMealRepository,
   SettingsRepository,
@@ -304,9 +306,105 @@ export const sqliteSavedMealRepo: SavedMealRepository = {
       m.createdAt,
     );
   },
+  async update(m) {
+    const db = await getDb();
+    await db.runAsync(
+      'UPDATE saved_meals SET title = ?, ingredients = ?, calories = ?, protein_g = ?, carbs_g = ?, fat_g = ? WHERE id = ?',
+      m.title,
+      JSON.stringify(m.ingredients),
+      m.calories,
+      m.proteinG,
+      m.carbsG,
+      m.fatG,
+      m.id,
+    );
+  },
   async remove(id) {
     const db = await getDb();
-    await db.runAsync('DELETE FROM saved_meals WHERE id = ?', id);
+    await db.withExclusiveTransactionAsync(async (tx) => {
+      await tx.runAsync('DELETE FROM meal_schedules WHERE saved_meal_id = ?', id);
+      await tx.runAsync('DELETE FROM saved_meals WHERE id = ?', id);
+    });
+  },
+};
+
+type ScheduleRow = {
+  id: string;
+  saved_meal_id: string;
+  time: string;
+  days: string | null;
+  enabled: number;
+  created_at: string;
+  last_applied: string | null;
+};
+
+const parseDays = (raw: string | null): number[] | null => {
+  if (!raw) return null;
+  try {
+    const d = JSON.parse(raw);
+    return Array.isArray(d) ? d.filter((n): n is number => Number.isInteger(n) && n >= 0 && n <= 6) : null;
+  } catch {
+    return null;
+  }
+};
+
+export const sqliteMealScheduleRepo: MealScheduleRepository = {
+  async list() {
+    const db = await getDb();
+    const rows = await db.getAllAsync<ScheduleRow>('SELECT * FROM meal_schedules ORDER BY time, created_at');
+    return rows.map(
+      (r): MealSchedule => ({
+        id: r.id,
+        savedMealId: r.saved_meal_id,
+        time: r.time,
+        days: parseDays(r.days),
+        enabled: r.enabled === 1,
+        createdAt: r.created_at,
+        lastApplied: r.last_applied,
+      }),
+    );
+  },
+  async add(s) {
+    const db = await getDb();
+    await db.runAsync(
+      'INSERT INTO meal_schedules (id, saved_meal_id, time, days, enabled, created_at, last_applied) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      s.id,
+      s.savedMealId,
+      s.time,
+      s.days ? JSON.stringify(s.days) : null,
+      s.enabled ? 1 : 0,
+      s.createdAt,
+      s.lastApplied,
+    );
+  },
+  async update(s) {
+    const db = await getDb();
+    await db.runAsync(
+      'UPDATE meal_schedules SET time = ?, days = ?, enabled = ?, created_at = ? WHERE id = ?',
+      s.time,
+      s.days ? JSON.stringify(s.days) : null,
+      s.enabled ? 1 : 0,
+      s.createdAt,
+      s.id,
+    );
+  },
+  async remove(id) {
+    const db = await getDb();
+    await db.runAsync('DELETE FROM meal_schedules WHERE id = ?', id);
+  },
+  async claim(id, date) {
+    const db = await getDb();
+    const r = await db.runAsync(
+      'UPDATE meal_schedules SET last_applied = ? WHERE id = ? AND (last_applied IS NULL OR last_applied != ?)',
+      date,
+      id,
+      date,
+    );
+    return r.changes === 1;
+  },
+  async release(id, previous) {
+    const db = await getDb();
+    await db.runAsync('UPDATE meal_schedules SET last_applied = ? WHERE id = ?', previous, id);
   },
 };
 

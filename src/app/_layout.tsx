@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { startAutoBackup } from '@/services/backup';
 import { refreshHealth } from '@/services/healthSync';
 import { ensureDefaultMealGoal, refreshMealGoals } from '@/services/mealGoalSync';
+import { runMealSchedules } from '@/services/mealSchedule';
 import { applyUpdateNow } from '@/services/otaUpdate';
 import { syncWidget } from '@/services/widgetSync';
 import { useMealStore } from '@/store/useMealStore';
@@ -60,6 +61,22 @@ export default function RootLayout() {
     return () => sub.remove();
   }, [ready]);
 
+  // Scheduled meals: log whatever is due on open, on return to foreground, every minute while open, and when
+  // schedules/meals change (e.g. right after the data finished loading).
+  const schedules = useMealStore((s) => s.schedules);
+  const savedMeals = useMealStore((s) => s.saved);
+  useEffect(() => {
+    runMealSchedules();
+  }, [schedules, savedMeals]);
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (s) => s === 'active' && runMealSchedules());
+    const timer = setInterval(() => AppState.currentState === 'active' && runMealSchedules(), 60_000);
+    return () => {
+      sub.remove();
+      clearInterval(timer);
+    };
+  }, []);
+
   // Keep the lock-screen widget in step with every change (and on each app open).
   useEffect(() => {
     if (ready) syncWidget(routines, done);
@@ -73,6 +90,7 @@ export default function RootLayout() {
         <Stack.Screen name="routine-form" options={{ presentation: 'modal' }} />
         <Stack.Screen name="scan" options={{ presentation: 'modal' }} />
         <Stack.Screen name="diary" />
+        <Stack.Screen name="meal-builder" options={{ presentation: 'modal' }} />
         <Stack.Screen name="meal-settings" options={{ presentation: 'modal' }} />
         <Stack.Screen name="backup" options={{ presentation: 'modal' }} />
       </Stack>

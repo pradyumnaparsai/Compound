@@ -40,6 +40,7 @@ import {
   type MealSlot,
   type SavedMeal,
 } from '@/domain/meal';
+import { formatDays, formatTime } from '@/domain/mealSchedule';
 import { AnalysisCancelled, analyzeMeal, getApiKey, getGroqKey } from '@/services/mealAnalyzer';
 import { deletePending, listPending, pendingBase64, savePending, type PendingMeal } from '@/services/pendingMeals';
 import { useMealStore } from '@/store/useMealStore';
@@ -55,7 +56,7 @@ type Photo = { uri: string; base64: string; mimeType: string };
 export default function MealsScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { meals, saved, goals, add, saveTemplate, removeTemplate } = useMealStore();
+  const { meals, saved, schedules, goals, add, saveTemplate, removeTemplate } = useMealStore();
   const today = todayKey();
   const todays = useMemo(() => meals.filter((m) => m.date === today), [meals, today]);
   const totals = dayTotals(todays);
@@ -761,35 +762,62 @@ export default function MealsScreen() {
         )}
 
         {/* Quick log */}
-        {saved.length > 0 && (
-          <View style={{ marginTop: 20 }}>
-            <Text style={[styles.section, { color: t.textDim }]}>QUICK LOG</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-              {saved.map((m) => (
-                <Pressable
-                  key={m.id}
-                  onPress={() => logSaved(m)}
-                  onLongPress={() =>
-                    Alert.alert('Delete saved meal?', m.title, [
-                      { text: 'Cancel', style: 'cancel' },
-                      { text: 'Delete', style: 'destructive', onPress: () => removeTemplate(m.id).catch(onFail()) },
-                    ])
-                  }
-                  style={({ pressed }) => [
-                    styles.chip,
-                    { backgroundColor: t.surface, borderColor: t.border, opacity: pressed ? 0.7 : 1 },
-                  ]}
-                >
-                  <Ionicons name="add" size={14} color={t.accent} />
-                  <Text style={{ color: t.text, fontSize: 14, fontWeight: '600', maxWidth: 140 }} numberOfLines={1}>
-                    {m.title}
-                  </Text>
-                  <Text style={{ color: t.textDim, fontSize: 12 }}>{m.calories}</Text>
-                </Pressable>
-              ))}
-            </ScrollView>
+        <View style={{ marginTop: 20 }}>
+          <View style={styles.quickHead}>
+            <Text style={[styles.section, { color: t.textDim, marginBottom: 0 }]}>QUICK LOG</Text>
+            <Pressable
+              onPress={() => router.push('/meal-builder' as Href)}
+              hitSlop={10}
+              accessibilityLabel="Create a meal"
+              style={styles.newMeal}
+            >
+              <Ionicons name="add-circle-outline" size={16} color={t.accent} />
+              <Text style={{ color: t.accent, fontSize: 13, fontWeight: '700' }}>New meal</Text>
+            </Pressable>
           </View>
-        )}
+          {saved.length === 0 ? (
+            <Text style={{ color: t.textDim, fontSize: 13 }}>
+              Combine foods you repeat (e.g. a protein shake) into one meal, then log it in a tap or on a schedule.
+            </Text>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+              {saved.map((m) => {
+                const sched = schedules.find((s) => s.savedMealId === m.id && s.enabled);
+                return (
+                  <Pressable
+                    key={m.id}
+                    onPress={() => logSaved(m)}
+                    onLongPress={() =>
+                      Alert.alert(m.title, sched ? `Auto-logs ${formatDays(sched.days).toLowerCase()} at ${formatTime(sched.time)}.` : undefined, [
+                        { text: 'Edit', onPress: () => router.push(`/meal-builder?id=${m.id}` as Href) },
+                        {
+                          text: 'Delete',
+                          style: 'destructive',
+                          onPress: () =>
+                            Alert.alert('Delete saved meal?', sched ? `${m.title} and its schedule.` : m.title, [
+                              { text: 'Cancel', style: 'cancel' },
+                              { text: 'Delete', style: 'destructive', onPress: () => removeTemplate(m.id).catch(onFail()) },
+                            ]),
+                        },
+                        { text: 'Cancel', style: 'cancel' },
+                      ])
+                    }
+                    style={({ pressed }) => [
+                      styles.chip,
+                      { backgroundColor: t.surface, borderColor: t.border, opacity: pressed ? 0.7 : 1 },
+                    ]}
+                  >
+                    <Ionicons name={sched ? 'time-outline' : 'add'} size={14} color={t.accent} />
+                    <Text style={{ color: t.text, fontSize: 14, fontWeight: '600', maxWidth: 140 }} numberOfLines={1}>
+                      {m.title}
+                    </Text>
+                    <Text style={{ color: t.textDim, fontSize: 12 }}>{m.calories}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          )}
+        </View>
 
       </ScrollView>
     </Screen>
@@ -893,6 +921,8 @@ const styles = StyleSheet.create({
   totalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 14, marginTop: 4 },
   primary: { borderRadius: radius.sm, paddingVertical: 14, alignItems: 'center', marginTop: 14 },
   section: { fontSize: 12, fontWeight: '700', letterSpacing: 0.8, marginBottom: 10 },
+  quickHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  newMeal: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   chips: { gap: 8, paddingRight: 8 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 10 },
 });

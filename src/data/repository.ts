@@ -1,5 +1,6 @@
 import type { Food } from '@/domain/food';
 import type { Goals, Meal, SavedMeal } from '@/domain/meal';
+import type { MealSchedule } from '@/domain/mealSchedule';
 import type { Completion, Routine, RoutineInput, Task } from '@/domain/types';
 import type { WeightEntry } from '@/domain/weight';
 
@@ -35,7 +36,20 @@ export interface MealRepository {
 export interface SavedMealRepository {
   list(): Promise<SavedMeal[]>;
   add(m: SavedMeal): Promise<void>;
+  update(m: SavedMeal): Promise<void>;
+  /** Also deletes the meal's schedules. */
   remove(id: string): Promise<void>;
+}
+
+export interface MealScheduleRepository {
+  list(): Promise<MealSchedule[]>;
+  add(s: MealSchedule): Promise<void>;
+  update(s: MealSchedule): Promise<void>;
+  remove(id: string): Promise<void>;
+  /** Atomically marks the schedule applied for `date`. False if it already was (another run won the race). */
+  claim(id: string, date: string): Promise<boolean>;
+  /** Undoes a claim after the meal could not be logged. */
+  release(id: string, previous: string | null): Promise<void>;
 }
 
 export interface SettingsRepository {

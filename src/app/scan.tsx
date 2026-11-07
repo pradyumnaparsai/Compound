@@ -26,6 +26,7 @@ import { guessUnitGrams } from '@/domain/unitWeights';
 import { mergeTranscript } from '@/domain/voice';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { barcodeCandidates, lookupBarcode, RequestCancelled, searchFoods } from '@/services/openFoodFacts';
+import { useMealDraft } from '@/store/useMealDraft';
 import { useMealStore } from '@/store/useMealStore';
 import { radius, useTheme } from '@/theme';
 
@@ -46,8 +47,10 @@ export default function ScanScreen() {
   const { add, saveTemplate } = useMealStore();
   const [perm, requestPerm] = useCameraPermissions();
   const locked = useRef(false);
-  const params = useLocalSearchParams<{ slot?: string | string[]; mode?: string | string[] }>();
+  const params = useLocalSearchParams<{ slot?: string | string[]; mode?: string | string[]; target?: string | string[] }>();
   const slotParam = Array.isArray(params.slot) ? params.slot[0] : params.slot;
+  // target=builder: the food is added to the meal being built instead of being logged.
+  const toBuilder = (Array.isArray(params.target) ? params.target[0] : params.target) === 'builder';
   const [slot] = useState(() => (isMealSlot(slotParam) ? slotParam : slotForTime(new Date())));
 
   // Photo / Library / Search / Scan are separate entry points; the route decides which this screen is.
@@ -272,6 +275,17 @@ export default function ScanScreen() {
   const ing = current && valid ? scaleFood(current, g) : null;
   const tot = ing ? totalsOf([ing]) : null;
 
+  const addToBuilder = async () => {
+    if (!current || !ing) return;
+    try {
+      if (current.barcode) await sqliteFoodCacheRepo.put(current);
+      useMealDraft.getState().add(ing);
+      router.back();
+    } catch (e) {
+      notifyError(e, 'Could not add', 'Could not add this food. Please try again.');
+    }
+  };
+
   const log = async (alsoFavorite: boolean) => {
     if (!current || !ing || !tot) return;
     try {
@@ -325,7 +339,7 @@ export default function ScanScreen() {
   return (
     <Screen padBottom>
       <View style={styles.head}>
-        <Text style={[styles.title, { color: t.text }]}>{food ? 'Log food' : mode === 'search' ? 'Search food' : 'Scan barcode'}</Text>
+        <Text style={[styles.title, { color: t.text }]}>{food ? (toBuilder ? 'Add to meal' : 'Log food') : mode === 'search' ? 'Search food' : 'Scan barcode'}</Text>
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Text style={{ color: t.accent, fontWeight: '600' }}>Close</Text>
         </Pressable>
@@ -494,20 +508,32 @@ export default function ScanScreen() {
               <Text style={{ color: t.danger, fontSize: 12, marginTop: 6 }}>Calories are 0 — fill in the label values first.</Text>
             )}
 
-            <Pressable
-              disabled={!valid}
-              onPress={() => log(false)}
-              style={[styles.btn, { backgroundColor: t.success, opacity: valid ? 1 : 0.4, marginTop: 14 }]}
-            >
-              <Text style={{ color: '#06231B', fontWeight: '800' }}>Log to {slotLabel(slot)}</Text>
-            </Pressable>
-            <Pressable
-              disabled={!valid}
-              onPress={() => log(true)}
-              style={[styles.btn, { backgroundColor: t.surfaceAlt, opacity: valid ? 1 : 0.4, marginTop: 8 }]}
-            >
-              <Text style={{ color: t.accent, fontWeight: '700' }}>Log & save as favorite</Text>
-            </Pressable>
+            {toBuilder ? (
+              <Pressable
+                disabled={!valid}
+                onPress={addToBuilder}
+                style={[styles.btn, { backgroundColor: t.success, opacity: valid ? 1 : 0.4, marginTop: 14 }]}
+              >
+                <Text style={{ color: '#06231B', fontWeight: '800' }}>Add to meal</Text>
+              </Pressable>
+            ) : (
+              <>
+                <Pressable
+                  disabled={!valid}
+                  onPress={() => log(false)}
+                  style={[styles.btn, { backgroundColor: t.success, opacity: valid ? 1 : 0.4, marginTop: 14 }]}
+                >
+                  <Text style={{ color: '#06231B', fontWeight: '800' }}>Log to {slotLabel(slot)}</Text>
+                </Pressable>
+                <Pressable
+                  disabled={!valid}
+                  onPress={() => log(true)}
+                  style={[styles.btn, { backgroundColor: t.surfaceAlt, opacity: valid ? 1 : 0.4, marginTop: 8 }]}
+                >
+                  <Text style={{ color: t.accent, fontWeight: '700' }}>Log & save as favorite</Text>
+                </Pressable>
+              </>
+            )}
             <Pressable onPress={reset} style={[styles.btn, { marginTop: 4 }]}>
               <Text style={{ color: t.textDim, fontWeight: '600' }}>Scan another</Text>
             </Pressable>

@@ -8,7 +8,7 @@ import { useTaskStore } from '@/store/useTaskStore';
 import { useWeightStore } from '@/store/useWeightStore';
 
 // food_cache is rebuildable and intentionally excluded.
-const TABLES = ['routines', 'completions', 'weights', 'meals', 'saved_meals', 'settings', 'tasks'] as const;
+const TABLES = ['routines', 'completions', 'weights', 'meals', 'saved_meals', 'meal_schedules', 'settings', 'tasks'] as const;
 const KEEP = 5;
 const AUTO_MIN_INTERVAL_MS = 2 * 60_000;
 // `backup_*` settings are device-local bookkeeping and never part of a snapshot.

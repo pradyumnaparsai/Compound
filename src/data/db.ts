@@ -85,6 +85,16 @@ const MIGRATIONS: string[] = [
      completed_at TEXT
    );
    CREATE INDEX idx_tasks_date ON tasks(date);`,
+  `CREATE TABLE meal_schedules (
+     id TEXT PRIMARY KEY NOT NULL,
+     saved_meal_id TEXT NOT NULL,
+     time TEXT NOT NULL,
+     days TEXT,
+     enabled INTEGER NOT NULL DEFAULT 1,
+     created_at TEXT NOT NULL,
+     last_applied TEXT
+   );
+   CREATE INDEX idx_meal_schedules_meal ON meal_schedules(saved_meal_id);`,
 ];
 
 async function migrate(db: SQLite.SQLiteDatabase) {
