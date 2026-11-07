@@ -680,16 +680,6 @@ export default function MealsScreen() {
                     onPress={() => setEditing(i)}
                     style={[styles.ing, styles.ingRow, { borderColor: t.border }]}
                   >
-                    <Pressable
-                      onPress={() => {
-                        tap();
-                        dropIngredient(i);
-                      }}
-                      hitSlop={10}
-                      accessibilityLabel={`Remove ${ing.name}`}
-                    >
-                      <Ionicons name="remove-circle" size={22} color={t.danger} />
-                    </Pressable>
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: t.text, fontSize: 15 }} numberOfLines={1}>
                         {ing.name}
@@ -701,6 +691,16 @@ export default function MealsScreen() {
                       ) : null}
                     </View>
                     <Text style={{ color: t.textDim, fontSize: 14 }}>{ing.calories}</Text>
+                    <Pressable
+                      onPress={() => {
+                        tap();
+                        dropIngredient(i);
+                      }}
+                      hitSlop={10}
+                      accessibilityLabel={`Remove ${ing.name}`}
+                    >
+                      <Ionicons name="remove-circle" size={22} color={t.danger} />
+                    </Pressable>
                   </Pressable>
                 ),
               )}

@@ -85,7 +85,15 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style={t.dark ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.bg } }}>
+      {/* Swipe back from anywhere on pushed screens; modals keep the native swipe-down dismiss. */}
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          gestureEnabled: true,
+          fullScreenGestureEnabled: true,
+          contentStyle: { backgroundColor: t.bg },
+        }}
+      >
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="routine-form" options={{ presentation: 'modal' }} />
         <Stack.Screen name="scan" options={{ presentation: 'modal' }} />

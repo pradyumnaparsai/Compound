@@ -3,6 +3,11 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.10.0 — 2026-11-07
+### Added
+- Swipe back from anywhere on the screen to go back (modals still swipe down to dismiss).
+### Changed
+- AI estimate: the remove-item button now sits on the right of each item instead of the left.
 ## v1.9.0 — 2026-11-07
 ### Changed
 - Meal builder: the auto-log time is now picked with a native time wheel instead of typing "HH:MM". The quick-pick time chips still work and stay in sync with the wheel.
