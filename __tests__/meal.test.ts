@@ -1,0 +1,115 @@
+import {
+  dayTotals,
+  macroGoals,
+  normalizeIngredient,
+  parseAnalysis,
+  slotForTime,
+  totalsOf,
+  type Meal,
+} from '@/domain/meal';
+
+const ing = (over = {}) => ({
+  name: 'Rice',
+  estimated_quantity: '100 g',
+  calories: 130,
+  protein_g: 2.7,
+  carbs_g: 28,
+  fat_g: 0.3,
+  ...over,
+});
+
+describe('slotForTime', () => {
+  it.each([
+    [8, 'breakfast'],
+    [12, 'lunch'],
+    [16, 'snacks'],
+    [20, 'dinner'],
+  ])('hour %i -> %s', (h, slot) => {
+    expect(slotForTime(new Date(2026, 10, 7, h))).toBe(slot);
+  });
+});
+
+describe('macroGoals', () => {
+  it('derives carbs/fat from remaining calories 70/30', () => {
+    expect(macroGoals({ calories: 2000, proteinG: 150 })).toEqual({
+      calories: 2000,
+      proteinG: 150,
+      carbsG: Math.round((1400 * 0.7) / 4),
+      fatG: Math.round((1400 * 0.3) / 9),
+    });
+  });
+
+  it('keeps explicit values and never goes negative', () => {
+    expect(macroGoals({ calories: 100, proteinG: 100, carbsG: 5, fatG: 6 })).toMatchObject({ carbsG: 5, fatG: 6 });
+    expect(macroGoals({ calories: 100, proteinG: 100 })).toMatchObject({ carbsG: 0, fatG: 0 });
+  });
+});
+
+describe('totals', () => {
+  it('sums ingredients with rounding', () => {
+    expect(totalsOf([ing(), ing({ calories: 70.4, protein_g: 0.34 })])).toEqual({
+      calories: 200,
+      proteinG: 3.0,
+      carbsG: 56,
+      fatG: 0.6,
+    });
+  });
+
+  it('sums a day of meals', () => {
+    const m = { calories: 500, proteinG: 30.25, carbsG: 50, fatG: 10 } as Meal;
+    expect(dayTotals([m, m])).toEqual({ calories: 1000, proteinG: 60.5, carbsG: 100, fatG: 20 });
+  });
+});
+
+describe('normalizeIngredient', () => {
+  it('sanitises bad values and old rows', () => {
+    expect(normalizeIngredient({ name: 'X', calories: -5, protein_g: '1,5' as unknown as number })).toEqual({
+      name: 'X',
+      estimated_quantity: '',
+      calories: 0,
+      protein_g: 1.5,
+      carbs_g: 0,
+      fat_g: 0,
+    });
+  });
+});
+
+describe('parseAnalysis', () => {
+  const json = JSON.stringify({
+    input_type: 'image_only',
+    meal_confidence_score: 7.4,
+    ingredients: [ing()],
+    assumptions_made: ['- cooked rice'],
+    totals: { calories: 99999 },
+  });
+
+  it('parses clean JSON and ignores model-supplied totals', () => {
+    const r = parseAnalysis(json, 'image_and_note');
+    expect(r.input_type).toBe('image_only');
+    expect(r.meal_confidence_score).toBe(7);
+    expect(r.ingredients).toHaveLength(1);
+    expect(r).not.toHaveProperty('totals');
+  });
+
+  it('strips <think> blocks and markdown fences', () => {
+    const wrapped = `<think>hmm {not json}</think>\n\`\`\`json\n${json}\n\`\`\``;
+    expect(parseAnalysis(wrapped, 'image_only').ingredients[0].name).toBe('Rice');
+  });
+
+  it('falls back on input type, clamps confidence, splits string assumptions', () => {
+    const r = parseAnalysis(
+      JSON.stringify({ input_type: 'bogus', meal_confidence_score: 99, ingredients: [ing()], assumptions_made: '- a\n• b' }),
+      'barcode',
+    );
+    expect(r.input_type).toBe('barcode');
+    expect(r.meal_confidence_score).toBe(10);
+    expect(r.assumptions_made).toEqual(['a', 'b']);
+  });
+
+  it('rejects invalid output', () => {
+    expect(() => parseAnalysis('not json', 'image_only')).toThrow('valid JSON');
+    expect(() => parseAnalysis('{"ingredients":[]}', 'image_only')).toThrow('No ingredients');
+    expect(() => parseAnalysis('{"ingredients":[1,null]}', 'image_only')).toThrow('No ingredients');
+    expect(() => parseAnalysis('[]', 'image_only')).toThrow();
+  });
+});

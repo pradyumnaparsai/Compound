@@ -63,11 +63,17 @@ src/domain/      pure business logic
 src/data/        SQLite + Supabase access
 src/services/    health, meal analysis, backup
 src/store/       Zustand stores
-docs/            design notes, Supabase schema
+__tests__/       unit tests
+docs/            design notes, workflow checklist, Supabase schema
 ```
 
 ## Scripts
 
-`npm start` · `npm run lint` · `npx tsc --noEmit`
+`npm start` · `npm test` · `npm run lint` · `npx tsc --noEmit`
+
+## Testing & contributing
+
+Unit tests live in `__tests__/` (Jest + jest-expo) and cover the domain logic. Run `npm test` before every commit.
+New features follow the checklist in [`docs/FEATURE_WORKFLOW.md`](docs/FEATURE_WORKFLOW.md).
 
 See [`docs/DESIGN.md`](docs/DESIGN.md) for design notes.

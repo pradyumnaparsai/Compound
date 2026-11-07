@@ -16,12 +16,24 @@ Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
 npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
 npx expo start              # start the dev server
 npx expo lint               # lint
+npm test                    # run all unit tests (Jest, jest-expo)
 npx tsc --noEmit            # typecheck
 npx expo-doctor             # diagnose dependency and config issues
 npx expo install --fix      # fix incompatible package versions
 ```
 
 Run lint and typecheck before declaring any task done.
+
+## Feature workflow (MANDATORY for every feature request)
+
+Details and checkboxes: `docs/FEATURE_WORKFLOW.md`. Follow these steps in order, every time:
+
+1. **Plan** — restate the requirement, ask the user to clarify anything ambiguous, write a short plan, get confirmation.
+2. **Advisor** — discuss the plan with the advisor for the best solution before coding.
+3. **Implement** — follow existing patterns; keep logic in pure functions.
+4. **Add tests** — unit tests in `__tests__/` (never in `src/app/`) for new logic; regression test for bug fixes.
+5. **Run all tests** — `npm test`, `npx tsc --noEmit`, `npx expo lint`. Never delete or weaken existing tests to get green.
+6. **Security, then push** — scan the diff for secrets, `npm audit`, ensure `.env` is unstaged and `package-lock.json` has no internal registry URLs (`grep -c "walmart\|npme" package-lock.json` = 0). Ask the user before committing/pushing.
 
 ## Navigation & Routing
 
