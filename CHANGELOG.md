@@ -3,6 +3,13 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.11.0 — 2026-11-07
+### Added
+- **Log food screen:** Meals → Log food. Meal-slot picker, Photo/Library/Search/Scan, describe-a-meal composer, AI review and Quick log now live here, so the Meals tab is just your day at a glance.
+- **My meals** list on the Meals tab shows every meal you created (items, protein, schedule); tap one to open it.
+- **Saved-meal screen:** tapping a created meal (list or Quick log chip) opens its items and totals and asks where to add it — Breakfast, Lunch, Snacks or Dinner — instead of logging it immediately. Edit and Delete are there too.
+### Changed
+- Quick log no longer logs a meal on tap.
 ## v1.10.0 — 2026-11-07
 ### Added
 - Swipe back from anywhere on the screen to go back (modals still swipe down to dismiss).
