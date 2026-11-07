@@ -42,3 +42,12 @@ yarn-error.*
 
 # env
 .env
+
+# AI tooling
+.wibey/
+.claude/
+
+# misc
+.env.*
+!.env.example
+*.log

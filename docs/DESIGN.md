@@ -109,7 +109,7 @@ A day's status = completed scheduled routines / scheduled routines for that date
 - App name: **Compound** (small daily actions compound into big results). Bundle ID intentionally kept as `com.productivitybooster.app` so iOS keeps the existing data.
 - Install on iPhone: `npm run ios:release` (standalone, re-run every 7 days on the free team) or `npm run ios:debug` (needs `npx expo start --dev-client`). Script: `scripts/install-ios.sh`.
 - Expo SDK 58, React Native 0.88, Expo Router (routes in `src/app/`), `@/*` alias → `src/*`.
-- Runs as a **development build** on the iPhone (Expo Go is not enough: widgets, HealthKit). Install built with free Personal Team `3264875TR6`; builds expire after 7 days.
+- Runs as a **development build** on the iPhone (Expo Go is not enough: widgets, HealthKit). Free Personal Team builds expire after 7 days.
 - Done-day rule implemented: "all scheduled routines done" = solid green, partial = soft green.
 - Routine edit changes the rule retroactively for scheduled-day computation (open question above); archive keeps history.
 - Verified on iPhone 16 Pro (iOS 27.0.1): routines, Today, calendar work. Year view + weight tracker added afterwards (typechecked).
