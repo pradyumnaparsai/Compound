@@ -3,6 +3,11 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.6.2 — 2026-11-07
+
+### Fixed
+- Tapping the ✕ (discard) on an analysed meal now also clears the prompt text, not just the AI result.
+
 ## v1.6.1 — 2026-11-07
 
 ### Fixed

@@ -263,6 +263,12 @@ export default function MealsScreen() {
     },
   );
 
+  /** Discard = drop the AI result and clear the prompt text too (the photo is kept; it has its own remove button). */
+  const discardDraft = () => {
+    setDraft(null);
+    setNote('');
+  };
+
   const editIngredient = (i: number, patch: Partial<Ingredient>) =>
     setDraft((d) => d && { ...d, ingredients: d.ingredients.map((x, j) => (j === i ? { ...x, ...patch } : x)) });
   const dropIngredient = (i: number) => {
@@ -652,7 +658,7 @@ export default function MealsScreen() {
                 <Pressable onPress={saveDraftAsFavorite} style={[styles.iconBtn, { backgroundColor: t.surfaceAlt }]} accessibilityLabel="Save as favorite">
                   <Ionicons name="star-outline" size={18} color={t.accent} />
                 </Pressable>
-                <Pressable onPress={() => setDraft(null)} style={[styles.iconBtn, { backgroundColor: t.surfaceAlt }]} accessibilityLabel="Discard">
+                <Pressable onPress={discardDraft} style={[styles.iconBtn, { backgroundColor: t.surfaceAlt }]} accessibilityLabel="Discard">
                   <Ionicons name="close" size={18} color={t.textDim} />
                 </Pressable>
               </View>
