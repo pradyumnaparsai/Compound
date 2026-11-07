@@ -49,6 +49,7 @@ Follow these strict operational rules based on the input type:
 
 6. OUTPUT STRUCTURE: Return your analysis strictly in a clean, parseable JSON format containing:
    - "input_type": ("barcode", "image_only", or "image_and_note")
+   - "meal_title": A short header for the whole meal, 2-4 words, Title Case, no quotes or trailing punctuation (e.g. "Dal Rice Thali", "Paneer Wrap", "Oats With Banana").
    - "meal_confidence_score": (1-10 rating of how clearly the food or product is identified)
    - "ingredients": An array of objects, each containing "name", "estimated_quantity", "calories", "protein_g", "carbs_g" and "fat_g" (numbers).
    - "totals": An object containing "total_calories", "total_protein_g", "total_carbs_g" and "total_fat_g".

@@ -1,7 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { recordUsage } from '@/services/aiUsage';
 import { AnalysisFailed, UserError } from '@/domain/errors';
-import { parseAnalysis, type InputType, type MealAnalysis } from '@/domain/meal';
+import { buildRefineText, parseAnalysis, type Ingredient, type InputType, type MealAnalysis } from '@/domain/meal';
 import {
   DEFAULT_GROQ_MODEL,
   DEFAULT_MODEL,
@@ -46,6 +46,8 @@ export type AnalyzeInput = {
   mimeType?: string;
   note?: string;
   barcode?: string;
+  /** Correct a previous estimate (same photo, if any) instead of starting over. */
+  refine?: { prev: { title: string; ingredients: Ingredient[] }; correction: string };
   signal?: AbortSignal;
 };
 
@@ -64,20 +66,23 @@ export async function analyzeMeal(input: AnalyzeInput): Promise<MealAnalysis & {
   ensureActive();
   const note = input.note?.trim();
   const barcode = input.barcode?.trim();
-  if (!input.imageBase64 && !barcode && !note) throw new UserError('Add a photo or describe the meal first.');
+  const refine = input.refine && input.refine.correction.trim() ? input.refine : undefined;
+  if (!input.imageBase64 && !barcode && !note && !refine) throw new UserError('Add a photo or describe the meal first.');
 
   const [groqKey, geminiKey] = await Promise.all([getGroqKey(), getApiKey()]);
   ensureActive();
   if (!groqKey && !geminiKey) throw new UserError('Add a Groq or Gemini API key in Meal settings to use AI.');
 
-  const inputType: InputType = barcode ? 'barcode' : note ? 'image_and_note' : 'image_only';
-  const text = [
-    barcode ? `Barcode/Product: ${barcode}` : null,
-    note ? `User note: ${note}` : null,
-    !barcode && !note ? 'No user note provided.' : null,
-  ]
-    .filter(Boolean)
-    .join('\n');
+  const inputType: InputType = barcode ? 'barcode' : note || refine ? 'image_and_note' : 'image_only';
+  const text = refine
+    ? buildRefineText(refine.prev, refine.correction, note)
+    : [
+        barcode ? `Barcode/Product: ${barcode}` : null,
+        note ? `User note: ${note}` : null,
+        !barcode && !note ? 'No user note provided.' : null,
+      ]
+        .filter(Boolean)
+        .join('\n');
   const mime = input.mimeType ?? 'image/jpeg';
 
   const targets: Target[] = [];

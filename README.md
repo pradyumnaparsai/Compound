@@ -7,7 +7,7 @@ A personal iOS app for tracking daily routines, todos, body weight and meals. Bu
 - **Routines & todos** — daily or weekday-based routines, one-off todos, reorderable lists
 - **Calendar & year view** — see completed days at a glance
 - **Weight log** — daily entries with a weekly-average chart
-- **Meals** — photo or barcode → calories/protein estimate (Groq / Gemini, Open Food Facts)
+- **Meals** — photo or barcode → calories/protein estimate (Groq / Gemini, Open Food Facts); AI-named meal header shown in the diary, remove wrong items with ➖, and correct an estimate with a text follow-up
 - **Apple Health** — steps and workouts auto-check goal routines
 - **Backup** — optional Supabase backup/restore
 

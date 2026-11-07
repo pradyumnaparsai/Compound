@@ -12,6 +12,7 @@ export type Ingredient = {
 
 /** Result of an analysis, before it is saved. */
 export type MealAnalysis = {
+  title: string; // short header for the whole meal, e.g. "Dal Rice Thali"
   input_type: InputType;
   meal_confidence_score: number; // 1-10
   ingredients: Ingredient[];
@@ -103,6 +104,44 @@ export const normalizeIngredient = (i: Partial<Ingredient>): Ingredient => ({
   fat_g: r1(num(i.fat_g)),
 });
 
+const TITLE_MAX = 40;
+
+/** Fallback header when the model gives none: the first two item names, "+ N more" for the rest. */
+export function mealTitle(ingredients: Pick<Ingredient, 'name'>[]): string {
+  const names = ingredients.map((i) => i.name.trim()).filter((n) => n && n !== 'Unknown');
+  if (names.length === 0) return 'Meal';
+  const head = names.slice(0, 2).join(' + ');
+  const t = names.length > 2 ? `${head} + ${names.length - 2} more` : head;
+  return t.length > TITLE_MAX ? `${t.slice(0, TITLE_MAX - 1).trimEnd()}…` : t;
+}
+
+/** Cleans a model-supplied title: single line, no wrapping quotes, capped length. '' if unusable. */
+export function cleanTitle(v: unknown): string {
+  if (typeof v !== 'string') return '';
+  const s = v.replace(/\s+/g, ' ').replace(/^["'“”‘’\s]+|["'“”‘’.\s]+$/g, '');
+  return s.length > TITLE_MAX ? `${s.slice(0, TITLE_MAX - 1).trimEnd()}…` : s;
+}
+
+/** Prompt text asking the model to correct a previous estimate instead of starting over. */
+export function buildRefineText(prev: { title: string; ingredients: Ingredient[] }, correction: string, originalNote?: string): string {
+  const items = prev.ingredients.map((i) => ({
+    name: i.name,
+    estimated_quantity: i.estimated_quantity,
+    calories: i.calories,
+    protein_g: i.protein_g,
+    carbs_g: i.carbs_g,
+    fat_g: i.fat_g,
+  }));
+  return [
+    originalNote?.trim() ? `Original user note: ${originalNote.trim()}` : null,
+    `Previous estimate (JSON): ${JSON.stringify({ meal_title: prev.title, ingredients: items })}`,
+    `User correction: ${correction.trim()}`,
+    'The user is correcting the previous estimate. Treat the correction as fact. Return the FULL updated analysis in the usual format: apply the correction, keep every item the user did not mention unchanged, and update meal_title if the dish changed.',
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
 /** Strips <think> blocks, markdown fences and stray prose around the JSON object. */
 const stripFences = (raw: string) => {
   const s = raw
@@ -146,6 +185,7 @@ export function parseAnalysis(raw: string, fallbackType: InputType): MealAnalysi
       ? o.assumptions_made.split('\n').map((s) => s.replace(/^[-•*\s]+/, '')).filter(Boolean)
       : [];
   return {
+    title: cleanTitle(o.meal_title) || mealTitle(ingredients),
     input_type,
     meal_confidence_score: Math.min(10, Math.max(1, conf || 1)),
     ingredients,

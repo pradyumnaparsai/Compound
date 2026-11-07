@@ -97,6 +97,9 @@ export default function MealsScreen() {
   const [draft, setDraft] = useState<MealAnalysis | null>(null);
   const [usedModel, setUsedModel] = useState<string | null>(null);
   const [title, setTitle] = useState('');
+  const titleTouched = useRef(false); // once the user types a name, a refine must not overwrite it
+  const [refineText, setRefineText] = useState('');
+  const [refineError, setRefineError] = useState<string | null>(null);
   const [editing, setEditing] = useState<number | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   // A manual pick sticks only while the time-based default hasn't moved on (the tab stays mounted all day).
@@ -210,6 +213,8 @@ export default function MealsScreen() {
     abortRef.current = ctrl;
     setBusy(true);
     setError(null);
+    setRefineError(null);
+    setRefineText('');
     setDraft(null);
     // Persist first: a 503/429 retry chain can take minutes and the app may be killed meanwhile.
     let pendingId = cur?.id ?? null;
@@ -233,7 +238,8 @@ export default function MealsScreen() {
       }
       setDraft(r);
       setUsedModel(r.model);
-      setTitle(r.ingredients[0]?.name ?? 'Meal');
+      setTitle(r.title);
+      titleTouched.current = false;
       setEditing(null);
       setShowDetails(false);
     } catch (e) {
@@ -267,6 +273,45 @@ export default function MealsScreen() {
   const discardDraft = () => {
     setDraft(null);
     setNote('');
+    setRefineText('');
+    setRefineError(null);
+  };
+
+  /** Follow-up: send the current items + a text correction (and the photo) back to the model; keeps the draft visible meanwhile. */
+  const refine = async () => {
+    const correction = refineText.trim();
+    if (!draft || busy || !correction) return;
+    Keyboard.dismiss();
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    setBusy(true);
+    setRefineError(null);
+    try {
+      const r = await analyzeMeal({
+        imageBase64: photo?.base64,
+        mimeType: photo?.mimeType,
+        note,
+        refine: { prev: { title, ingredients: draft.ingredients }, correction },
+        signal: ctrl.signal,
+      });
+      if (abortRef.current !== ctrl) return;
+      setDraft(r);
+      setUsedModel(r.model);
+      if (!titleTouched.current) setTitle(r.title);
+      setRefineText('');
+      setEditing(null);
+      done();
+    } catch (e) {
+      if (e instanceof AnalysisCancelled || abortRef.current !== ctrl) return;
+      console.warn('Refine failed', e);
+      setRefineError(friendlyError(e, 'Could not update the estimate. Please try again.'));
+    } finally {
+      if (abortRef.current === ctrl) {
+        abortRef.current = null;
+        setBusy(false);
+      }
+    }
   };
 
   const editIngredient = (i: number, patch: Partial<Ingredient>) =>
@@ -327,6 +372,8 @@ export default function MealsScreen() {
       setDraft(null);
       clearPhoto();
       setNote('');
+      setRefineText('');
+      setRefineError(null);
     } catch (e) {
       notifyError(e, 'Could not save', 'Could not save this meal. Please try again.');
     }
@@ -579,7 +626,10 @@ export default function MealsScreen() {
             <View style={styles.reviewHead}>
               <TextInput
                 value={title}
-                onChangeText={setTitle}
+                onChangeText={(v) => {
+                  titleTouched.current = true;
+                  setTitle(v);
+                }}
                 placeholder="Meal name"
                 placeholderTextColor={t.textDim}
                 style={[styles.reviewTitle, { color: t.text }]}
@@ -629,6 +679,16 @@ export default function MealsScreen() {
                     onPress={() => setEditing(i)}
                     style={[styles.ing, styles.ingRow, { borderColor: t.border }]}
                   >
+                    <Pressable
+                      onPress={() => {
+                        tap();
+                        dropIngredient(i);
+                      }}
+                      hitSlop={10}
+                      accessibilityLabel={`Remove ${ing.name}`}
+                    >
+                      <Ionicons name="remove-circle" size={22} color={t.danger} />
+                    </Pressable>
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: t.text, fontSize: 15 }} numberOfLines={1}>
                         {ing.name}
@@ -643,7 +703,34 @@ export default function MealsScreen() {
                   </Pressable>
                 ),
               )}
+              {draft.ingredients.length === 0 && (
+                <Text style={{ color: t.textDim, fontSize: 13, paddingVertical: 10 }}>
+                  No items left — describe what you ate below, or discard.
+                </Text>
+              )}
             </View>
+
+            {/* Follow-up: correct the estimate in words */}
+            <View style={[styles.refine, { backgroundColor: t.surfaceAlt }]}>
+              <TextInput
+                value={refineText}
+                onChangeText={setRefineText}
+                placeholder="Wrong? Tell me what to fix — “curry is rajma, rice is half”"
+                placeholderTextColor={t.textDim}
+                multiline
+                editable={!busy}
+                style={[styles.refineInput, { color: t.text }]}
+              />
+              <Pressable
+                disabled={busy || refineText.trim() === ''}
+                onPress={refine}
+                style={[styles.send, { backgroundColor: t.accent, opacity: busy || refineText.trim() === '' ? 0.35 : 1 }]}
+                accessibilityLabel="Update estimate"
+              >
+                {busy ? <ActivityIndicator color="#fff" size="small" /> : <Ionicons name="refresh" size={16} color="#fff" />}
+              </Pressable>
+            </View>
+            {refineError && <InlineNotice message={refineError} onDismiss={() => setRefineError(null)} />}
 
             <View style={[styles.totalRow, { borderColor: t.border }]}>
               <View>
@@ -797,6 +884,8 @@ const styles = StyleSheet.create({
   reviewHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   reviewTitle: { flex: 1, fontSize: 18, fontWeight: '700', padding: 0 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 5 },
+  refine: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, borderRadius: radius.md, padding: 6, marginTop: 12 },
+  refineInput: { flex: 1, fontSize: 14, minHeight: 34, maxHeight: 90, paddingHorizontal: 8, paddingTop: 7, paddingBottom: 7 },
   ing: { borderTopWidth: StyleSheet.hairlineWidth, paddingVertical: 4 },
   ingRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },

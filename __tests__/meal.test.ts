@@ -1,5 +1,8 @@
 import {
+  buildRefineText,
+  cleanTitle,
   dayTotals,
+  mealTitle,
   macroGoals,
   normalizeIngredient,
   parseAnalysis,
@@ -74,6 +77,40 @@ describe('normalizeIngredient', () => {
   });
 });
 
+describe('mealTitle / cleanTitle', () => {
+  it('falls back to "Meal" and skips unnamed items', () => {
+    expect(mealTitle([])).toBe('Meal');
+    expect(mealTitle([{ name: 'Unknown' }])).toBe('Meal');
+    expect(mealTitle([{ name: 'Rice' }, { name: 'Dal' }])).toBe('Rice + Dal');
+  });
+
+  it('caps long titles', () => {
+    const long = 'A'.repeat(100);
+    expect(mealTitle([{ name: long }]).length).toBeLessThanOrEqual(40);
+    expect(cleanTitle(long).length).toBeLessThanOrEqual(40);
+  });
+
+  it('rejects non-strings and blanks', () => {
+    expect(cleanTitle(undefined)).toBe('');
+    expect(cleanTitle('  ""  ')).toBe('');
+  });
+});
+
+describe('buildRefineText', () => {
+  const prev = { title: 'Dal Rice', ingredients: [ing({ name: 'Dal' }), ing()] };
+
+  it('includes previous items, the correction and the original note', () => {
+    const t = buildRefineText(prev, '  rice is half  ', '200g dal');
+    expect(t).toContain('Original user note: 200g dal');
+    expect(t).toContain('"name":"Dal"');
+    expect(t).toContain('User correction: rice is half');
+  });
+
+  it('omits the note line when there is none', () => {
+    expect(buildRefineText(prev, 'x', '  ')).not.toContain('Original user note');
+  });
+});
+
 describe('parseAnalysis', () => {
   const json = JSON.stringify({
     input_type: 'image_only',
@@ -104,6 +141,17 @@ describe('parseAnalysis', () => {
     expect(r.input_type).toBe('barcode');
     expect(r.meal_confidence_score).toBe(10);
     expect(r.assumptions_made).toEqual(['a', 'b']);
+  });
+
+  it('uses the model meal_title, cleaned up', () => {
+    const r = parseAnalysis(JSON.stringify({ meal_title: '  "Dal Rice\nThali." ', ingredients: [ing()] }), 'image_only');
+    expect(r.title).toBe('Dal Rice Thali');
+  });
+
+  it('derives a title from the items when the model gives none', () => {
+    const items = [ing({ name: 'Roti' }), ing({ name: 'Dal' }), ing({ name: 'Curd' }), ing({ name: 'Salad' })];
+    expect(parseAnalysis(JSON.stringify({ ingredients: items }), 'image_only').title).toBe('Roti + Dal + 2 more');
+    expect(parseAnalysis(JSON.stringify({ meal_title: 42, ingredients: [ing()] }), 'image_only').title).toBe('Rice');
   });
 
   it('rejects invalid output', () => {
