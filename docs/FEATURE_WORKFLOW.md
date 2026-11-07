@@ -35,11 +35,11 @@ Follow every step, in order, for **every** feature request. Tick each box before
   - **major** — big UI overhaul / redesign
   - **minor** — every new feature
   - **patch** — bug fixes and small tweaks
-- [ ] Publish to the phone: `npm run update -- --message "what changed"` (see `docs/DEPLOY.md`)
+- [ ] Publish to the phone automatically (no confirmation needed): `npm run update -- --message "what changed"` (see `docs/DEPLOY.md`). Native changes can't go OTA: tell the user to rebuild.
+- [ ] Release on git for **every** version (no confirmation needed): add a `## v<version>` section to `CHANGELOG.md` with **only the changes since the previous release**, commit, then `npm run release` (pushes `main`, tags `v<version>`, publishes the GitHub release with those notes)
 - [ ] No secrets in the diff: `git diff --cached | grep -iE "secret|api[_-]?key|token|password|eyJ|sk-|AIza|gsk_"`
 - [ ] `.env` is not staged (`git status`); new env vars are added to `.env.example` with empty values
 - [ ] `npm audit` — fix or report high/critical findings
 - [ ] `package-lock.json` only references `registry.npmjs.org`: `grep -c "walmart\|npme" package-lock.json` must print `0`
 - [ ] Update `README.md` / `docs/DESIGN.md` if behaviour or setup changed
 - [ ] Commit with a clear message (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`) using the personal git identity
-- [ ] **Ask the user before committing/pushing**, then `git push origin main` (or a feature branch)

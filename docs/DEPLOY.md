@@ -43,7 +43,13 @@ npm run bump -- minor        # minor = new feature, patch = fix, major = big UI 
 npm run update -- --message "short description"
 ```
 
-Then open the app on the phone twice (first launch downloads, second applies). The Routines tab
+Then publish the release on git (every version): add a `## v<version>` section to `CHANGELOG.md` covering
+only the changes since the previous release, commit, and run `npm run release` (`--dry-run` previews). It
+pushes `main`, tags `v<version>` and creates the GitHub release with those notes. Needs a one-time
+`gh auth login --hostname github.com` with the personal account.
+
+Open the app on the phone (the app fetches and restarts into new updates on launch since v1.2.1; older
+builds need two opens: first launch downloads, second applies). The Routines tab
 footer shows `v<version> · Updated <time>`: the version should match the one you bumped to.
 The printed **Runtime version** must be `1` (same as the installed build).
 
