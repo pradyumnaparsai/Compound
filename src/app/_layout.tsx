@@ -1,7 +1,7 @@
-import { Stack } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import { AppState } from 'react-native';
+import { useEffect, useMemo } from 'react';
+import { AppState, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { startAutoBackup } from '@/services/backup';
 import { refreshHealth } from '@/services/healthSync';
@@ -17,6 +17,13 @@ import { useTheme } from '@/theme';
 
 export default function RootLayout() {
   const t = useTheme();
+  // The navigator's default theme is light grey/white; it shows as a pale line along the edge of a screen
+  // that is being swiped away. Paint every navigation surface with the app background instead.
+  const base = t.dark ? DarkTheme : DefaultTheme;
+  const navTheme = useMemo(
+    () => ({ ...base, colors: { ...base.colors, background: t.bg, card: t.bg, border: t.border } }),
+    [base, t.bg, t.border],
+  );
   const { load, ready, routines, done } = useRoutineStore();
   useEffect(() => {
     load().catch((e) => console.error('Failed to load data', e));
@@ -83,27 +90,31 @@ export default function RootLayout() {
   }, [ready, routines, done]);
 
   return (
-    <SafeAreaProvider>
-      <StatusBar style={t.dark ? 'light' : 'dark'} />
-      {/* Swipe back from anywhere on pushed screens; modals keep the native swipe-down dismiss. */}
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          gestureEnabled: true,
-          fullScreenGestureEnabled: true,
-          contentStyle: { backgroundColor: t.bg },
-        }}
-      >
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="routine-form" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="scan" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="diary" />
-        <Stack.Screen name="log-meal" />
-        <Stack.Screen name="saved-meal" />
-        <Stack.Screen name="meal-builder" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="meal-settings" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="backup" options={{ presentation: 'modal' }} />
-      </Stack>
+    <SafeAreaProvider style={{ backgroundColor: t.bg }}>
+      <ThemeProvider value={navTheme}>
+        <View style={{ flex: 1, backgroundColor: t.bg }}>
+          <StatusBar style={t.dark ? 'light' : 'dark'} />
+          {/* Swipe back from anywhere on pushed screens; modals keep the native swipe-down dismiss. */}
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              gestureEnabled: true,
+              fullScreenGestureEnabled: true,
+              contentStyle: { backgroundColor: t.bg },
+            }}
+          >
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="routine-form" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="scan" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="diary" />
+            <Stack.Screen name="log-meal" />
+            <Stack.Screen name="saved-meal" />
+            <Stack.Screen name="meal-builder" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="meal-settings" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="backup" options={{ presentation: 'modal' }} />
+          </Stack>
+        </View>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

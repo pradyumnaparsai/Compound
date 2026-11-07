@@ -3,6 +3,9 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.11.1 — 2026-11-07
+### Fixed
+- Swipe back no longer shows a pale line along the screen edge while the gesture is in progress; navigation surfaces now use the app background.
 ## v1.11.0 — 2026-11-07
 ### Added
 - **Log food screen:** Meals → Log food. Meal-slot picker, Photo/Library/Search/Scan, describe-a-meal composer, AI review and Quick log now live here, so the Meals tab is just your day at a glance.
