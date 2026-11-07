@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -9,6 +10,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  type TextInputInstance,
   View,
 } from 'react-native';
 import { InlineNotice } from '@/components/InlineNotice';
@@ -60,6 +62,7 @@ export default function ScanScreen() {
   const [error, setError] = useState<string | null>(null); // a lookup/search that failed
   const abortRef = useRef<AbortController | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queryRef = useRef<TextInputInstance>(null);
   const cacheRef = useRef(new Map<string, Food[]>());
 
   // selected food + editable values (strings so partial typing works)
@@ -377,17 +380,33 @@ export default function ScanScreen() {
             {mode === 'search' && (
               <>
                 <View style={styles.row}>
-                  <TextInput
-                    value={query}
-                    onChangeText={setQuery}
-                    placeholder="e.g. amul paneer"
-                    placeholderTextColor={t.textDim}
-                    autoCorrect={false}
-                    autoFocus
-                    style={[input, { flex: 1 }]}
-                    returnKeyType="search"
-                    onSubmitEditing={submitSearch}
-                  />
+                  <View style={{ flex: 1, justifyContent: 'center' }}>
+                    <TextInput
+                      ref={queryRef}
+                      value={query}
+                      onChangeText={setQuery}
+                      placeholder="e.g. amul paneer"
+                      placeholderTextColor={t.textDim}
+                      autoCorrect={false}
+                      autoFocus
+                      style={[input, query.length > 0 && { paddingRight: 36 }]}
+                      returnKeyType="search"
+                      onSubmitEditing={submitSearch}
+                    />
+                    {query.length > 0 && (
+                      <Pressable
+                        onPress={() => {
+                          setQuery(''); // search field only — never touches the meal prompt box
+                          queryRef.current?.focus();
+                        }}
+                        hitSlop={10}
+                        style={{ position: 'absolute', right: 10 }}
+                        accessibilityLabel="Clear search"
+                      >
+                        <Ionicons name="close-circle" size={18} color={t.textDim} />
+                      </Pressable>
+                    )}
+                  </View>
                   <MicButton state={voice.state} onPress={voice.toggle} size={44} />
                   <Pressable onPress={submitSearch} style={[styles.btn, { backgroundColor: t.accent }]}>
                     <Text style={styles.btnText}>Search</Text>

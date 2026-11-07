@@ -3,6 +3,11 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.6.1 — 2026-11-07
+
+### Fixed
+- Search food: added a clear (✕) button to the search box. It clears only the search text and keeps focus in the field.
+
 ## v1.6.0 — 2026-11-07
 
 ### Added
