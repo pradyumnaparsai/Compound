@@ -3,6 +3,13 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.7.0 — 2026-11-07
+
+### Added
+- Meal estimate now gets a short header name (e.g. "Dal Rice Thali") instead of the first item's name. It is editable and shows in the Diary.
+- ➖ button on every estimated item to remove a wrongly estimated food before logging.
+- Refine box on the estimate: type a correction ("curry is rajma, rice is half") and the AI updates the current items using the photo and your correction.
+
 ## v1.6.2 — 2026-11-07
 
 ### Fixed
