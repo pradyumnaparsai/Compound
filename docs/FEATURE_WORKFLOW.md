@@ -30,7 +30,12 @@ Follow every step, in order, for **every** feature request. Tick each box before
 - [ ] `npx expo lint` — no new warnings
 - [ ] Fix failures at the root cause; never delete or weaken an existing test to make it pass
 
-## 6. Security check, then push
+## 6. Version bump, security check, then push
+- [ ] Bump the version (shown in the app footer): `npm run bump -- <major|minor|patch>`
+  - **major** — big UI overhaul / redesign
+  - **minor** — every new feature
+  - **patch** — bug fixes and small tweaks
+- [ ] Publish to the phone: `npm run update -- --message "what changed"` (see `docs/DEPLOY.md`)
 - [ ] No secrets in the diff: `git diff --cached | grep -iE "secret|api[_-]?key|token|password|eyJ|sk-|AIza|gsk_"`
 - [ ] `.env` is not staged (`git status`); new env vars are added to `.env.example` with empty values
 - [ ] `npm audit` — fix or report high/critical findings

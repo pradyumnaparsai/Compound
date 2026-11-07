@@ -3,7 +3,14 @@
     "name": "Compound",
     "slug": "compound",
     "scheme": "compound",
-    "version": "1.0.0",
+    "version": "1.1.0",
+    "runtimeVersion": "1",
+    "updates": {
+      "requestHeaders": {
+        "expo-channel-name": "main"
+      },
+      "url": "https://u.expo.dev/f33670b0-6e89-4a23-b379-ae0766832fa2"
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -16,9 +23,28 @@
       "expo-router",
       "expo-sqlite",
       "expo-dev-client",
-      ["expo-image-picker", { "photosPermission": "Compound reads a meal photo you pick to estimate its calories and protein.", "cameraPermission": "Compound uses the camera to photograph meals for calorie and protein estimates.", "microphonePermission": false }],
-      ["expo-camera", { "cameraPermission": "Compound uses the camera to scan food barcodes and photograph meals.", "microphonePermission": false, "recordAudioAndroid": false }],
-      ["expo-secure-store", { "faceIDPermission": false }],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Compound reads a meal photo you pick to estimate its calories and protein.",
+          "cameraPermission": "Compound uses the camera to photograph meals for calorie and protein estimates.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Compound uses the camera to scan food barcodes and photograph meals.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": false
+        }
+      ],
       [
         "@kingstinct/react-native-healthkit",
         {
@@ -31,6 +57,22 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "f33670b0-6e89-4a23-b379-ae0766832fa2"
+      }
+    },
+    "owner": "pradyumnaparsai",
+    "android": {
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
     }
   }
 }

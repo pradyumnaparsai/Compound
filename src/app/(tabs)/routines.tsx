@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Screen } from '@/components/Screen';
+import { VersionInfo } from '@/components/VersionInfo';
 import { goalLabel } from '@/domain/goal';
 import { recurrenceLabel } from '@/domain/recurrence';
 import { useRoutineStore } from '@/store/useRoutineStore';
@@ -66,6 +67,7 @@ export default function RoutinesScreen() {
           Long-press a routine to archive it
         </Text>
       )}
+      <VersionInfo />
     </Screen>
   );
 }

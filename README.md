@@ -77,3 +77,5 @@ Unit tests live in `__tests__/` (Jest + jest-expo) and cover the domain logic. R
 New features follow the checklist in [`docs/FEATURE_WORKFLOW.md`](docs/FEATURE_WORKFLOW.md).
 
 See [`docs/DESIGN.md`](docs/DESIGN.md) for design notes.
+
+Deploying to a phone (OTA updates + weekly re-install): [`docs/DEPLOY.md`](docs/DEPLOY.md).

@@ -33,7 +33,7 @@ Details and checkboxes: `docs/FEATURE_WORKFLOW.md`. Follow these steps in order,
 3. **Implement** — follow existing patterns; keep logic in pure functions.
 4. **Add tests** — unit tests in `__tests__/` (never in `src/app/`) for new logic; regression test for bug fixes.
 5. **Run all tests** — `npm test`, `npx tsc --noEmit`, `npx expo lint`. Never delete or weaken existing tests to get green.
-6. **Security, then push** — scan the diff for secrets, `npm audit`, ensure `.env` is unstaged and `package-lock.json` has no internal registry URLs (`grep -c "walmart\|npme" package-lock.json` = 0). Ask the user before committing/pushing.
+6. **Version bump, security, then push** — bump the version with `npm run bump -- <major|minor|patch>` (major = big UI overhaul, minor = every new feature, patch = fixes); publish with `npm run update -- --message "..."` (`docs/DEPLOY.md`). Scan the diff for secrets, `npm audit`, ensure `.env` is unstaged and `package-lock.json` has no internal registry URLs (`grep -c "walmart\|npme" package-lock.json` = 0). Ask the user before committing/pushing.
 
 ## Navigation & Routing
 
