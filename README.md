@@ -1,3 +1,6 @@
+<img width="1024" height="1024" alt="image" src="https://github.com/user-attachments/assets/904fb5c0-c5a4-4fe8-aa58-0eca3298d4a8" />
+
+
 # Compound
 
 A personal iOS app for tracking daily routines, todos, body weight and meals. Built with Expo / React Native. Data lives on-device (SQLite); cloud backup via Supabase is optional.
