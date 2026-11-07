@@ -37,6 +37,21 @@ export function parseTime(raw: string): string | null {
   return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
 }
 
+/** 'HH:mm' → a Date on `base`'s day at that time (for time pickers). Invalid input → `base` unchanged. */
+export function timeToDate(time: string, base: Date = new Date()): Date {
+  const parsed = parseTime(time);
+  const d = new Date(base);
+  if (!parsed) return d;
+  const [h, m] = parsed.split(':').map(Number);
+  d.setHours(h, m, 0, 0);
+  return d;
+}
+
+/** Date → 'HH:mm' (device-local). */
+export function dateToTime(date: Date): string {
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
 /** 'HH:mm' → '8:00 AM'. */
 export function formatTime(time: string): string {
   const [h, m] = time.split(':').map(Number);

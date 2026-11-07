@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { DateTimePicker } from '@expo/ui/community/datetime-picker';
+import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { notifyError } from '@/components/notify';
 import { Screen } from '@/components/Screen';
 import { totalsOf } from '@/domain/meal';
-import { editSchedule, formatTime, parseTime, templateFromItems, WEEKDAY_NAMES, type MealSchedule } from '@/domain/mealSchedule';
+import { dateToTime, editSchedule, formatTime, parseTime, templateFromItems, timeToDate, WEEKDAY_NAMES, type MealSchedule } from '@/domain/mealSchedule';
 import { useMealDraft } from '@/store/useMealDraft';
 import { useMealStore } from '@/store/useMealStore';
 import { radius, useTheme } from '@/theme';
@@ -36,6 +37,7 @@ export default function MealBuilder() {
   }, [id]);
 
   const time = parseTime(timeText);
+  const pickerValue = useMemo(() => timeToDate(timeText), [timeText]);
   const tot = totalsOf(items);
   const canSave = !saving && items.length > 0 && title.trim().length > 0 && (!auto || (time !== null && (everyDay || days.length > 0)));
 
@@ -144,16 +146,17 @@ export default function MealBuilder() {
 
           {auto && (
             <>
-              <Text style={[styles.label, { color: t.textDim }]}>Time (24 h)</Text>
-              <TextInput
-                value={timeText}
-                onChangeText={setTimeText}
-                placeholder="08:00"
-                placeholderTextColor={t.textDim}
-                keyboardType="numbers-and-punctuation"
-                maxLength={5}
-                style={[styles.input, { backgroundColor: t.surface, borderColor: time ? t.border : t.danger, color: t.text, marginBottom: 8 }]}
-              />
+              <Text style={[styles.label, { color: t.textDim }]}>Time</Text>
+              <View style={[styles.dial, { backgroundColor: t.surface, borderColor: t.border }]}>
+                <DateTimePicker
+                  value={pickerValue}
+                  mode="time"
+                  display="spinner"
+                  accentColor={t.accent}
+                  themeVariant={t.dark ? 'dark' : 'light'}
+                  onValueChange={(_e, d) => setTimeText(dateToTime(d))}
+                />
+              </View>
               <View style={styles.chips}>
                 {TIME_PRESETS.map((p) => (
                   <Pressable
@@ -215,6 +218,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 8, marginTop: 8, marginBottom: 20, flexWrap: 'wrap' },
   addBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 10 },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderRadius: radius.md, borderWidth: 1, marginBottom: 16 },
+  dial: { borderWidth: 1, borderRadius: radius.md, overflow: 'hidden', marginBottom: 12 },
   chips: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   chip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: radius.pill, borderWidth: 1 },
   save: { borderRadius: radius.md, paddingVertical: 16, alignItems: 'center', marginTop: 8 },

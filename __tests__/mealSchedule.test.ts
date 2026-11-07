@@ -1,5 +1,6 @@
 import type { SavedMeal } from '@/domain/meal';
 import {
+  dateToTime,
   dueSchedules,
   editSchedule,
   formatDays,
@@ -7,6 +8,7 @@ import {
   mealFromTemplate,
   parseTime,
   templateFromItems,
+  timeToDate,
   type MealSchedule,
 } from '@/domain/mealSchedule';
 
@@ -48,6 +50,20 @@ describe('parseTime', () => {
   ])('%s -> %s', (raw, out) => expect(parseTime(raw)).toBe(out));
 
   it.each(['', 'abc', '24:00', '8:60', '123456', '-1', '8:'])('rejects %p', (raw) => expect(parseTime(raw)).toBeNull());
+});
+
+describe('timeToDate / dateToTime', () => {
+  it('round-trips HH:mm', () => {
+    for (const t of ['00:00', '07:05', '12:30', '23:59']) expect(dateToTime(timeToDate(t))).toBe(t);
+  });
+  it('keeps the base day and zeroes seconds', () => {
+    const d = timeToDate('21:15', new Date(2026, 10, 7, 3, 4, 5, 6));
+    expect([d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds()]).toEqual([2026, 10, 7, 21, 15, 0, 0]);
+  });
+  it('leaves the base time for invalid input', () => {
+    const base = new Date(2026, 10, 7, 3, 4);
+    expect(timeToDate('nope', base).getTime()).toBe(base.getTime());
+  });
 });
 
 describe('format helpers', () => {
