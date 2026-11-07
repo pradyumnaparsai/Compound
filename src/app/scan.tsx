@@ -78,7 +78,7 @@ export default function ScanScreen() {
   const [fat, setFat] = useState('');
   const [grams, setGrams] = useState('');
   const [units, setUnits] = useState('');
-  const [unitW, setUnitW] = useState(''); // user-defined grams per unit when the product lists no pack/serving
+  const [unitW, setUnitW] = useState(''); // suggested grams per unit for plain whole foods when the product lists no pack/serving
 
   const select = (f: Food, cached = false, note: string | null = null) => {
     setFood(f);
@@ -241,12 +241,6 @@ export default function ScanScreen() {
   const customW = parse(unitW);
   const unitG = food ? (food.packG ?? food.servingG ?? (Number.isFinite(customW) && customW > 0 ? customW : null)) : null;
   const unitKnown = !!food && (food.packG ?? food.servingG) != null;
-  const onUnitW = (v: string) => {
-    setUnitW(v);
-    const w = parse(v);
-    const u = parse(units);
-    if (Number.isFinite(w) && w > 0 && Number.isFinite(u)) setGrams(fmt(u * w));
-  };
   const unitFmt = (n: number) => String(Math.round(n * 100) / 100);
   const onGrams = (v: string) => {
     setGrams(v);
@@ -475,12 +469,6 @@ export default function ScanScreen() {
 
             <Text style={[styles.label, { color: t.textDim }]}>How much did you eat? (g)</Text>
             <TextInput value={grams} onChangeText={onGrams} keyboardType="decimal-pad" style={input} />
-            {!unitKnown && (
-              <>
-                <Text style={[styles.label, { color: t.textDim }]}>Grams per unit (1 piece / bowl / cup) — your estimate</Text>
-                <TextInput value={unitW} onChangeText={onUnitW} keyboardType="decimal-pad" placeholder="e.g. 180" placeholderTextColor={t.textDim} style={input} />
-              </>
-            )}
             {unitG ? (
               <>
                 <Text style={[styles.label, { color: t.textDim }]}>
