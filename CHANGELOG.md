@@ -3,6 +3,13 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.8.0 — 2026-11-07
+
+### Added
+- **Meal builder:** Meals → Quick log → New meal. Name a meal, then search or scan foods and keep adding them; save it and log the whole meal in one tap. Long-press a quick-log chip to edit or delete it.
+- **Auto-log meals:** switch on "Log automatically" for a meal, pick a time (and optionally weekdays) and it is added to your diary for you, e.g. a daily protein shake. iOS can't run the app in the background, so it's logged (stamped at the set time) the next time you open the app after that time; only today is logged, missed days are skipped. Changing a schedule restarts it from its next occurrence.
+- Schedules are included in the cloud backup (new `meal_schedules` table).
+
 ## v1.7.1 — 2026-11-07
 
 ### Fixed
