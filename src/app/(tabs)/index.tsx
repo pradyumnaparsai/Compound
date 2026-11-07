@@ -11,7 +11,7 @@ import { TaskAdder } from '@/components/TaskAdder';
 import { TaskRow } from '@/components/TaskRow';
 import { MONTH_NAMES, fromKey, todayKey } from '@/domain/date';
 import { completionKey, currentStreak, scheduledOn } from '@/domain/recurrence';
-import { overdueTasks, tasksOn } from '@/domain/task';
+import { dayProgress, overdueTasks, tasksOn } from '@/domain/task';
 import { useRoutineStore } from '@/store/useRoutineStore';
 import { useTaskStore } from '@/store/useTaskStore';
 import { radius, useTheme } from '@/theme';
@@ -37,6 +37,7 @@ export default function TodayScreen() {
 
   const scheduled = useMemo(() => scheduledOn(routines, today), [routines, today]);
   const doneCount = scheduled.filter((r) => done.has(completionKey(r.id, today))).length;
+  const progress = dayProgress(doneCount, scheduled.length, todayTasks, overdue);
   const streak = useMemo(() => currentStreak(routines, done), [routines, done]);
   const d = fromKey(today);
 
@@ -51,8 +52,8 @@ export default function TodayScreen() {
         <View style={styles.cardTop}>
           <View>
             <Text style={[styles.big, { color: t.text }]}>
-              {doneCount}
-              <Text style={{ color: t.textDim }}> / {scheduled.length}</Text>
+              {progress.done}
+              <Text style={{ color: t.textDim }}> / {progress.total}</Text>
             </Text>
             <Text style={[styles.small, { color: t.textDim }]}>done today</Text>
           </View>
@@ -61,7 +62,7 @@ export default function TodayScreen() {
             <Text style={[styles.streakText, { color: t.accent }]}>{streak} day streak</Text>
           </View>
         </View>
-        <ProgressBar value={scheduled.length ? doneCount / scheduled.length : 0} />
+        <ProgressBar value={progress.fraction} />
       </View>
 
       <ReorderableList

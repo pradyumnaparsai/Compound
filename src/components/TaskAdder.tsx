@@ -31,7 +31,7 @@ export function TaskAdder({ date, placeholder = 'Add a task…' }: { date: strin
         placeholder={placeholder}
         placeholderTextColor={t.textDim}
         returnKeyType="done"
-        submitBehavior="submit"
+        submitBehavior="blurAndSubmit"
         maxLength={120}
         style={[styles.input, { color: t.text }]}
       />

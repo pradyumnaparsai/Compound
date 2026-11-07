@@ -155,6 +155,8 @@ export function ReorderableList<T extends { id: string }>({
       scrollEnabled={activeId === null}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      automaticallyAdjustKeyboardInsets
       contentContainerStyle={[{ flexGrow: 1 }, contentContainerStyle]}
     >
       {header}

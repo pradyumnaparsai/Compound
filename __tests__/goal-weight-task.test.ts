@@ -1,5 +1,5 @@
 import { defaultMealRoutine, goalLabel, mealFraction, goalProgress, mealGoalMet, MEAL_CALORIE_SLACK, MEAL_PROTEIN_SLACK, stepFraction } from '@/domain/goal';
-import { overdueTasks, taskCounts, tasksOn } from '@/domain/task';
+import { dayProgress, overdueTasks, taskCounts, tasksOn } from '@/domain/task';
 import type { Task } from '@/domain/types';
 import { weekStart, weeklyAverages } from '@/domain/weight';
 
@@ -123,5 +123,14 @@ describe('tasks', () => {
   it('counts total and open per day', () => {
     const c = taskCounts([t('a', today), t('b', today, '2026-11-07T10:00:00.000Z')]);
     expect(c.get(today)).toEqual({ total: 2, open: 1 });
+  });
+});
+
+describe('dayProgress', () => {
+  const mk = (id: string, completedAt: string | null = null): Task => ({ id, title: id, date: '2026-01-01', createdAt: '', completedAt });
+  it('counts tasks together with routines', () => {
+    
+    expect(dayProgress(1, 2, [mk('a', '2026-01-01T00:00:00Z'), mk('b')], [mk('c')])).toEqual({ done: 2, total: 5, fraction: 0.4 });
+    expect(dayProgress(0, 0, [], [])).toEqual({ done: 0, total: 0, fraction: 0 });
   });
 });

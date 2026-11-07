@@ -18,3 +18,11 @@ export function taskCounts(tasks: Task[]): Map<string, { total: number; open: nu
   }
   return out;
 }
+
+/** Combined "done today" progress: today's routines plus today's and overdue tasks. */
+export function dayProgress(routinesDone: number, routinesTotal: number, todayTasks: Task[], overdue: Task[]) {
+  const tasks = [...todayTasks, ...overdue];
+  const done = routinesDone + tasks.filter((t) => !!t.completedAt).length;
+  const total = routinesTotal + tasks.length;
+  return { done, total, fraction: total ? done / total : 0 };
+}

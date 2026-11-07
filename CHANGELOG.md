@@ -3,6 +3,12 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.7.1 — 2026-11-07
+
+### Fixed
+- Keyboard now dismisses on the Today screen when you scroll or press Done after adding a task.
+- "Done today" card and progress bar now count today's and overdue tasks along with routines.
+
 ## v1.7.0 — 2026-11-07
 
 ### Added
