@@ -1,0 +1,390 @@
+import { todayKey } from '@/domain/date';
+import type { Completion, Goal, Recurrence, Routine, RoutineInput, Task } from '@/domain/types';
+import type { Food } from '@/domain/food';
+import { isMealSlot, normalizeIngredient, slotForTime, type Goals, type Meal, type SavedMeal } from '@/domain/meal';
+import type { WeightEntry } from '@/domain/weight';
+import { getDb } from './db';
+import type {
+  CompletionRepository,
+  FoodCacheRepository,
+  MealRepository,
+  RoutineRepository,
+  SavedMealRepository,
+  SettingsRepository,
+  TaskRepository,
+  WeightRepository,
+} from './repository';
+
+type MealRow = {
+  id: string;
+  date: string;
+  slot: string | null;
+  logged_at: string;
+  title: string;
+  input_type: Meal['inputType'];
+  confidence: number;
+  ingredients: string;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  assumptions: string;
+};
+
+const mealFromRow = (r: MealRow): Meal => ({
+  id: r.id,
+  date: r.date,
+  slot: isMealSlot(r.slot) ? r.slot : slotForTime(r.logged_at),
+  loggedAt: r.logged_at,
+  title: r.title,
+  inputType: r.input_type,
+  confidence: r.confidence,
+  ingredients: (JSON.parse(r.ingredients) as Partial<Meal['ingredients'][number]>[]).map(normalizeIngredient),
+  calories: r.calories,
+  proteinG: r.protein_g,
+  carbsG: r.carbs_g,
+  fatG: r.fat_g,
+  assumptions: JSON.parse(r.assumptions),
+});
+
+export const sqliteMealRepo: MealRepository = {
+  async list() {
+    const db = await getDb();
+    const rows = await db.getAllAsync<MealRow>('SELECT * FROM meals ORDER BY date, logged_at');
+    return rows.map(mealFromRow);
+  },
+  async add(m) {
+    const db = await getDb();
+    await db.runAsync(
+      'INSERT INTO meals (id, date, slot, logged_at, title, input_type, confidence, ingredients, calories, protein_g, carbs_g, fat_g, assumptions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      m.id,
+      m.date,
+      m.slot,
+      m.loggedAt,
+      m.title,
+      m.inputType,
+      m.confidence,
+      JSON.stringify(m.ingredients),
+      m.calories,
+      m.proteinG,
+      m.carbsG,
+      m.fatG,
+      JSON.stringify(m.assumptions),
+    );
+  },
+  async update(m) {
+    const db = await getDb();
+    await db.runAsync(
+      'UPDATE meals SET title = ?, slot = ?, ingredients = ?, calories = ?, protein_g = ?, carbs_g = ?, fat_g = ? WHERE id = ?',
+      m.title,
+      m.slot,
+      JSON.stringify(m.ingredients),
+      m.calories,
+      m.proteinG,
+      m.carbsG,
+      m.fatG,
+      m.id,
+    );
+  },
+  async remove(id) {
+    const db = await getDb();
+    await db.runAsync('DELETE FROM meals WHERE id = ?', id);
+  },
+};
+
+type RoutineRow = {
+  id: string;
+  title: string;
+  recurrence: string;
+  reminder_time: string | null;
+  goal: string | null;
+  created_at: string;
+  archived_at: string | null;
+};
+
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+function parseGoal(raw: string | null): Goal | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as Goal;
+  } catch {
+    return null;
+  }
+}
+
+const toRoutine = (r: RoutineRow): Routine => ({
+  id: r.id,
+  title: r.title,
+  recurrence: JSON.parse(r.recurrence) as Recurrence,
+  goal: parseGoal(r.goal),
+  reminderTime: r.reminder_time,
+  createdAt: r.created_at,
+  archivedAt: r.archived_at,
+});
+
+export const sqliteRoutineRepo: RoutineRepository = {
+  async list() {
+    const db = await getDb();
+    const rows = await db.getAllAsync<RoutineRow>('SELECT * FROM routines ORDER BY position, created_at, rowid');
+    return rows.map(toRoutine);
+  },
+
+  async create(input: RoutineInput) {
+    const db = await getDb();
+    const routine: Routine = {
+      id: newId(),
+      title: input.title.trim(),
+      recurrence: input.recurrence,
+      goal: input.goal ?? null,
+      reminderTime: input.reminderTime ?? null,
+      createdAt: todayKey(),
+      archivedAt: null,
+    };
+    await db.runAsync(
+      'INSERT INTO routines (id, title, recurrence, reminder_time, goal, created_at, position) VALUES (?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(position), -1) + 1 FROM routines))',
+      routine.id,
+      routine.title,
+      JSON.stringify(routine.recurrence),
+      routine.reminderTime,
+      routine.goal ? JSON.stringify(routine.goal) : null,
+      routine.createdAt,
+    );
+    return routine;
+  },
+
+  async update(id, patch) {
+    const db = await getDb();
+    await db.runAsync(
+      'UPDATE routines SET title = ?, recurrence = ?, reminder_time = ?, goal = ? WHERE id = ?',
+      patch.title.trim(),
+      JSON.stringify(patch.recurrence),
+      patch.reminderTime ?? null,
+      patch.goal ? JSON.stringify(patch.goal) : null,
+      id,
+    );
+  },
+
+  async archive(id) {
+    const db = await getDb();
+    await db.runAsync('UPDATE routines SET archived_at = ? WHERE id = ?', todayKey(), id);
+  },
+
+  async reorder(ids) {
+    const db = await getDb();
+    await db.withExclusiveTransactionAsync(async (tx) => {
+      for (let i = 0; i < ids.length; i++) {
+        await tx.runAsync('UPDATE routines SET position = ? WHERE id = ?', i, ids[i]);
+      }
+    });
+  },
+};
+
+export const sqliteCompletionRepo: CompletionRepository = {
+  async list() {
+    const db = await getDb();
+    const rows = await db.getAllAsync<{ routine_id: string; date: string }>(
+      'SELECT routine_id, date FROM completions',
+    );
+    return rows.map((r): Completion => ({ routineId: r.routine_id, date: r.date }));
+  },
+
+  async set(routineId, date, done) {
+    const db = await getDb();
+    if (done) {
+      await db.runAsync(
+        'INSERT OR IGNORE INTO completions (routine_id, date, completed_at) VALUES (?, ?, ?)',
+        routineId,
+        date,
+        new Date().toISOString(),
+      );
+    } else {
+      await db.runAsync('DELETE FROM completions WHERE routine_id = ? AND date = ?', routineId, date);
+    }
+  },
+};
+
+type TaskRow = { id: string; title: string; date: string; created_at: string; completed_at: string | null };
+
+export const sqliteTaskRepo: TaskRepository = {
+  async list() {
+    const db = await getDb();
+    const rows = await db.getAllAsync<TaskRow>('SELECT * FROM tasks ORDER BY date, created_at, rowid');
+    return rows.map(
+      (r): Task => ({ id: r.id, title: r.title, date: r.date, createdAt: r.created_at, completedAt: r.completed_at }),
+    );
+  },
+  async create(title, date) {
+    const db = await getDb();
+    const task: Task = { id: newId(), title: title.trim(), date, createdAt: new Date().toISOString(), completedAt: null };
+    await db.runAsync(
+      'INSERT INTO tasks (id, title, date, created_at) VALUES (?, ?, ?, ?)',
+      task.id,
+      task.title,
+      task.date,
+      task.createdAt,
+    );
+    return task;
+  },
+  async setDone(id, done) {
+    const db = await getDb();
+    const completedAt = done ? new Date().toISOString() : null;
+    await db.runAsync('UPDATE tasks SET completed_at = ? WHERE id = ?', completedAt, id);
+    return completedAt;
+  },
+  async reschedule(id, date) {
+    const db = await getDb();
+    await db.runAsync('UPDATE tasks SET date = ? WHERE id = ?', date, id);
+  },
+  async remove(id) {
+    const db = await getDb();
+    await db.runAsync('DELETE FROM tasks WHERE id = ?', id);
+  },
+};
+
+export const sqliteWeightRepo: WeightRepository = {
+  async list() {
+    const db = await getDb();
+    return db.getAllAsync<WeightEntry>('SELECT date, kg FROM weights ORDER BY date');
+  },
+  async upsert(date, kg) {
+    const db = await getDb();
+    await db.runAsync(
+      'INSERT INTO weights (date, kg, logged_at) VALUES (?, ?, ?) ON CONFLICT(date) DO UPDATE SET kg = excluded.kg, logged_at = excluded.logged_at',
+      date,
+      kg,
+      new Date().toISOString(),
+    );
+  },
+  async remove(date) {
+    const db = await getDb();
+    await db.runAsync('DELETE FROM weights WHERE date = ?', date);
+  },
+};
+
+type SavedRow = {
+  id: string;
+  title: string;
+  ingredients: string;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  created_at: string;
+};
+
+export const sqliteSavedMealRepo: SavedMealRepository = {
+  async list() {
+    const db = await getDb();
+    const rows = await db.getAllAsync<SavedRow>('SELECT * FROM saved_meals ORDER BY title COLLATE NOCASE');
+    return rows.map(
+      (r): SavedMeal => ({
+        id: r.id,
+        title: r.title,
+        ingredients: (JSON.parse(r.ingredients) as Partial<Meal['ingredients'][number]>[]).map(normalizeIngredient),
+        calories: r.calories,
+        proteinG: r.protein_g,
+        carbsG: r.carbs_g,
+        fatG: r.fat_g,
+        createdAt: r.created_at,
+      }),
+    );
+  },
+  async add(m) {
+    const db = await getDb();
+    await db.runAsync(
+      'INSERT INTO saved_meals (id, title, ingredients, calories, protein_g, carbs_g, fat_g, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      m.id,
+      m.title,
+      JSON.stringify(m.ingredients),
+      m.calories,
+      m.proteinG,
+      m.carbsG,
+      m.fatG,
+      m.createdAt,
+    );
+  },
+  async remove(id) {
+    const db = await getDb();
+    await db.runAsync('DELETE FROM saved_meals WHERE id = ?', id);
+  },
+};
+
+export const sqliteSettingsRepo: SettingsRepository = {
+  async getGoals() {
+    const db = await getDb();
+    const row = await db.getFirstAsync<{ value: string }>("SELECT value FROM settings WHERE key = 'goals'");
+    if (!row) return null;
+    try {
+      const g = JSON.parse(row.value) as Goals;
+      if (!Number.isFinite(g.calories) || !Number.isFinite(g.proteinG)) return null;
+      const opt = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : undefined);
+      return { calories: g.calories, proteinG: g.proteinG, carbsG: opt(g.carbsG), fatG: opt(g.fatG) };
+    } catch {
+      return null;
+    }
+  },
+  async setGoals(g) {
+    const db = await getDb();
+    if (!g) {
+      await db.runAsync("DELETE FROM settings WHERE key = 'goals'");
+      return;
+    }
+    await db.runAsync(
+      "INSERT INTO settings (key, value) VALUES ('goals', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+      JSON.stringify(g),
+    );
+  },
+};
+
+type FoodRow = {
+  barcode: string;
+  name: string;
+  brand: string;
+  kcal100: number;
+  protein100: number;
+  carbs100: number;
+  fat100: number;
+  pack_g: number | null;
+  serving_g: number | null;
+};
+
+export const sqliteFoodCacheRepo: FoodCacheRepository = {
+  async get(barcode) {
+    const db = await getDb();
+    const r = await db.getFirstAsync<FoodRow>('SELECT * FROM food_cache WHERE barcode = ?', barcode);
+    if (!r) return null;
+    return {
+      barcode: r.barcode,
+      name: r.name,
+      brand: r.brand,
+      kcal100: r.kcal100,
+      protein100: r.protein100,
+      carbs100: r.carbs100,
+      fat100: r.fat100,
+      packG: r.pack_g,
+      servingG: r.serving_g,
+    };
+  },
+  async put(f: Food) {
+    if (!f.barcode) return;
+    const db = await getDb();
+    await db.runAsync(
+      `INSERT INTO food_cache (barcode, name, brand, kcal100, protein100, carbs100, fat100, pack_g, serving_g, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(barcode) DO UPDATE SET name = excluded.name, brand = excluded.brand, kcal100 = excluded.kcal100,
+         protein100 = excluded.protein100, carbs100 = excluded.carbs100, fat100 = excluded.fat100,
+         pack_g = excluded.pack_g, serving_g = excluded.serving_g, updated_at = excluded.updated_at`,
+      f.barcode,
+      f.name,
+      f.brand,
+      f.kcal100,
+      f.protein100,
+      f.carbs100,
+      f.fat100,
+      f.packG,
+      f.servingG,
+      new Date().toISOString(),
+    );
+  },
+};

@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Compound",
+    "slug": "compound",
+    "scheme": "compound",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": false,
+      "appleTeamId": "3264875TR6",
+      "bundleIdentifier": "com.productivitybooster.app"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-dev-client",
+      ["expo-image-picker", { "photosPermission": "Compound reads a meal photo you pick to estimate its calories and protein.", "cameraPermission": "Compound uses the camera to photograph meals for calorie and protein estimates.", "microphonePermission": false }],
+      ["expo-camera", { "cameraPermission": "Compound uses the camera to scan food barcodes and photograph meals.", "microphonePermission": false, "recordAudioAndroid": false }],
+      ["expo-secure-store", { "faceIDPermission": false }],
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "Compound reads your steps and workouts to automatically check off your daily goals.",
+          "NSHealthUpdateUsageDescription": false,
+          "background": false
+        }
+      ],
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

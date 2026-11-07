@@ -1,0 +1,17 @@
+{
+  "_comment": "Re-add this entry to app.json 'plugins' once the iPhone is registered on a team that allows App Groups. Then run: npx expo prebuild -p ios --clean",
+  "plugin": [
+    "expo-widgets",
+    {
+      "widgets": [
+        {
+          "name": "RoutineWidget",
+          "displayName": "Today's Routines",
+          "description": "Routines done today, on your Lock Screen",
+          "ios": { "supportedFamilies": ["accessoryCircular", "accessoryRectangular", "accessoryInline"] },
+          "android": null
+        }
+      ]
+    }
+  ]
+}
