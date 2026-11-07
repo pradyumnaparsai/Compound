@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Alert, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { notifyError, onFail } from '@/components/notify';
 import { Screen } from '@/components/Screen';
 import { WeeklyChart } from '@/components/WeeklyChart';
 import { MONTH_NAMES, fromKey, todayKey } from '@/domain/date';
@@ -28,13 +29,13 @@ export default function WeightScreen() {
       setText('');
       Keyboard.dismiss();
     } catch (e) {
-      console.error(e);
+      notifyError(e, 'Could not save', 'Could not save your weight. Please try again.');
     }
   };
 
   return (
     <Screen>
-      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={{ paddingBottom: 32 }}>
+      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets contentContainerStyle={{ paddingBottom: 32 }}>
         <Text style={[styles.title, { color: t.text }]}>Weight</Text>
 
         <View style={[styles.card, { backgroundColor: t.surface, borderColor: t.border }]}>
@@ -90,7 +91,7 @@ export default function WeightScreen() {
               onLongPress={() =>
                 Alert.alert('Delete entry?', `${e.kg.toFixed(1)} kg on ${e.date}`, [
                   { text: 'Cancel', style: 'cancel' },
-                  { text: 'Delete', style: 'destructive', onPress: () => remove(e.date).catch(console.error) },
+                  { text: 'Delete', style: 'destructive', onPress: () => remove(e.date).catch(onFail()) },
                 ])
               }
               style={[styles.hist, { backgroundColor: t.surface, borderColor: t.border }]}

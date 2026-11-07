@@ -11,15 +11,22 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  type ScrollViewInstance,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { InlineNotice } from '@/components/InlineNotice';
+import { MicButton } from '@/components/MicButton';
+import { notifyError, onFail } from '@/components/notify';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Screen } from '@/components/Screen';
 import { addDays, todayKey } from '@/domain/date';
+import { friendlyError } from '@/domain/errors';
+import { mergeTranscript } from '@/domain/voice';
+import { useVoiceInput } from '@/hooks/useVoiceInput';
 import {
   dayTotals,
   macroGoals,
@@ -72,7 +79,21 @@ export default function MealsScreen() {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryable, setRetryable] = useState(false); // Retry only makes sense for a failed analysis, not voice/permission errors
   const abortRef = useRef<AbortController | null>(null);
+  // Keep the composer above the keyboard: remember where it sits and scroll to it when it is focused.
+  const scrollRef = useRef<ScrollViewInstance>(null);
+  const composerPos = useRef({ wrap: 0, box: 0 });
+  const composerFocused = useRef(false);
+  const revealComposer = useCallback(() => {
+    scrollRef.current?.scrollTo({ y: Math.max(0, composerPos.current.wrap + composerPos.current.box - 120), animated: true });
+  }, []);
+  useEffect(() => {
+    const sub = Keyboard.addListener('keyboardDidShow', () => {
+      if (composerFocused.current) revealComposer();
+    });
+    return () => sub.remove();
+  }, [revealComposer]);
   const [draft, setDraft] = useState<MealAnalysis | null>(null);
   const [usedModel, setUsedModel] = useState<string | null>(null);
   const [title, setTitle] = useState('');
@@ -119,7 +140,7 @@ export default function MealsScreen() {
         setError(null);
       }
     } catch (e) {
-      Alert.alert('Photo failed', e instanceof Error ? e.message : String(e));
+      notifyError(e, 'Could not get the photo', 'Could not get that photo. Please try again.');
     }
   };
 
@@ -175,12 +196,14 @@ export default function MealsScreen() {
       },
     ]);
 
-  const analyze = async () => {
+  /** `spoken`: the note as it will be after voice input (state hasn't updated yet when this runs). */
+  const analyze = async (spoken?: string) => {
     if (busy) {
       tap();
       cancelAnalyze();
       return;
     }
+    const noteText = spoken ?? note;
     Keyboard.dismiss();
     abortRef.current?.abort();
     const ctrl = new AbortController();
@@ -193,7 +216,7 @@ export default function MealsScreen() {
     const fromPending = cur?.fromPending ?? false;
     if (photo && !pendingId) {
       try {
-        pendingId = savePending(photo.uri, { note, slot, date: today, mimeType: photo.mimeType }).id;
+        pendingId = savePending(photo.uri, { note: noteText, slot, date: today, mimeType: photo.mimeType }).id;
         setCur({ id: pendingId, fromPending: false });
         refreshPending();
       } catch (e) {
@@ -201,7 +224,7 @@ export default function MealsScreen() {
       }
     }
     try {
-      const r = await analyzeMeal({ imageBase64: photo?.base64, mimeType: photo?.mimeType, note, signal: ctrl.signal });
+      const r = await analyzeMeal({ imageBase64: photo?.base64, mimeType: photo?.mimeType, note: noteText, signal: ctrl.signal });
       if (abortRef.current !== ctrl) return;
       if (pendingId && !fromPending) {
         deletePending(pendingId);
@@ -215,8 +238,10 @@ export default function MealsScreen() {
       setShowDetails(false);
     } catch (e) {
       if (e instanceof AnalysisCancelled || abortRef.current !== ctrl) return;
-      const msg = e instanceof Error ? e.message : String(e);
-      setError(pendingId ? `${msg} — photo saved, retry anytime.` : msg);
+      console.warn('Analyze failed', e);
+      const msg = friendlyError(e, 'Could not analyze this meal. Please try again.');
+      setError(pendingId ? `${msg} Your photo is saved — retry anytime.` : msg);
+      setRetryable(true);
     } finally {
       if (abortRef.current === ctrl) {
         abortRef.current = null;
@@ -224,6 +249,19 @@ export default function MealsScreen() {
       }
     }
   };
+
+  const voice = useVoiceInput(
+    (spoken) => {
+      const merged = mergeTranscript(note, spoken);
+      setNote(merged);
+      setError(null);
+      if (!busy) analyze(merged); // speak → calories, no extra tap
+    },
+    (e) => {
+      setError(friendlyError(e, 'Voice input failed. Please try again.'));
+      setRetryable(false);
+    },
+  );
 
   const editIngredient = (i: number, patch: Partial<Ingredient>) =>
     setDraft((d) => d && { ...d, ingredients: d.ingredients.map((x, j) => (j === i ? { ...x, ...patch } : x)) });
@@ -284,7 +322,7 @@ export default function MealsScreen() {
       clearPhoto();
       setNote('');
     } catch (e) {
-      console.error(e);
+      notifyError(e, 'Could not save', 'Could not save this meal. Please try again.');
     }
   };
 
@@ -295,13 +333,15 @@ export default function MealsScreen() {
       tap();
       Alert.alert('Saved', `“${title.trim() || 'Meal'}” is in your quick-log chips.`);
     } catch (e) {
-      console.error(e);
+      notifyError(e, 'Could not save favorite', 'Could not save this favorite. Please try again.');
     }
   };
 
   const logSaved = (m: SavedMeal) => {
     done();
-    add(toMeal(m.title, 'saved', 10, m.ingredients, ['Logged from a saved meal.'])).catch(console.error);
+    add(toMeal(m.title, 'saved', 10, m.ingredients, ['Logged from a saved meal.'])).catch((e) =>
+      notifyError(e, 'Could not log', 'Could not log this meal. Please try again.'),
+    );
   };
 
   const input = [styles.input, { backgroundColor: t.surfaceAlt, color: t.text }];
@@ -309,9 +349,11 @@ export default function MealsScreen() {
   return (
     <Screen>
       <ScrollView
+        ref={scrollRef}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
+        automaticallyAdjustKeyboardInsets
         contentContainerStyle={{ paddingBottom: 32 }}
       >
         <View style={styles.header}>
@@ -392,7 +434,7 @@ export default function MealsScreen() {
           </Pressable>
         )}
 
-        <View>
+        <View onLayout={(e) => (composerPos.current.wrap = e.nativeEvent.layout.y)}>
         {/* Which section new food goes into */}
         <Text style={[styles.section, { color: t.textDim, marginTop: 20, marginBottom: 8 }]}>ADDING TO</Text>
         <View style={styles.slotRow}>
@@ -452,18 +494,27 @@ export default function MealsScreen() {
           </View>
         </Modal>
 
-        <View style={[styles.composer, { backgroundColor: t.surface, borderColor: t.border }]}>
+        <View
+          onLayout={(e) => (composerPos.current.box = e.nativeEvent.layout.y)}
+          style={[styles.composer, { backgroundColor: t.surface, borderColor: t.border }]}
+        >
           <TextInput
             value={note}
             onChangeText={setNote}
+            onFocus={() => {
+              composerFocused.current = true;
+              setTimeout(revealComposer, 50); // keyboard may already be up (e.g. tapping between inputs)
+            }}
+            onBlur={() => (composerFocused.current = false)}
             placeholder="Describe a meal — “200g paneer, 1 tsp ghee”"
             placeholderTextColor={t.textDim}
             multiline
             style={[styles.composerInput, { color: t.text }]}
           />
+          <MicButton state={voice.state} onPress={voice.toggle} />
           <Pressable
             disabled={!canAnalyze}
-            onPress={analyze}
+            onPress={() => analyze()}
             style={[styles.send, { backgroundColor: t.accent, opacity: canAnalyze ? 1 : 0.35 }]}
             accessibilityLabel={busy ? 'Cancel analysis' : 'Analyze meal'}
           >
@@ -478,12 +529,12 @@ export default function MealsScreen() {
           </Pressable>
         </View>
         {error && (
-          <View style={styles.errRow}>
-            <Text style={{ color: t.danger, fontSize: 13, flex: 1 }}>{error}</Text>
-            <Pressable onPress={() => setError(null)} hitSlop={12} accessibilityLabel="Dismiss error">
-              <Ionicons name="close" size={18} color={t.danger} />
-            </Pressable>
-          </View>
+          <InlineNotice
+            message={error}
+            actionLabel={retryable && canAnalyze && !busy ? 'Retry' : undefined}
+            onAction={() => analyze()}
+            onDismiss={() => setError(null)}
+          />
         )}
         </View>
 
@@ -628,7 +679,7 @@ export default function MealsScreen() {
                   onLongPress={() =>
                     Alert.alert('Delete saved meal?', m.title, [
                       { text: 'Cancel', style: 'cancel' },
-                      { text: 'Delete', style: 'destructive', onPress: () => removeTemplate(m.id).catch(console.error) },
+                      { text: 'Delete', style: 'destructive', onPress: () => removeTemplate(m.id).catch(onFail()) },
                     ])
                   }
                   style={({ pressed }) => [
@@ -712,7 +763,6 @@ function NumField({
 }
 
 const styles = StyleSheet.create({
-  errRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 8 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   title: { fontSize: 32, fontWeight: '800' },
   iconBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },

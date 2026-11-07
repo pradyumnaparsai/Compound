@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { onFail } from '@/components/notify';
 import { RoutineRow } from '@/components/RoutineRow';
 import { Screen } from '@/components/Screen';
 import { TaskAdder } from '@/components/TaskAdder';
@@ -165,8 +166,8 @@ export default function CalendarScreen() {
           <TaskRow
             key={task.id}
             task={task}
-            onToggle={() => toggleTask(task.id).catch(console.error)}
-            onDelete={() => removeTask(task.id).catch(console.error)}
+            onToggle={() => toggleTask(task.id).catch(onFail())}
+            onDelete={() => removeTask(task.id).catch(onFail())}
           />
         ))}
 
@@ -181,7 +182,7 @@ export default function CalendarScreen() {
               date={selected}
               done={done.has(completionKey(r.id, selected))}
               disabled={selected > today}
-              onToggle={() => toggle(r.id, selected).catch(console.error)}
+              onToggle={() => toggle(r.id, selected).catch(onFail())}
             />
           ))
         )}

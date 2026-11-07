@@ -3,7 +3,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Keyboard,
   Pressable,
   ScrollView,
@@ -12,12 +11,18 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { InlineNotice } from '@/components/InlineNotice';
+import { MicButton } from '@/components/MicButton';
+import { notifyError } from '@/components/notify';
 import { Screen } from '@/components/Screen';
 import { todayKey } from '@/domain/date';
+import { friendlyError } from '@/domain/errors';
 import { foodTitle, scaleFood, type Food } from '@/domain/food';
 import { isMealSlot, slotForTime, slotLabel, totalsOf, type Meal } from '@/domain/meal';
 import { sqliteFoodCacheRepo } from '@/data/sqliteRepository';
 import { guessUnitGrams } from '@/domain/unitWeights';
+import { mergeTranscript } from '@/domain/voice';
+import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { barcodeCandidates, lookupBarcode, RequestCancelled, searchFoods } from '@/services/openFoodFacts';
 import { useMealStore } from '@/store/useMealStore';
 import { radius, useTheme } from '@/theme';
@@ -51,7 +56,8 @@ export default function ScanScreen() {
   const [results, setResults] = useState<Food[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [searching, setSearching] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null); // guidance (not a failure)
+  const [error, setError] = useState<string | null>(null); // a lookup/search that failed
   const abortRef = useRef<AbortController | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cacheRef = useRef(new Map<string, Food[]>());
@@ -106,6 +112,7 @@ export default function ScanScreen() {
     Keyboard.dismiss();
     setBusy(true);
     setNotice(null);
+    setError(null);
     try {
       for (const c of barcodeCandidates(clean)) {
         const hit = await sqliteFoodCacheRepo.get(c);
@@ -133,7 +140,8 @@ export default function ScanScreen() {
         select(blank(barcodeCandidates(clean)[0], '', null), false, 'Not in Open Food Facts. Enter the label values (per 100 g) once — it’s remembered for next time.');
       }
     } catch (e) {
-      setNotice(e instanceof Error ? e.message : String(e));
+      console.warn('Barcode lookup failed', e);
+      setError(friendlyError(e, 'Could not look that up. Please try again.'));
       locked.current = false;
     } finally {
       setBusy(false);
@@ -148,6 +156,7 @@ export default function ScanScreen() {
       setResults(null);
       setSearching(false);
       setNotice(null);
+      setError(null);
       return;
     }
     const key = trimmed.toLowerCase();
@@ -156,6 +165,7 @@ export default function ScanScreen() {
       abortRef.current = null;
       setResults(cached);
       setNotice(cached.length === 0 ? NO_MATCH : null);
+      setError(null);
       setSearching(false);
       return;
     }
@@ -163,6 +173,7 @@ export default function ScanScreen() {
     abortRef.current = ctrl;
     setSearching(true);
     setNotice(null);
+    setError(null);
     try {
       const r = await searchFoods(trimmed, 12, ctrl.signal);
       if (abortRef.current !== ctrl) return; // superseded by a newer query: never show stale hits
@@ -171,7 +182,8 @@ export default function ScanScreen() {
       setNotice(r.length === 0 ? NO_MATCH : null);
     } catch (e) {
       if (e instanceof RequestCancelled || abortRef.current !== ctrl) return;
-      setNotice(e instanceof Error ? e.message : String(e));
+      console.warn('Food search failed', e);
+      setError(friendlyError(e, 'Search failed. Please try again.'));
     } finally {
       if (abortRef.current === ctrl) setSearching(false);
     }
@@ -198,6 +210,7 @@ export default function ScanScreen() {
     locked.current = false;
     setFood(null);
     setNotice(null);
+    setError(null);
     setManual('');
   };
 
@@ -294,9 +307,14 @@ export default function ScanScreen() {
       }
       router.back();
     } catch (e) {
-      Alert.alert('Could not log', e instanceof Error ? e.message : String(e));
+      notifyError(e, 'Could not log', 'Could not log this food. Please try again.');
     }
   };
+
+  const voice = useVoiceInput(
+    (spoken) => setQuery(mergeTranscript('', spoken)),
+    (e) => setError(friendlyError(e, 'Voice input failed. Please try again.')),
+  );
 
   const input = [styles.input, { backgroundColor: t.surfaceAlt, color: t.text }];
   const card = [styles.card, { backgroundColor: t.surface, borderColor: t.border }];
@@ -310,7 +328,7 @@ export default function ScanScreen() {
         </Pressable>
       </View>
 
-      <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+      <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         {!food && (
           <>
             {mode === 'scan' && (
@@ -370,6 +388,7 @@ export default function ScanScreen() {
                     returnKeyType="search"
                     onSubmitEditing={submitSearch}
                   />
+                  <MicButton state={voice.state} onPress={voice.toggle} size={44} />
                   <Pressable onPress={submitSearch} style={[styles.btn, { backgroundColor: t.accent }]}>
                     <Text style={styles.btnText}>Search</Text>
                   </Pressable>
@@ -395,13 +414,21 @@ export default function ScanScreen() {
             )}
 
             {busy && <ActivityIndicator style={{ marginTop: 16 }} color={t.accent} />}
-            {notice && <Text style={{ color: t.danger, marginTop: 10 }}>{notice}</Text>}
+            {error && (
+              <InlineNotice
+                message={error}
+                actionLabel={mode === 'search' && query.trim().length >= 2 ? 'Retry' : undefined}
+                onAction={submitSearch}
+                onDismiss={() => setError(null)}
+              />
+            )}
+            {notice && !error && <InlineNotice tone="info" message={notice} />}
           </>
         )}
 
         {food && (
           <View style={card}>
-            {notice && <Text style={{ color: t.danger, fontSize: 12, marginBottom: 8 }}>{notice}</Text>}
+            {notice && <InlineNotice tone="info" message={notice} />}
             {fromCache && <Text style={{ color: t.textDim, fontSize: 12, marginBottom: 8 }}>Using values you saved for this barcode.</Text>}
             <TextInput value={name} onChangeText={setName} placeholder="Food name" placeholderTextColor={t.textDim} style={input} />
 

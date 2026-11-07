@@ -1,8 +1,10 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { notifyError, onFail } from '@/components/notify';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Screen } from '@/components/Screen';
+import { UserError } from '@/domain/errors';
 import {
   clearApiKey,
   clearGroqKey,
@@ -77,11 +79,11 @@ export default function MealSettingsScreen() {
         if ([goalCal, goalProt, goalCarb, goalFat].every((v) => v.trim() === '')) await setGoals(null);
         else if (gc > 0 && gc < 10000 && gp > 0 && gp < 1000 && optOk(gk, 2000) && optOk(gf, 1000))
           await setGoals({ calories: Math.round(gc), proteinG: Math.round(gp), carbsG: gk, fatG: gf });
-        else throw new Error('Calories and protein must be positive numbers (carbs and fat are optional), or clear everything.');
+        else throw new UserError('Calories and protein must be positive numbers (carbs and fat are optional), or clear everything.');
       }
       router.back();
     } catch (e) {
-      Alert.alert('Could not save', e instanceof Error ? e.message : String(e));
+      notifyError(e, 'Could not save', 'Could not save your settings. Please try again.');
     }
   };
 
@@ -97,7 +99,7 @@ export default function MealSettingsScreen() {
         </Pressable>
       </View>
 
-      <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+      <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         <Text style={label}>DAILY GOALS</Text>
         <View style={styles.row}>
           <TextInput value={goalCal} onChangeText={setGoalCal} keyboardType="number-pad" placeholder="Calories" placeholderTextColor={t.textDim} style={[input, { flex: 1 }]} />
@@ -132,7 +134,7 @@ export default function MealSettingsScreen() {
           style={[input, { marginTop: 8 }]}
         />
         {hasGroq && (
-          <Pressable onPress={async () => { await clearGroqKey().catch(console.error); setHasGroq(false); }} hitSlop={8}>
+          <Pressable onPress={async () => { await clearGroqKey().catch(onFail()); setHasGroq(false); }} hitSlop={8}>
             <Text style={[styles.remove, { color: t.danger }]}>Remove key</Text>
           </Pressable>
         )}
@@ -158,7 +160,7 @@ export default function MealSettingsScreen() {
           style={[input, { marginTop: 8 }]}
         />
         {hasKey && (
-          <Pressable onPress={async () => { await clearApiKey().catch(console.error); setHasKey(false); }} hitSlop={8}>
+          <Pressable onPress={async () => { await clearApiKey().catch(onFail()); setHasKey(false); }} hitSlop={8}>
             <Text style={[styles.remove, { color: t.danger }]}>Remove key</Text>
           </Pressable>
         )}

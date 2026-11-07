@@ -1,5 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import { recordUsage } from '@/services/aiUsage';
+import { AnalysisFailed, UserError } from '@/domain/errors';
 import { parseAnalysis, type InputType, type MealAnalysis } from '@/domain/meal';
 
 const KEY_STORE = 'gemini.apiKey';
@@ -90,11 +91,11 @@ export async function analyzeMeal(input: AnalyzeInput): Promise<MealAnalysis & {
   ensureActive();
   const note = input.note?.trim();
   const barcode = input.barcode?.trim();
-  if (!input.imageBase64 && !barcode && !note) throw new Error('Add a photo, a barcode/product, or a note.');
+  if (!input.imageBase64 && !barcode && !note) throw new UserError('Add a photo or describe the meal first.');
 
   const [groqKey, geminiKey] = await Promise.all([getGroqKey(), getApiKey()]);
   ensureActive();
-  if (!groqKey && !geminiKey) throw new Error('Add a Groq or Gemini API key in Settings first.');
+  if (!groqKey && !geminiKey) throw new UserError('Add a Groq or Gemini API key in Meal settings to use AI.');
 
   const inputType: InputType = barcode ? 'barcode' : note ? 'image_and_note' : 'image_only';
   const text = [
@@ -118,7 +119,8 @@ export async function analyzeMeal(input: AnalyzeInput): Promise<MealAnalysis & {
     }
   }
 
-  let lastError = new Error('Analysis failed.');
+  let lastMessage = 'Analysis failed.';
+  let lastStatus = 0;
   for (const target of targets) {
     for (let attempt = 0; attempt < 2; attempt++) {
       if (attempt > 0) await new Promise((r) => setTimeout(r, 1500));
@@ -129,11 +131,13 @@ export async function analyzeMeal(input: AnalyzeInput): Promise<MealAnalysis & {
         try {
           return { ...parseAnalysis(r.text, inputType), model: target.label };
         } catch (e) {
-          lastError = new Error(`${target.label}: ${e instanceof Error ? e.message : String(e)}`);
+          lastMessage = `${target.label}: ${e instanceof Error ? e.message : String(e)}`;
+          lastStatus = -1;
           break; // bad output: next target rather than the same one
         }
       }
-      lastError = new Error(`${target.label}: ${r.message}`);
+      lastMessage = `${target.label}: ${r.message}`;
+      lastStatus = r.status;
       if (r.status === 404) break; // unknown model: next one
       if (!TRANSIENT.has(r.status)) {
         // Bad key / bad request: another model on the same provider won't help, but another provider might.
@@ -141,7 +145,10 @@ export async function analyzeMeal(input: AnalyzeInput): Promise<MealAnalysis & {
       }
     }
   }
-  throw new Error(`${lastError.message} (tried ${targets.map((t) => t.label).join(', ')})`);
+  // Technical detail stays in the log; the UI shows friendlyError(e).
+  const technical = `${lastMessage} (tried ${targets.map((t) => t.label).join(', ')})`;
+  console.warn('Meal analysis failed:', technical);
+  throw new AnalysisFailed(technical, lastStatus);
 }
 
 type Posted = { res: Response } | { fail: CallResult };

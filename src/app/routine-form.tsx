@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { notifyError } from '@/components/notify';
 import { Screen } from '@/components/Screen';
 import { DEFAULT_STEP_TARGET, MEAL_CALORIE_SLACK, MEAL_PROTEIN_SLACK } from '@/domain/goal';
 import type { Goal, Recurrence } from '@/domain/types';
@@ -72,7 +73,7 @@ export default function RoutineForm() {
       else await addRoutine({ title, recurrence, goal });
       router.back();
     } catch (e) {
-      console.error(e);
+      notifyError(e, 'Could not save', 'Could not save this routine. Please try again.');
     }
   };
 

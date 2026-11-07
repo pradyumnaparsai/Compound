@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { notifyError } from '@/components/notify';
 import { useTaskStore } from '@/store/useTaskStore';
 import { radius, useTheme } from '@/theme';
 
@@ -16,8 +17,8 @@ export function TaskAdder({ date, placeholder = 'Add a task…' }: { date: strin
     const title = text;
     setText('');
     add(title, date).catch((e) => {
-      console.error(e);
       setText(title);
+      notifyError(e, 'Could not add task', 'Could not add that task. Please try again.');
     });
   };
 

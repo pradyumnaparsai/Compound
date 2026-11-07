@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { onFail } from '@/components/notify';
 import { ProgressBar } from '@/components/ProgressBar';
 import { ReorderableList } from '@/components/ReorderableList';
 import { RoutineRow } from '@/components/RoutineRow';
@@ -75,29 +76,29 @@ export default function TodayScreen() {
                 key={task.id}
                 task={task}
                 sub={`Overdue · was due ${MONTH_NAMES[fromKey(task.date).getMonth()].slice(0, 3)} ${fromKey(task.date).getDate()}`}
-                onToggle={() => toggleTask(task.id).catch(console.error)}
-                onDelete={() => removeTask(task.id).catch(console.error)}
-                onMoveToToday={() => reschedule(task.id, today).catch(console.error)}
+                onToggle={() => toggleTask(task.id).catch(onFail())}
+                onDelete={() => removeTask(task.id).catch(onFail())}
+                onMoveToToday={() => reschedule(task.id, today).catch(onFail())}
               />
             ))}
             {todayTasks.map((task) => (
               <TaskRow
                 key={task.id}
                 task={task}
-                onToggle={() => toggleTask(task.id).catch(console.error)}
-                onDelete={() => removeTask(task.id).catch(console.error)}
+                onToggle={() => toggleTask(task.id).catch(onFail())}
+                onDelete={() => removeTask(task.id).catch(onFail())}
               />
             ))}
             {scheduled.length > 0 && <Text style={[styles.section, { color: t.textDim, marginTop: 12 }]}>Routines</Text>}
           </View>
         }
-        onReorder={(ids) => reorder(ids).catch(console.error)}
+        onReorder={(ids) => reorder(ids).catch(onFail())}
         renderItem={(item, dragProps) => (
           <RoutineRow
             routine={item}
             date={today}
             done={done.has(completionKey(item.id, today))}
-            onToggle={() => toggle(item.id, today).catch(console.error)}
+            onToggle={() => toggle(item.id, today).catch(onFail())}
             dragProps={dragProps}
           />
         )}

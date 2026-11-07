@@ -3,6 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { router, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { onFail } from '@/components/notify';
 import { Screen } from '@/components/Screen';
 import { addDays, fromKey, todayKey } from '@/domain/date';
 import { dayTotals, MEAL_SLOTS, type Meal, type MealSlot } from '@/domain/meal';
@@ -33,14 +34,14 @@ export default function DiaryScreen() {
   const relog = (m: Meal) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     // Always logs to today, in the same section as the original.
-    add({ ...m, id: newId(), date: today, loggedAt: new Date().toISOString() }).catch(console.error);
+    add({ ...m, id: newId(), date: today, loggedAt: new Date().toISOString() }).catch(onFail());
   };
 
   const moveTo = (m: Meal) =>
     Alert.alert('Move to…', m.title, [
       ...MEAL_SLOTS.filter((s) => s.key !== m.slot).map((s) => ({
         text: s.label,
-        onPress: () => update({ ...m, slot: s.key }).catch(console.error),
+        onPress: () => update({ ...m, slot: s.key }).catch(onFail()),
       })),
       { text: 'Cancel', style: 'cancel' as const },
     ]);
@@ -48,7 +49,7 @@ export default function DiaryScreen() {
   const confirmDelete = (m: Meal) =>
     Alert.alert('Delete meal?', m.title, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => remove(m.id).catch(console.error) },
+      { text: 'Delete', style: 'destructive', onPress: () => remove(m.id).catch(onFail()) },
     ]);
 
   const addTo = (s: MealSlot) => {
@@ -113,7 +114,7 @@ export default function DiaryScreen() {
                         { text: 'Cancel', style: 'cancel' },
                         { text: 'Log again', onPress: () => relog(m) },
                         { text: 'Move to…', onPress: () => setTimeout(() => moveTo(m), 300) }, // let the first alert dismiss
-                        { text: 'Delete', style: 'destructive', onPress: () => remove(m.id).catch(console.error) },
+                        { text: 'Delete', style: 'destructive', onPress: () => remove(m.id).catch(onFail()) },
                       ]);
                     }}
                     style={styles.logRow}

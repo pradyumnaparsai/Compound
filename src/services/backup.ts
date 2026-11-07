@@ -1,6 +1,7 @@
 import { AppState } from 'react-native';
 import { getDb } from '@/data/db';
 import { supabase, supabaseConfigured } from '@/data/supabase';
+import { UserError } from '@/domain/errors';
 import { useMealStore } from '@/store/useMealStore';
 import { useRoutineStore } from '@/store/useRoutineStore';
 import { useTaskStore } from '@/store/useTaskStore';
@@ -96,9 +97,9 @@ export async function keepLocal() {
 }
 
 export async function backupNow(): Promise<void> {
-  if ((await getSetting('backup_checked')) !== '1') throw new Error('Resolve the cloud check first.');
+  if ((await getSetting('backup_checked')) !== '1') throw new UserError('Resolve the cloud check first.');
   const snap = await exportSnapshot();
-  if (isEmpty(snap)) throw new Error('Nothing to back up (local data is empty).');
+  if (isEmpty(snap)) throw new UserError('Nothing to back up (local data is empty).');
   const { error } = await supabase.from('backups').insert({ schema_version: await localVersion(), data: snap });
   if (error) throw error;
   await setSetting('backup_last_at', new Date().toISOString());
@@ -117,15 +118,15 @@ export async function lastBackupAt(): Promise<string | null> {
 
 export async function restoreLatest(): Promise<void> {
   const latest = await latestBackup();
-  if (!latest) throw new Error('No cloud backup found.');
+  if (!latest) throw new UserError('No cloud backup found.');
   if ((latest.schema_version as number) > (await localVersion())) {
-    throw new Error('Backup is from a newer app version. Update the app first.');
+    throw new UserError('Backup is from a newer app version. Update the app first.');
   }
   const snap = latest.data as Snapshot;
-  if (!snap) throw new Error('Backup is empty or malformed; local data left untouched.');
+  if (!snap) throw new UserError('Backup is empty or malformed; local data left untouched.');
   for (const t of TABLES) snap[t] ??= [];
   if (TABLES.some((t) => !Array.isArray(snap[t])) || isEmpty(snap)) {
-    throw new Error('Backup is empty or malformed; local data left untouched.');
+    throw new UserError('Backup is empty or malformed; local data left untouched.');
   }
 
   const db = await getDb();

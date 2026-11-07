@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { notifyError } from '@/components/notify';
 import { Screen } from '@/components/Screen';
 import { supabaseConfigured } from '@/data/supabase';
 import {
@@ -34,7 +35,7 @@ export default function BackupScreen() {
       setLast(await lastBackupAt());
       setCheck(s ? await checkCloud() : null);
     } catch (e) {
-      Alert.alert('Backup', String((e as Error).message ?? e));
+      notifyError(e, 'Backup', 'Could not reach your cloud backup. Please try again.');
     }
   }, []);
 
@@ -48,7 +49,7 @@ export default function BackupScreen() {
       await fn();
       if (ok) Alert.alert('Backup', ok);
     } catch (e) {
-      Alert.alert('Backup', String((e as Error).message ?? e));
+      notifyError(e, 'Backup', 'Backup did not finish. Please try again.');
     } finally {
       setBusy(false);
       await refresh();
@@ -76,7 +77,7 @@ export default function BackupScreen() {
 
   return (
     <Screen>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 32 }}>
+      <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets contentContainerStyle={{ paddingBottom: 32 }}>
         <Text style={[styles.title, { color: t.text }]}>Cloud backup</Text>
 
         {!signedInAs ? (

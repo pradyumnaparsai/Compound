@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { onFail } from '@/components/notify';
 import { Screen } from '@/components/Screen';
 import { VersionInfo } from '@/components/VersionInfo';
 import { goalLabel } from '@/domain/goal';
@@ -16,7 +17,7 @@ export default function RoutinesScreen() {
   const confirmArchive = (id: string, title: string) =>
     Alert.alert('Archive routine?', `"${title}" will stop appearing from today. Past history is kept.`, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Archive', style: 'destructive', onPress: () => archiveRoutine(id).catch(console.error) },
+      { text: 'Archive', style: 'destructive', onPress: () => archiveRoutine(id).catch(onFail()) },
     ]);
 
   return (
