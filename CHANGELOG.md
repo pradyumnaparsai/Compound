@@ -3,6 +3,9 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.15.3 — 2026-11-08
+### Changed
+- The "Long-press and drag to reorder", "Long-press a routine to archive it" and "Long-press an entry to delete it" footer hints now appear only the first time (fresh install) and are gone afterwards.
 ## v1.15.2 — 2026-11-08
 ### Fixed
 - Startup splash: it now uses a full-screen portrait poster with the **COMPOUND** heading, filling the whole iPhone screen instead of a cropped or mis-sized picture.
