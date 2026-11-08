@@ -3,6 +3,13 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.13.0 — 2026-11-08
+### Changed
+- **Atomic:** the assistant is now called Atomic and has a simple look that follows the app theme: a round accent-coloured button and a clean bottom card that shows only what it heard and its answer. The glowing orb, chat list and typing box are gone; it just listens and responds.
+- **Better voice:** replies are read in a natural voice (Groq Orpheus) instead of the robotic device voice, and play even when the silent switch is on. If the natural voice isn't available it falls back to the best voice installed on the phone.
+### Fixed
+- Atomic now stops listening by itself when you finish speaking (no second tap needed); the missing answers were mostly the recording never being stopped.
+- Answers appeared very late or not at all: the chat model's slow "thinking" step is now off, requests give up after 90 seconds with a visible message, and Whisper repeating its own hint on silence is ignored.
 ## v1.12.0 — 2026-11-08
 ### Added
 - **AI assistant:** a floating orb on every screen (drag it anywhere; it snaps to an edge). Tap it, say what you want, and it adds routines and tasks, logs meals to the diary, checks off routines/tasks, moves tasks, logs weight and sets calorie/protein goals. It talks back (mute button in the panel) and you can type instead.
