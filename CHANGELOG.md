@@ -3,6 +3,13 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.12.0 — 2026-11-08
+### Added
+- **AI assistant:** a floating orb on every screen (drag it anywhere; it snaps to an edge). Tap it, say what you want, and it adds routines and tasks, logs meals to the diary, checks off routines/tasks, moves tasks, logs weight and sets calorie/protein goals. It talks back (mute button in the panel) and you can type instead.
+- Deletes, archives and goal changes ask for confirmation (tap or say "yes"); every other change has an Undo button.
+- Meals logged by voice use the same AI estimate as the Log food screen; token use is about 1–3k per command and counts in AI usage.
+### Changed
+- **Requires a rebuild:** adds the native `expo-speech` module (runtime version 3). Run `scripts/install-ios.sh release` once; it now always runs `pod install`.
 ## v1.11.1 — 2026-11-07
 ### Fixed
 - Swipe back no longer shows a pale line along the screen edge while the gesture is in progress; navigation surfaces now use the app background.
