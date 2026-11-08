@@ -6,7 +6,9 @@ import { useMealStore } from '@/store/useMealStore';
 import { useRoutineStore } from '@/store/useRoutineStore';
 import { useTaskStore } from '@/store/useTaskStore';
 import { useUnitStore } from '@/store/useUnitStore';
+import { useWorkoutHistory } from '@/store/useWorkoutHistory';
 import { useWorkoutLibraryStore } from '@/store/useWorkoutLibraryStore';
+import { useWorkoutSession } from '@/store/useWorkoutSession';
 import { useWeightStore } from '@/store/useWeightStore';
 
 // food_cache is rebuildable and intentionally excluded.
@@ -174,6 +176,8 @@ export async function restoreLatest(): Promise<void> {
     useTaskStore.getState().load(),
     useUnitStore.getState().load(),
     useWorkoutLibraryStore.getState().load(),
+    useWorkoutHistory.getState().load(),
+    useWorkoutSession.getState().load(),
   ]);
 }
 

@@ -3,7 +3,7 @@ import type { Goals, Meal, SavedMeal } from '@/domain/meal';
 import type { MealSchedule } from '@/domain/mealSchedule';
 import type { Completion, Routine, RoutineInput, Task } from '@/domain/types';
 import type { WeightEntry } from '@/domain/weight';
-import type { ExerciseDef, WorkoutFolder, WorkoutTemplate } from '@/domain/workout';
+import type { ExerciseDef, Workout, WorkoutFolder, WorkoutTemplate } from '@/domain/workout';
 
 export interface RoutineRepository {
   list(): Promise<Routine[]>; // includes archived (history needs them)
@@ -101,4 +101,22 @@ export interface WorkoutTemplateRepository {
   remove(id: string): Promise<void>;
   /** Persists the display order; `ids` is the full template list in the desired order. */
   reorder(ids: string[]): Promise<void>;
+}
+
+export interface WorkoutRepository {
+  /** The workout being logged right now (no end time), if any. */
+  getActive(): Promise<Workout | null>;
+  /** Inserts or replaces the whole workout (exercises and sets) in one transaction. */
+  save(w: Workout): Promise<void>;
+  get(id: string): Promise<Workout | null>;
+  /** Finished workouts, newest first; `before` is a `startedAt` cursor for the next page. */
+  listRecent(limit: number, before?: string): Promise<Workout[]>;
+  /** Finished workouts that include any of the exercises, with only those exercises (and their sets) kept. */
+  listForExercises(exerciseIds: string[]): Promise<Workout[]>;
+  /** Finished workouts started on a local date (YYYY-MM-DD), oldest first. */
+  listByDate(date: string): Promise<Workout[]>;
+  /** Local dates (YYYY-MM-DD) that have a finished workout. */
+  datesWithWorkouts(): Promise<string[]>;
+  /** Also deletes its exercises and sets. */
+  remove(id: string): Promise<void>;
 }

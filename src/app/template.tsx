@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, useNavigation, usePreventRemove, type Href } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Chip, ChipRow } from '@/components/Chip';
 import { notifyError } from '@/components/notify';
 import { ReorderableList } from '@/components/ReorderableList';
 import { Screen } from '@/components/Screen';
@@ -101,20 +102,11 @@ export default function TemplateScreen() {
         style={[styles.notes, { backgroundColor: t.surface, borderColor: t.border, color: t.text }]}
       />
       {folders.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }} keyboardShouldPersistTaps="handled">
-          {[{ id: null as string | null, title: 'No folder' }, ...folders].map((f) => {
-            const on = draft.folderId === f.id;
-            return (
-              <Pressable
-                key={f.id ?? 'none'}
-                onPress={() => d().setMeta({ folderId: f.id })}
-                style={[styles.chip, { backgroundColor: on ? t.accent : t.surface, borderColor: on ? t.accent : t.border }]}
-              >
-                <Text style={{ color: on ? '#fff' : t.text, fontSize: 13, fontWeight: '600' }}>{f.title}</Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+        <ChipRow>
+          {[{ id: null as string | null, title: 'No folder' }, ...folders].map((f) => (
+            <Chip key={f.id ?? 'none'} label={f.title} on={draft.folderId === f.id} onPress={() => d().setMeta({ folderId: f.id })} />
+          ))}
+        </ChipRow>
       )}
     </View>
   );
@@ -176,7 +168,6 @@ const styles = StyleSheet.create({
   heading: { fontSize: 20, fontWeight: '800' },
   title: { borderWidth: 1, borderRadius: radius.md, padding: 14, fontSize: 20, fontWeight: '700' },
   notes: { borderWidth: 1, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 10, fontSize: 15, minHeight: 44 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, borderWidth: 1 },
   bar: { flexDirection: 'row', gap: 10, paddingTop: 8 },
   barBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 15, borderRadius: radius.lg },
 });

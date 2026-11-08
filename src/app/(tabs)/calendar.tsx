@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
+import { router, type Href } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { onFail } from '@/components/notify';
 import { RoutineRow } from '@/components/RoutineRow';
@@ -7,11 +8,14 @@ import { Screen } from '@/components/Screen';
 import { TaskAdder } from '@/components/TaskAdder';
 import { TaskRow } from '@/components/TaskRow';
 import { YearView } from '@/components/YearView';
+import { sqliteWorkoutRepo } from '@/data/sqliteWorkoutLogRepository';
 import { MONTH_NAMES, WEEKDAY_LABELS, fromKey, monthGrid, todayKey } from '@/domain/date';
 import { completionKey, dayStatus, scheduledOn } from '@/domain/recurrence';
 import { taskCounts, tasksOn } from '@/domain/task';
 import { useRoutineStore } from '@/store/useRoutineStore';
+import { formatDuration, workoutDurationSeconds, type Workout } from '@/domain/workout';
 import { useTaskStore } from '@/store/useTaskStore';
+import { useWorkoutHistory } from '@/store/useWorkoutHistory';
 import { radius, useTheme } from '@/theme';
 
 export default function CalendarScreen() {
@@ -19,6 +23,8 @@ export default function CalendarScreen() {
   const { routines, done, toggle } = useRoutineStore();
   const { tasks, toggle: toggleTask, remove: removeTask } = useTaskStore();
   const counts = useMemo(() => taskCounts(tasks), [tasks]);
+  const workoutDates = useWorkoutHistory((s) => s.dates);
+  const workoutDays = useMemo(() => new Set(workoutDates), [workoutDates]);
   const today = todayKey();
   const now = new Date();
   const [cursor, setCursor] = useState({ y: now.getFullYear(), m: now.getMonth() });
@@ -44,6 +50,19 @@ export default function CalendarScreen() {
   const selectedRoutines = scheduledOn(routines, selected);
   const selectedTasks = tasksOn(tasks, selected);
   const sel = fromKey(selected);
+
+  // Workouts on the selected day (the badge set above only knows which days have one).
+  const [dayWorkouts, setDayWorkouts] = useState<Workout[]>([]);
+  useEffect(() => {
+    let alive = true;
+    sqliteWorkoutRepo
+      .listByDate(selected)
+      .then((w) => alive && setDayWorkouts(w))
+      .catch(() => alive && setDayWorkouts([]));
+    return () => {
+      alive = false;
+    };
+  }, [selected, workoutDates]);
 
   return (
     <Screen>
@@ -136,6 +155,9 @@ export default function CalendarScreen() {
                     <Text style={{ color: fg, fontWeight: status === 'all' ? '800' : '500', fontSize: 15 }}>
                       {Number(key.slice(8))}
                     </Text>
+                    {workoutDays.has(key) && (
+                      <Ionicons name="barbell" size={10} color={status === 'all' ? t.bg : '#F5B800'} style={styles.workoutBadge} />
+                    )}
                     {counts.get(key) && (
                       <View
                         style={[
@@ -155,11 +177,37 @@ export default function CalendarScreen() {
           <Legend color={t.success} label="All done" t={t} />
           <Legend color={t.successSoft} label="Partial" t={t} />
           <Legend color={t.accent} label="Task due" t={t} />
+          <View style={styles.legendItem}>
+            <Ionicons name="barbell" size={12} color="#F5B800" />
+            <Text style={{ color: t.textDim, fontSize: 12 }}>Workout</Text>
+          </View>
         </View>
 
         <Text style={[styles.selTitle, { color: t.text }]}>
           {MONTH_NAMES[sel.getMonth()]} {sel.getDate()}
         </Text>
+        {dayWorkouts.length > 0 && (
+          <>
+            <Text style={[styles.section, { color: t.textDim }]}>Workouts</Text>
+            {dayWorkouts.map((w) => (
+              <Pressable
+                key={w.id}
+                onPress={() => router.push(`/workout-detail?id=${w.id}` as Href)}
+                style={[styles.workoutRow, { backgroundColor: t.surface, borderColor: t.border }]}
+              >
+                <Ionicons name="barbell" size={20} color="#F5B800" />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: t.text, fontWeight: '700', fontSize: 15 }}>{w.title}</Text>
+                  <Text style={{ color: t.textDim, fontSize: 12 }}>
+                    {formatDuration(workoutDurationSeconds(w))} · {w.exercises.length} exercise{w.exercises.length === 1 ? '' : 's'}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={t.textDim} />
+              </Pressable>
+            ))}
+            <View style={{ height: 12 }} />
+          </>
+        )}
         <Text style={[styles.section, { color: t.textDim }]}>Tasks</Text>
         <TaskAdder date={selected} placeholder={`Add a task for ${MONTH_NAMES[sel.getMonth()].slice(0, 3)} ${sel.getDate()}…`} />
         {selectedTasks.map((task) => (
@@ -215,6 +263,8 @@ const styles = StyleSheet.create({
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   dot: { width: 12, height: 12, borderRadius: 6, borderWidth: 1 },
   section: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  workoutBadge: { position: 'absolute', top: 3, right: 4 },
+  workoutRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: radius.md, borderWidth: 1, marginBottom: 8 },
   taskDot: { position: 'absolute', bottom: 4, width: 5, height: 5, borderRadius: 3 },
   selTitle: { fontSize: 20, fontWeight: '700', marginBottom: 12 },
 });

@@ -6,11 +6,11 @@ const id = (p: string) => `${p}${++n}`;
 export const set = (
   weightKg: number | null,
   reps: number | null,
-  opts: Partial<WorkoutSet> & { type?: SetType } = {},
+  { type, ...opts }: Partial<WorkoutSet> & { type?: SetType } = {},
 ): WorkoutSet => ({
   id: id('s'),
   index: 0,
-  setType: opts.type ?? 'normal',
+  setType: type ?? 'normal',
   weightKg,
   reps,
   durationSeconds: null,

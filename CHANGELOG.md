@@ -3,6 +3,18 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.17.0 — 2026-11-08
+### Added
+- **Start a workout**: a **Start** button on every template and **Start empty workout** (Body → Workouts). Log weight and reps per set, see last time's numbers beside each set (tap to copy), tick sets off to start the rest timer, add sets/exercises/warm-ups, reorder, replace or superset exercises mid-workout. The workout survives closing the app and resumes where you left off (banner on Today and Body).
+- **Finish summary**: duration, volume, sets and any new **personal records**; offers to update the template when you changed it.
+- **History**: every logged workout (Body → History), edit or delete past workouts, save one as a template; barbell badge and a day list on the calendar.
+- **Progress**: per exercise, best set / estimated 1RM / volume charts, records and history (tap an exercise's menu or its picture).
+- **Animated exercise figures**: each exercise has a looping stick-figure of the movement, shown as a circle next to the exercise and larger on its details page. Original artwork drawn in code, so no extra download size; respects Reduce Motion.
+- ~30 more exercises, including **Preacher Curl** and **Seated Palms-Up Wrist Curl**.
+- Setting: count warm-up sets in volume (off by default).
+### Fixed
+- Filter chips on Exercises, Add exercises and Workouts were stretched or clipped.
+
 ## v1.16.0 — 2026-11-08
 ### Added
 - **Body tab** replaces Weight: a **Workouts | Weight** switch. Weight works as before.

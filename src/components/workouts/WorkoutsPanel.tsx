@@ -1,12 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Chip, ChipRow } from '@/components/Chip';
 import { onFail } from '@/components/notify';
 import { ReorderableList } from '@/components/ReorderableList';
+import { ActiveWorkoutBanner } from '@/components/workouts/ActiveWorkoutBanner';
+import { startWorkout } from '@/hooks/useStartWorkout';
 import { exerciseMap } from '@/domain/exerciseCatalog';
 import type { WorkoutTemplate } from '@/domain/workout';
 import { useWorkoutLibraryStore } from '@/store/useWorkoutLibraryStore';
+import { useWorkoutSession } from '@/store/useWorkoutSession';
 import { radius, useTheme } from '@/theme';
 
 type Filter = 'all' | 'none' | string; // 'all' | 'none' (no folder) | folder id
@@ -18,6 +22,7 @@ export function WorkoutsPanel() {
   const t = useTheme();
   const { folders, templates, customs, reorderTemplates, duplicate, removeTemplate, addFolder, renameFolder, removeFolder, moveFolder } =
     useWorkoutLibraryStore();
+  const active = useWorkoutSession((s) => s.mode === 'live' && !!s.workout);
   const [filter, setFilter] = useState<Filter>('all');
   const [folderEdit, setFolderEdit] = useState<{ id: string | null; text: string } | null>(null);
   const names = useMemo(() => exerciseMap(customs), [customs]);
@@ -30,6 +35,7 @@ export function WorkoutsPanel() {
 
   const templateMenu = (x: WorkoutTemplate) =>
     Alert.alert(x.title || 'Template', undefined, [
+      { text: 'Edit template', onPress: () => openTemplate(x.id) },
       { text: 'Duplicate', onPress: () => duplicate(x.id).catch(onFail()) },
       {
         text: 'Delete',
@@ -71,22 +77,21 @@ export function WorkoutsPanel() {
     }
   };
 
-  const chip = (key: Filter, label: string, onLongPress?: () => void) => {
-    const on = activeFilter === key;
-    return (
-      <Pressable
-        key={key}
-        onPress={() => setFilter(key)}
-        onLongPress={onLongPress}
-        style={[styles.chip, { backgroundColor: on ? t.accent : t.surface, borderColor: on ? t.accent : t.border }]}
-      >
-        <Text style={{ color: on ? '#fff' : t.text, fontWeight: '600', fontSize: 13 }}>{label}</Text>
-      </Pressable>
-    );
-  };
+  const chip = (key: Filter, label: string, onLongPress?: () => void) => (
+    <Chip key={key} label={label} on={activeFilter === key} onPress={() => setFilter(key)} onLongPress={onLongPress} />
+  );
 
   const header = (
     <View>
+      {active ? (
+        <ActiveWorkoutBanner />
+      ) : (
+        <Pressable onPress={() => startWorkout(null)} style={[styles.startEmpty, { backgroundColor: t.accent }]} accessibilityRole="button">
+          <Ionicons name="play" size={18} color="#fff" />
+          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }}>Start empty workout</Text>
+        </Pressable>
+      )}
+      <Text style={[styles.sectionHead, { color: t.textDim }]}>Templates</Text>
       <View style={styles.actions}>
         <Pressable onPress={() => openTemplate()} style={[styles.primary, { backgroundColor: t.accent }]}>
           <Ionicons name="add" size={18} color="#fff" />
@@ -101,14 +106,12 @@ export function WorkoutsPanel() {
         </Pressable>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} keyboardShouldPersistTaps="handled">
+      <ChipRow>
         {chip('all', 'All')}
         {folders.map((f) => chip(f.id, f.title, () => folderMenu(f.id, f.title)))}
         {templates.some((x) => x.folderId === null) && folders.length > 0 && chip('none', 'Unfiled')}
-        <Pressable onPress={() => setFolderEdit({ id: null, text: '' })} style={[styles.chip, { borderColor: t.border, borderStyle: 'dashed' }]}>
-          <Text style={{ color: t.textDim, fontWeight: '600', fontSize: 13 }}>+ Folder</Text>
-        </Pressable>
-      </ScrollView>
+        <Chip label="+ Folder" dashed onPress={() => setFolderEdit({ id: null, text: '' })} />
+      </ChipRow>
 
       {folderEdit && (
         <View style={styles.folderRow}>
@@ -169,9 +172,15 @@ export function WorkoutsPanel() {
                 </Text>
               )}
             </View>
-            <Pressable onPress={() => templateMenu(x)} hitSlop={12} accessibilityLabel={`More actions for ${x.title}`}>
-              <Ionicons name="ellipsis-horizontal" size={22} color={t.textDim} />
-            </Pressable>
+            <View style={{ alignItems: 'center', gap: 10 }}>
+              <Pressable onPress={() => startWorkout(x)} style={[styles.start, { backgroundColor: t.accent }]} accessibilityRole="button" accessibilityLabel={`Start ${x.title}`}>
+                <Ionicons name="play" size={14} color="#fff" />
+                <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13 }}>Start</Text>
+              </Pressable>
+              <Pressable onPress={() => templateMenu(x)} hitSlop={12} accessibilityLabel={`More actions for ${x.title}`}>
+                <Ionicons name="ellipsis-horizontal" size={20} color={t.textDim} />
+              </Pressable>
+            </View>
           </Pressable>
         );
       }}
@@ -180,11 +189,12 @@ export function WorkoutsPanel() {
 }
 
 const styles = StyleSheet.create({
+  startEmpty: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 15, borderRadius: radius.lg, marginBottom: 16 },
+  sectionHead: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  start: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
   primary: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: radius.pill },
   secondary: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: radius.pill },
-  chips: { gap: 8, paddingBottom: 12 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, borderWidth: 1 },
   folderRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   folderInput: { flex: 1, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15 },
   card: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: radius.md, borderWidth: 1, marginBottom: 10 },

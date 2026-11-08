@@ -1,10 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { memo } from 'react';
+import { router, type Href } from 'expo-router';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { DragProps } from '@/components/ReorderableList';
+import { ExerciseThumb } from '@/components/workouts/ExerciseThumb';
 import { NumField } from '@/components/workouts/NumField';
 import { formatNumber, kgToUnit, parseWeightInput, type WeightUnit } from '@/domain/units';
 import {
+  REST_PRESETS,
   SET_TYPE_HINTS,
   formatDuration,
   setFields,
@@ -16,7 +19,6 @@ import {
 import { useTemplateDraft } from '@/store/useTemplateDraft';
 import { radius, useTheme } from '@/theme';
 
-export const REST_PRESETS = [0, 30, 45, 60, 90, 120, 180, 240, 300];
 const restLabel = (s: number | null) => (!s ? 'Rest: off' : `Rest: ${formatDuration(s)}`);
 const nextRest = (s: number | null) => REST_PRESETS[(Math.max(0, REST_PRESETS.indexOf(s ?? 0)) + 1) % REST_PRESETS.length];
 
@@ -58,6 +60,7 @@ export const TemplateExerciseCard = memo(function TemplateExerciseCard({ exercis
     <View style={[styles.card, { backgroundColor: t.surface, borderColor: badge ? t.accent : t.border }]}>
       <Pressable onLongPress={drag.onLongPress} onPressOut={drag.onPressOut} style={styles.head} accessibilityHint="Long-press and drag to reorder">
         <Ionicons name="reorder-three" size={22} color={t.textDim} />
+        <ExerciseThumb def={def} size={40} onPress={def ? () => router.push(`/exercise-info?id=${def.id}` as Href) : undefined} />
         <View style={{ flex: 1 }}>
           <Text style={[styles.name, { color: t.text }]} numberOfLines={1}>
             {def?.title ?? 'Unknown exercise'}

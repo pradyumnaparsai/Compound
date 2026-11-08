@@ -32,3 +32,15 @@ export const formatWeekLabel = (key: string) => {
 };
 
 export { toKey };
+
+/** Body weight to use for a date: the latest entry on or before it, else the earliest one after it. Null with no entries. */
+export function weightOn(entries: WeightEntry[], date: string): number | null {
+  let before: WeightEntry | null = null;
+  let after: WeightEntry | null = null;
+  for (const e of entries) {
+    if (e.date <= date) {
+      if (!before || e.date > before.date) before = e;
+    } else if (!after || e.date < after.date) after = e;
+  }
+  return (before ?? after)?.kg ?? null;
+}

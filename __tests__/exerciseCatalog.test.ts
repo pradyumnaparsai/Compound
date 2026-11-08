@@ -47,3 +47,10 @@ describe('searchExercises', () => {
     expect(findByTitle(all, 'Nope')).toBeUndefined();
   });
 });
+
+describe('exercise animations', () => {
+  it('finds the requested exercises', () => {
+    expect(findByTitle(SEED_EXERCISES, 'Preacher Curl')).toBeDefined();
+    expect(findByTitle(SEED_EXERCISES, 'Seated Palms-Up Wrist Curl')).toBeDefined();
+  });
+});

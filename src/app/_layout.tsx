@@ -15,7 +15,9 @@ import { useMealStore } from '@/store/useMealStore';
 import { useRoutineStore } from '@/store/useRoutineStore';
 import { useTaskStore } from '@/store/useTaskStore';
 import { useUnitStore } from '@/store/useUnitStore';
+import { useWorkoutHistory } from '@/store/useWorkoutHistory';
 import { useWorkoutLibraryStore } from '@/store/useWorkoutLibraryStore';
+import { useWorkoutSession } from '@/store/useWorkoutSession';
 import { useWeightStore } from '@/store/useWeightStore';
 import { useTheme } from '@/theme';
 
@@ -36,6 +38,8 @@ export default function RootLayout() {
     useTaskStore.getState().load().catch((e) => console.error('Failed to load tasks', e));
     useUnitStore.getState().load().catch((e) => console.error('Failed to load units', e));
     useWorkoutLibraryStore.getState().load().catch((e) => console.error('Failed to load workouts', e));
+    useWorkoutHistory.getState().load().catch((e) => console.error('Failed to load workout history', e));
+    useWorkoutSession.getState().load().catch((e) => console.error('Failed to resume workout', e)); // a workout in progress survives a kill
   }, [load]);
 
   // Apple Health → auto-check goal routines: on open, on every return to foreground, every minute while open,
@@ -56,6 +60,12 @@ export default function RootLayout() {
   useEffect(() => {
     applyUpdateNow();
     const sub = AppState.addEventListener('change', (s) => s === 'active' && applyUpdateNow());
+    return () => sub.remove();
+  }, []);
+
+  // Write the workout being logged to SQLite whenever the app leaves the foreground.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (s) => s !== 'active' && void useWorkoutSession.getState().flush());
     return () => sub.remove();
   }, []);
 
@@ -119,8 +129,12 @@ export default function RootLayout() {
             <Stack.Screen name="meal-settings" options={{ presentation: 'modal' }} />
             <Stack.Screen name="backup" options={{ presentation: 'modal' }} />
             <Stack.Screen name="exercises" />
+            <Stack.Screen name="exercise-info" />
             <Stack.Screen name="exercise-form" options={{ presentation: 'modal' }} />
             <Stack.Screen name="template" />
+            <Stack.Screen name="workout" options={{ gestureEnabled: false }} />
+            <Stack.Screen name="workout-summary" options={{ gestureEnabled: false }} />
+            <Stack.Screen name="workout-detail" />
             <Stack.Screen name="workout-settings" options={{ presentation: 'modal' }} />
           </Stack>
           <AtomicHost />

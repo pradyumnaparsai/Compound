@@ -9,6 +9,7 @@ import { RoutineRow } from '@/components/RoutineRow';
 import { Screen } from '@/components/Screen';
 import { TaskAdder } from '@/components/TaskAdder';
 import { TaskRow } from '@/components/TaskRow';
+import { ActiveWorkoutBanner } from '@/components/workouts/ActiveWorkoutBanner';
 import { useOneTimeHint } from '@/hooks/useOneTimeHint';
 import { MONTH_NAMES, fromKey, todayKey } from '@/domain/date';
 import { completionKey, currentStreak, scheduledOn } from '@/domain/recurrence';
@@ -49,6 +50,8 @@ export default function TodayScreen() {
       <Text style={[styles.date, { color: t.text }]}>
         {MONTH_NAMES[d.getMonth()]} {d.getDate()}
       </Text>
+
+      <ActiveWorkoutBanner />
 
       <View style={[styles.card, { backgroundColor: t.surface, borderColor: t.border }]}>
         <View style={styles.cardTop}>

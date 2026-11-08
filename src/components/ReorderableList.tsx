@@ -14,6 +14,8 @@ type Props<T extends { id: string }> = {
   empty?: ReactNode;
   /** Rendered above the rows inside the same scroll view (outside the drag gesture area). */
   header?: ReactNode;
+  /** Rendered below the rows inside the same scroll view (outside the drag gesture area). */
+  footer?: ReactNode;
   contentContainerStyle?: StyleProp<ViewStyle>;
 };
 
@@ -29,6 +31,7 @@ export function ReorderableList<T extends { id: string }>({
   onReorder,
   empty,
   header,
+  footer,
   contentContainerStyle,
 }: Props<T>) {
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -179,6 +182,7 @@ export function ReorderableList<T extends { id: string }>({
               );
             })}
       </View>
+      {footer}
     </ScrollView>
   );
 }

@@ -117,6 +117,8 @@ export type WorkoutTemplate = {
 export type WorkoutFolder = { id: string; title: string; position: number };
 
 export const DEFAULT_REST_SECONDS = 90;
+/** Rest durations the rest chip cycles through (0 = no timer). */
+export const REST_PRESETS = [0, 30, 45, 60, 90, 120, 180, 240, 300];
 
 /** Which inputs a set row shows for an exercise type. */
 export type SetFields = { weight: boolean; reps: boolean; duration: boolean; distance: boolean };
@@ -323,3 +325,6 @@ export function supersetBadges(exercises: { supersetId: string | null }[]): (str
 export function renumber<E extends { position: number; sets: { index: number }[] }>(exercises: E[]): E[] {
   return exercises.map((e, i) => ({ ...e, position: i, sets: e.sets.map((s, k) => ({ ...s, index: k })) }));
 }
+
+/** Re-numbers `index` so a list of sets is 0..n-1 in array order. */
+export const renumberSets = <S extends { index: number }>(sets: S[]): S[] => sets.map((s, i) => ({ ...s, index: i }));

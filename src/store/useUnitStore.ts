@@ -7,6 +7,7 @@ import { isWeightUnit, type WeightUnit } from '@/domain/units';
 const repo: SettingsRepository = sqliteSettingsRepo;
 const UNIT_KEY = 'weight_unit';
 const PLATES_KEY = 'plate_config';
+const WARMUP_KEY = 'volume_warmup';
 
 /** Parses stored plate config; anything malformed falls back to the default for the unit. */
 export function parsePlateConfig(raw: string | null, unit: WeightUnit): PlateConfig {
@@ -25,18 +26,22 @@ export function parsePlateConfig(raw: string | null, unit: WeightUnit): PlateCon
 type State = {
   unit: WeightUnit;
   plates: PlateConfig;
+  /** Whether warm-up sets count toward volume (off by default). */
+  warmupVolume: boolean;
   load: () => Promise<void>;
   setUnit: (u: WeightUnit) => Promise<void>;
   setPlates: (c: PlateConfig) => Promise<void>;
+  setWarmupVolume: (on: boolean) => Promise<void>;
 };
 
 export const useUnitStore = create<State>((set, get) => ({
   unit: 'kg',
   plates: defaultPlateConfig('kg'),
+  warmupVolume: false,
   async load() {
     const raw = await repo.getValue(UNIT_KEY);
     const unit = isWeightUnit(raw) ? raw : 'kg';
-    set({ unit, plates: parsePlateConfig(await repo.getValue(PLATES_KEY), unit) });
+    set({ unit, plates: parsePlateConfig(await repo.getValue(PLATES_KEY), unit), warmupVolume: (await repo.getValue(WARMUP_KEY)) === '1' });
   },
   async setUnit(unit) {
     const prev = get().unit;
@@ -53,5 +58,9 @@ export const useUnitStore = create<State>((set, get) => ({
   async setPlates(plates) {
     await repo.setValue(PLATES_KEY, JSON.stringify(plates));
     set({ plates });
+  },
+  async setWarmupVolume(on) {
+    await repo.setValue(WARMUP_KEY, on ? '1' : '0');
+    set({ warmupVolume: on });
   },
 }));

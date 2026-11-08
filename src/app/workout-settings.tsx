@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { notifyError } from '@/components/notify';
 import { Screen } from '@/components/Screen';
 import { Segmented } from '@/components/Segmented';
@@ -23,7 +23,7 @@ function parsePlates(text: string, unit: WeightUnit): number[] | null {
 /** Weight unit and plate setup (used to round suggested and warm-up weights to what can be loaded). */
 export default function WorkoutSettings() {
   const t = useTheme();
-  const { unit, plates, setUnit, setPlates } = useUnitStore();
+  const { unit, plates, warmupVolume, setUnit, setPlates, setWarmupVolume } = useUnitStore();
   const [barText, setBarText] = useState(formatNumber(kgToUnit(plates.barKg, unit), 2));
   const [platesText, setPlatesText] = useState(fmtList(plates.platesKg, unit));
 
@@ -87,6 +87,14 @@ export default function WorkoutSettings() {
         />
         <Text style={{ color: t.textDim, fontSize: 12 }}>Everything is stored in kg; this only changes how weights are shown and typed (workouts and body weight).</Text>
 
+        <View style={[styles.switchRow, { backgroundColor: t.surface, borderColor: t.border }]}>
+          <View style={{ flex: 1, paddingRight: 12 }}>
+            <Text style={{ color: t.text, fontSize: 16, fontWeight: '600' }}>Count warm-up sets in volume</Text>
+            <Text style={{ color: t.textDim, fontSize: 12, marginTop: 2 }}>Off by default. Warm-ups never count toward personal records.</Text>
+          </View>
+          <Switch value={warmupVolume} onValueChange={(v) => setWarmupVolume(v).catch((e) => notifyError(e, 'Could not save'))} trackColor={{ true: t.accent }} />
+        </View>
+
         <Text style={[styles.label, { color: t.textDim }]}>Empty bar ({unit})</Text>
         <TextInput value={barText} onChangeText={setBarText} keyboardType="decimal-pad" style={input} />
 
@@ -112,5 +120,6 @@ const styles = StyleSheet.create({
   heading: { fontSize: 24, fontWeight: '800' },
   label: { fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 18, marginBottom: 8 },
   input: { borderWidth: 1, borderRadius: radius.md, padding: 14, fontSize: 17 },
+  switchRow: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: radius.md, padding: 14, marginTop: 18 },
   cta: { alignItems: 'center', paddingVertical: 16, borderRadius: radius.lg, marginTop: 8 },
 });
