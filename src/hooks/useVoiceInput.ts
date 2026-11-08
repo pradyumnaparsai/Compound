@@ -7,7 +7,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { UserError } from '@/domain/errors';
-import { cleanTranscript, MAX_RECORD_SECONDS } from '@/domain/voice';
+import { autoStopDecision, cleanTranscript, isPromptEcho, MAX_RECORD_SECONDS, type MeterSample } from '@/domain/voice';
 import { transcribeAudio } from '@/services/transcribe';
 
 export type VoiceState = 'idle' | 'recording' | 'transcribing';
@@ -15,14 +15,29 @@ export type VoiceState = 'idle' | 'recording' | 'transcribing';
 // Speech only: mono 16 kHz keeps the upload to a few KB.
 const SPEECH_PRESET = { ...RecordingPresets.HIGH_QUALITY, sampleRate: 16000, numberOfChannels: 1, bitRate: 32000 };
 
+const METERED_PRESET = { ...SPEECH_PRESET, isMeteringEnabled: true };
+const METER_INTERVAL_MS = 100;
+
 const tick = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 
 /**
  * Tap once to start recording, tap again to stop. The audio is transcribed and handed to `onText`.
  * Failures go to `onError` (already a thrown error; format it with friendlyError).
+ * With `autoStop`, recording also ends by itself once the user has spoken and paused (needs no second tap).
  */
-export function useVoiceInput(onText: (text: string) => void, onError: (e: unknown) => void, hint?: string) {
-  const recorder = useAudioRecorder(SPEECH_PRESET);
+export function useVoiceInput(
+  onText: (text: string) => void,
+  onError: (e: unknown) => void,
+  hint?: string,
+  options: { autoStop?: boolean } = {},
+) {
+  const metered = !!options.autoStop;
+  const recorder = useAudioRecorder(metered ? METERED_PRESET : SPEECH_PRESET);
+  const meter = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stopMeter = () => {
+    if (meter.current) clearInterval(meter.current);
+    meter.current = null;
+  };
   const [state, setState] = useState<VoiceState>('idle');
   const stateRef = useRef<VoiceState>('idle');
   const abortRef = useRef<AbortController | null>(null);
@@ -40,6 +55,8 @@ export function useVoiceInput(onText: (text: string) => void, onError: (e: unkno
   const finish = useCallback(async () => {
     if (autoStop.current) clearTimeout(autoStop.current);
     autoStop.current = null;
+    if (meter.current) clearInterval(meter.current);
+    meter.current = null;
     set('transcribing');
     const ctrl = new AbortController();
     abortRef.current = ctrl;
@@ -50,7 +67,8 @@ export function useVoiceInput(onText: (text: string) => void, onError: (e: unkno
       if (!uri) throw new UserError('Nothing was recorded. Try again.');
       const text = cleanTranscript(await transcribeAudio(uri, ctrl.signal, handlers.current.hint));
       if (ctrl.signal.aborted) return;
-      if (!text) throw new UserError('Could not hear anything. Try again a little closer to the mic.');
+      const echo = handlers.current.hint ? isPromptEcho(text, handlers.current.hint) : false;
+      if (!text || echo) throw new UserError('Could not hear anything. Try again a little closer to the mic.');
       handlers.current.onText(text);
     } catch (e) {
       if (!ctrl.signal.aborted) handlers.current.onError(e);
@@ -72,11 +90,22 @@ export function useVoiceInput(onText: (text: string) => void, onError: (e: unkno
       autoStop.current = setTimeout(() => {
         if (stateRef.current === 'recording') finish();
       }, MAX_RECORD_SECONDS * 1000);
+      if (metered) {
+        const samples: MeterSample[] = [];
+        const t0 = Date.now();
+        stopMeter();
+        meter.current = setInterval(() => {
+          if (stateRef.current !== 'recording') return;
+          const level = recorder.getStatus().metering;
+          if (typeof level === 'number') samples.push({ ms: Date.now() - t0, level });
+          if (autoStopDecision(samples) === 'stop') finish();
+        }, METER_INTERVAL_MS);
+      }
     } catch (e) {
       set('idle');
       handlers.current.onError(e);
     }
-  }, [recorder, finish]);
+  }, [recorder, finish, metered]);
 
   const toggle = useCallback(() => {
     if (stateRef.current === 'idle') start();
@@ -90,6 +119,8 @@ export function useVoiceInput(onText: (text: string) => void, onError: (e: unkno
   const cancel = useCallback(() => {
     if (autoStop.current) clearTimeout(autoStop.current);
     autoStop.current = null;
+    if (meter.current) clearInterval(meter.current);
+    meter.current = null;
     abortRef.current?.abort();
     if (stateRef.current === 'recording') recorder.stop().catch(() => {});
     if (stateRef.current !== 'idle') setAudioModeAsync({ allowsRecording: false }).catch(() => {});
@@ -100,6 +131,7 @@ export function useVoiceInput(onText: (text: string) => void, onError: (e: unkno
   useEffect(
     () => () => {
       if (autoStop.current) clearTimeout(autoStop.current);
+      if (meter.current) clearInterval(meter.current);
       abortRef.current?.abort();
       if (stateRef.current === 'recording') recorder.stop().catch(() => {});
       setAudioModeAsync({ allowsRecording: false }).catch(() => {});

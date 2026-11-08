@@ -1,5 +1,6 @@
 import {
   ASSISTANT_PROMPT,
+  groqExtras,
   HISTORY_TURNS,
   normalizeHistory,
   parseAssistantReply,
@@ -39,7 +40,7 @@ export async function askAssistant({ text, context, history, now, signal }: Ask)
   ensureActive();
   const [groqKey, geminiKey] = await Promise.all([getGroqKey(), getApiKey()]);
   ensureActive();
-  if (!groqKey && !geminiKey) throw new UserError('Add a Groq or Gemini API key in Meal settings to use the assistant.');
+  if (!groqKey && !geminiKey) throw new UserError('Add a Groq or Gemini API key in Meal settings to use Atomic.');
 
   const recent = normalizeHistory(history, HISTORY_TURNS * 2);
   const targets: { label: string; call: () => Promise<CallResult> }[] = [];
@@ -52,7 +53,7 @@ export async function askAssistant({ text, context, history, now, signal }: Ask)
     targets.push({ label: `gemini:${model}`, call: () => callGemini(model, geminiKey, text, context, recent, signal) });
   }
 
-  let lastMessage = 'Assistant failed.';
+  let lastMessage = 'Atomic failed.';
   let lastStatus = 0;
   for (const target of targets) {
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
@@ -71,7 +72,7 @@ export async function askAssistant({ text, context, history, now, signal }: Ask)
       }
       lastMessage = `${target.label}: ${r.message}`;
       lastStatus = r.status;
-      console.warn('Assistant target failed:', lastMessage);
+      console.warn('Atomic target failed:', lastMessage);
       if (!TRANSIENT_STATUSES.has(r.status)) break;
     }
   }
@@ -98,6 +99,7 @@ async function callGroq(
       ],
       response_format: { type: 'json_object' },
       temperature: TEMPERATURE,
+      ...groqExtras(model),
     },
     signal,
   );

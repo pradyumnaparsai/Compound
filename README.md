@@ -11,7 +11,7 @@ A personal iOS app for tracking daily routines, todos, body weight and meals. Bu
 - **Calendar & year view** — see completed days at a glance
 - **Weight log** — daily entries with a weekly-average chart
 - **Meals** — photo or barcode → calories/protein estimate (Groq / Gemini, Open Food Facts); AI-named meal header shown in the diary, remove wrong items with ➖, and correct an estimate with a text follow-up
-- **AI assistant** — a floating orb on every screen (drag it anywhere): tap, speak, and it adds routines and tasks, logs meals, ticks things off, logs weight and sets goals, then talks back. Deletes and goal changes ask first; everything else has Undo. Uses your Groq key (Whisper + chat) with Gemini as fallback, about 1–3k tokens per command
+- **Atomic (voice)** — a floating button on every screen (drag it anywhere): tap, say what you need, and Atomic adds routines and tasks, logs meals, ticks things off, logs weight and sets goals, then answers out loud (natural voice via Groq, device voice as fallback). Deletes and goal changes ask first; everything else has Undo. Uses your Groq key (Whisper, chat, voice) with Gemini as chat fallback; about 1–3k tokens per command
 - **Apple Health** — steps and workouts auto-check goal routines
 - **Backup** — optional Supabase backup/restore
 
@@ -56,7 +56,7 @@ Get your UDID with `xcrun devicectl list devices`. Set your own `ios.appleTeamId
 | Setting | Where |
 |---------|-------|
 | `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `.env` — create the table by running `docs/supabase.sql` in your Supabase project |
-| Groq / Gemini API keys (also used by the assistant; voice needs Groq) | In-app: Meals → Settings (stored in the iOS Keychain, never in the repo) |
+| Groq / Gemini API keys (also used by Atomic; its voice needs Groq) | In-app: Meals → Settings (stored in the iOS Keychain, never in the repo) |
 
 ## Project structure
 

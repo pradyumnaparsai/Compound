@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo } from 'react';
 import { AppState, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AssistantHost } from '@/components/assistant/AssistantHost';
+import { AtomicHost } from '@/components/atomic/AtomicHost';
 import { startAutoBackup } from '@/services/backup';
 import { refreshHealth } from '@/services/healthSync';
 import { ensureDefaultMealGoal, refreshMealGoals } from '@/services/mealGoalSync';
@@ -114,7 +114,7 @@ export default function RootLayout() {
             <Stack.Screen name="meal-settings" options={{ presentation: 'modal' }} />
             <Stack.Screen name="backup" options={{ presentation: 'modal' }} />
           </Stack>
-          <AssistantHost />
+          <AtomicHost />
         </View>
       </ThemeProvider>
     </SafeAreaProvider>

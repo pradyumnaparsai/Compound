@@ -5,13 +5,12 @@ import { Animated, PanResponder, StyleSheet, useWindowDimensions, View } from 'r
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ASSISTANT_VOICE_HINT } from '@/domain/assistant';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
-import { initAssistant, reportError, stopAssistantSpeech, submit } from '@/services/assistantRunner';
+import { initAssistant, openAssistant, reportError, stopAssistantSpeech, submit } from '@/services/assistantRunner';
 import { useAssistantStore } from '@/store/useAssistantStore';
-import { AssistantOrb } from './AssistantOrb';
-import { AssistantPanel } from './AssistantPanel';
-import type { OrbMode } from './palette';
+import { AtomicButton, type AtomicState } from './AtomicButton';
+import { AtomicPanel } from './AtomicPanel';
 
-const FAB = 56;
+const FAB = 52;
 const MARGIN = 14;
 const TAB_BAR = 49;
 // Screens presented as native modals or camera views cover the app, so the button can't (and shouldn't) show there.
@@ -22,10 +21,10 @@ type Voice = ReturnType<typeof useVoiceInput>;
 const fab = { x: 0, y: 0, sx: 0, sy: 0, placed: false, width: 0, height: 0, top: 0, bottom: 0, voice: null as Voice | null };
 
 /**
- * Floating assistant button on every screen plus its slide-up panel. Drag the button to move it; it snaps to the
+ * Atomic: a floating button on every screen plus its slide-up panel. Drag the button to move it; it snaps to the
  * nearest edge. Tapping it opens the panel and starts listening.
  */
-export function AssistantHost() {
+export function AtomicHost() {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const segments = useSegments();
@@ -36,6 +35,7 @@ export function AssistantHost() {
     (t) => submit(t),
     (e) => reportError(e, 'I could not hear that. Please try again.'),
     ASSISTANT_VOICE_HINT,
+    { autoStop: true },
   );
   const startX = fab.placed ? fab.x : width - FAB - MARGIN;
   const startY = fab.placed ? fab.y : height - insets.bottom - TAB_BAR - FAB - MARGIN - 8;
@@ -64,7 +64,7 @@ export function AssistantHost() {
 
   const openPanel = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    useAssistantStore.getState().setOpen(true);
+    openAssistant();
     // Let the sheet start sliding in, then start listening straight away.
     setTimeout(() => {
       const v = fab.voice;
@@ -98,7 +98,7 @@ export function AssistantHost() {
     }),
   );
 
-  const onOrbPress = useCallback(() => {
+  const onMicPress = useCallback(() => {
     const v = fab.voice;
     if (!v) return;
     if (v.state === 'recording') v.toggle();
@@ -108,7 +108,7 @@ export function AssistantHost() {
     }
   }, []);
 
-  const mode: OrbMode =
+  const mode: AtomicState =
     voice.state === 'recording'
       ? 'listening'
       : voice.state === 'transcribing' || phase === 'thinking'
@@ -126,14 +126,14 @@ export function AssistantHost() {
           {...responder.panHandlers}
           accessible
           accessibilityRole="button"
-          accessibilityLabel="Open AI assistant"
+          accessibilityLabel="Open Atomic"
           onAccessibilityTap={openPanel}
           style={[styles.fab, { transform: pan.getTranslateTransform() }]}
         >
-          <AssistantOrb mode="idle" size={FAB} />
+          <AtomicButton state="idle" size={FAB} mark="atom" />
         </Animated.View>
       )}
-      <AssistantPanel mode={mode} onOrbPress={onOrbPress} />
+      <AtomicPanel state={mode} onMicPress={onMicPress} />
     </View>
   );
 }

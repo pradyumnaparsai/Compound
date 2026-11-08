@@ -49,7 +49,7 @@ const MAX_MEALS = 20;
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const FULL_DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-export const ASSISTANT_PROMPT = `You are the voice assistant inside Compound, a habit, task and meal tracking app. The user speaks to you; the text may contain speech-recognition mistakes. Turn each request into app actions plus a short spoken reply.
+export const ASSISTANT_PROMPT = `You are Atomic, the voice assistant inside Compound, a habit, task and meal tracking app. The user speaks to you; the text may contain speech-recognition mistakes. Turn each request into app actions plus a short spoken reply.
 
 Reply with JSON only: {"reply": string, "actions": Action[]}
 - reply: one or two short, friendly sentences of plain text (it is read aloud). Say what you did, or ask ONE short clarifying question. Never state calories or macros for a logged meal (they are computed after logging).
@@ -72,9 +72,16 @@ Rules:
 - Use archive_routine, delete_* and set_goals only when the user clearly asks for it.
 - If the user only chats or asks a question (e.g. how many calories are left), answer in reply using the context, with "actions": [].`;
 
-/** Hint for Whisper so app vocabulary and numbers come out right. */
-export const ASSISTANT_VOICE_HINT =
-  'Assistant commands: add routine, add task, log meal, breakfast, lunch, snacks, dinner, tomorrow, weight, kilograms, calories, protein, grams, roti, dal, paneer.';
+/** Hint for Whisper. Kept short: on near-silent audio Whisper tends to echo its prompt back. */
+export const ASSISTANT_VOICE_HINT = 'Add task, routine, meal, breakfast, lunch, dinner, tomorrow, kilograms, calories, protein.';
+
+/**
+ * Extra Groq request fields for the chat model. Qwen 3.8 otherwise "thinks" for many seconds before answering,
+ * which feels like no response; JSON mode needs the reasoning hidden (see Groq's reasoning docs).
+ */
+export function groqExtras(model: string): Record<string, string> {
+  return /^qwen\/qwen3\.8/i.test(model) ? { reasoning_effort: 'none', reasoning_format: 'hidden' } : {};
+}
 
 const clean = (s: string) => s.replace(/[\r\n|]+/g, ' ').replace(/\s+/g, ' ').trim();
 

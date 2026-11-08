@@ -2,6 +2,7 @@ import {
   buildContext,
   confirmIntent,
   describeAction,
+  groqExtras,
   isRisky,
   normalizeHistory,
   parseAssistantReply,
@@ -317,5 +318,13 @@ describe('normalizeHistory', () => {
   it('drops trailing user turns and blanks so the new request can follow', () => {
     expect(normalizeHistory([u('u1'), a('a1'), u('dangling'), u('  ')], 6)).toEqual([u('u1'), a('a1')]);
     expect(normalizeHistory([], 6)).toEqual([]);
+  });
+});
+
+describe('groqExtras', () => {
+  it('turns reasoning off for Qwen 3.8 only', () => {
+    expect(groqExtras('qwen/qwen3.8-27b')).toEqual({ reasoning_effort: 'none', reasoning_format: 'hidden' });
+    expect(groqExtras('llama-3.3-70b-versatile')).toEqual({});
+    expect(groqExtras('qwen/qwen3-32b')).toEqual({});
   });
 });
