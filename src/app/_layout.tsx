@@ -4,6 +4,7 @@ import { useEffect, useMemo } from 'react';
 import { AppState, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AtomicHost } from '@/components/atomic/AtomicHost';
+import { StartupSplash } from '@/components/StartupSplash';
 import { startAutoBackup } from '@/services/backup';
 import { refreshHealth } from '@/services/healthSync';
 import { ensureDefaultMealGoal, refreshMealGoals } from '@/services/mealGoalSync';
@@ -115,6 +116,7 @@ export default function RootLayout() {
             <Stack.Screen name="backup" options={{ presentation: 'modal' }} />
           </Stack>
           <AtomicHost />
+          <StartupSplash />
         </View>
       </ThemeProvider>
     </SafeAreaProvider>
