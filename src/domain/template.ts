@@ -95,7 +95,10 @@ export function diffTemplate(template: Pick<WorkoutTemplate, 'exercises'>, worko
       t.sets.length === e.sets.length &&
       t.sets.every((s, idx) => {
         const w = e.sets[idx];
-        return s.setType === w.setType && (s.weightKg ?? null) === (w.weightKg ?? null) && (s.reps ?? null) === (w.reps ?? null);
+        // A template number that is left empty is "no target" (e.g. imported templates): whatever you lifted is not a change.
+        const sameWeight = s.weightKg === null || s.weightKg === w.weightKg;
+        const sameReps = s.reps === null || s.reps === w.reps;
+        return s.setType === w.setType && sameWeight && sameReps;
       });
     const sameRest = (t.restSeconds ?? null) === (e.restSeconds ?? null);
     const sameLink = !!t.supersetId === !!e.supersetId;

@@ -12,7 +12,8 @@ A personal iOS app for tracking daily routines, todos, body weight and meals. Bu
 - **Body tab** — **Workouts** (exercise library with search and muscle/equipment filters plus your own custom exercises, workout templates with folders, drag reorder, set types, rep ranges, rest timers, supersets and pinned notes) and the **Weight** log (daily entries, weekly-average chart). kg or lb display, stored in kg. **Start a workout** from a template (or empty), log weight and reps per set with last time's numbers beside them, rest timer, PRs, finish summary, **History** of every logged workout, per-exercise progress charts, and a barbell badge on the calendar. Each exercise has a looping stick-figure animation (original, no downloaded images)
 - **Meals** — photo or barcode → calories/protein estimate (Groq / Gemini, Open Food Facts); AI-named meal header shown in the diary, remove wrong items with ➖, and correct an estimate with a text follow-up
 - **Atomic (voice)** — a floating button on every screen (drag it anywhere): tap, say what you need, and Atomic adds routines and tasks, logs meals, ticks things off, logs weight and sets goals, then answers out loud (natural voice via Groq, device voice as fallback). Deletes and goal changes ask first; everything else has Undo. Uses your Groq key (Whisper, chat, voice) with Gemini as chat fallback; about 1–3k tokens per command
-- **Apple Health** — steps and workouts auto-check goal routines
+- **Apple Health** — steps and workouts auto-check goal routines; finishing a template workout saves a Strength Training workout to Health
+- **Hevy import** — Workout settings → Import Hevy CSV brings in your history and templates
 - **Backup** — optional Supabase backup/restore
 
 ## Tech stack

@@ -5,24 +5,45 @@ import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-nativ
 import { Chip, ChipRow } from '@/components/Chip';
 import { onFail } from '@/components/notify';
 import { ReorderableList } from '@/components/ReorderableList';
+import { Segmented } from '@/components/Segmented';
 import { ActiveWorkoutBanner } from '@/components/workouts/ActiveWorkoutBanner';
+import { HistoryPanel } from '@/components/workouts/HistoryPanel';
 import { startWorkout } from '@/hooks/useStartWorkout';
 import { exerciseMap } from '@/domain/exerciseCatalog';
 import type { WorkoutTemplate } from '@/domain/workout';
 import { useWorkoutLibraryStore } from '@/store/useWorkoutLibraryStore';
-import { useWorkoutSession } from '@/store/useWorkoutSession';
 import { radius, useTheme } from '@/theme';
 
 type Filter = 'all' | 'none' | string; // 'all' | 'none' (no folder) | folder id
 
 const setCount = (t: WorkoutTemplate) => t.exercises.reduce((n, e) => n + e.sets.length, 0);
 
-/** Templates (planned sessions) with folder filters and drag reorder. */
+type Sub = 'templates' | 'history';
+
+/** Workouts: the in-progress banner, then Templates (start a session) or History (what was logged). */
 export function WorkoutsPanel() {
+  const [sub, setSub] = useState<Sub>('templates');
+  return (
+    <View style={{ flex: 1 }}>
+      <ActiveWorkoutBanner />
+      <Segmented
+        options={[
+          { value: 'templates', label: 'Templates' },
+          { value: 'history', label: 'History' },
+        ]}
+        value={sub}
+        onChange={setSub}
+      />
+      {sub === 'templates' ? <TemplatesList /> : <HistoryPanel />}
+    </View>
+  );
+}
+
+/** Templates (planned sessions) with folder filters and drag reorder. */
+function TemplatesList() {
   const t = useTheme();
   const { folders, templates, customs, reorderTemplates, duplicate, removeTemplate, addFolder, renameFolder, removeFolder, moveFolder } =
     useWorkoutLibraryStore();
-  const active = useWorkoutSession((s) => s.mode === 'live' && !!s.workout);
   const [filter, setFilter] = useState<Filter>('all');
   const [folderEdit, setFolderEdit] = useState<{ id: string | null; text: string } | null>(null);
   const names = useMemo(() => exerciseMap(customs), [customs]);
@@ -83,15 +104,6 @@ export function WorkoutsPanel() {
 
   const header = (
     <View>
-      {active ? (
-        <ActiveWorkoutBanner />
-      ) : (
-        <Pressable onPress={() => startWorkout(null)} style={[styles.startEmpty, { backgroundColor: t.accent }]} accessibilityRole="button">
-          <Ionicons name="play" size={18} color="#fff" />
-          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }}>Start empty workout</Text>
-        </Pressable>
-      )}
-      <Text style={[styles.sectionHead, { color: t.textDim }]}>Templates</Text>
       <View style={styles.actions}>
         <Pressable onPress={() => openTemplate()} style={[styles.primary, { backgroundColor: t.accent }]}>
           <Ionicons name="add" size={18} color="#fff" />
@@ -189,8 +201,6 @@ export function WorkoutsPanel() {
 }
 
 const styles = StyleSheet.create({
-  startEmpty: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 15, borderRadius: radius.lg, marginBottom: 16 },
-  sectionHead: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
   start: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
   primary: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: radius.pill },

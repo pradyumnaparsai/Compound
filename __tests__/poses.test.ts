@@ -16,6 +16,21 @@ describe('pose animations', () => {
     expect(patternFor('custom-1')).toBeNull();
   });
 
+  it('exercises that were drawn wrongly now use a pose that matches the movement', () => {
+    expect(patternFor('seed:pec-deck', 'chest')).toBe('pecDeck');
+    expect(patternFor('seed:reverse-pec-deck', 'shoulders')).toBe('reverseFlyMachine');
+    expect(patternFor('hevy:lying-leg-curl-machine', 'hamstrings')).toBe('lyingLegCurl');
+    expect(patternFor('hevy:leg-raise-parallel-bars', 'abs')).toBe('parallelBarLegRaise');
+    expect(patternFor('hevy:unknown-thing', 'biceps')).toBe('curl'); // unknown imports still fall back to the muscle
+  });
+
+  it('a face-down pad sits under the chest, not above it', () => {
+    const lay = layoutPattern('lyingLegCurl', 100);
+    const torso = lay.parts.find((p) => p.key === 'torso')!;
+    const bench = lay.parts.find((p) => p.key === 'bench')!;
+    expect(bench.cy[0]).toBeGreaterThan(torso.cy[0]);
+  });
+
   describe.each(Object.keys(PATTERNS) as PatternName[])('%s', (name) => {
     const size = 100;
     const lay = layoutPattern(name, size);

@@ -2,9 +2,10 @@ import { router, type Href } from 'expo-router';
 import { Alert } from 'react-native';
 import { notifyError } from '@/components/notify';
 import type { WorkoutTemplate } from '@/domain/workout';
+import { onTemplateWorkoutStarted } from '@/services/workoutHealth';
 import { useWorkoutSession } from '@/store/useWorkoutSession';
 
-/** Starts a workout (from a template, or empty) and opens the logger; resumes the one in progress instead of starting a second. */
+/** Starts a workout from a template (nudging the Apple Watch) and opens the logger; resumes the one in progress instead of starting a second. */
 export function startWorkout(template: WorkoutTemplate | null) {
   const s = useWorkoutSession.getState();
   const open = () => router.push('/workout' as Href);
@@ -16,6 +17,9 @@ export function startWorkout(template: WorkoutTemplate | null) {
     return;
   }
   s.startFromTemplate(template)
-    .then(open)
+    .then(() => {
+      if (template) onTemplateWorkoutStarted();
+      open();
+    })
     .catch((e) => notifyError(e, 'Could not start workout', 'Could not start the workout. Please try again.'));
 }

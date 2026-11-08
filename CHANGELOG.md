@@ -3,6 +3,19 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.18.0 — 2026-11-08
+Needs a native rebuild (`scripts/install-ios.sh release`): the app asks Apple Health for permission to save workouts, and Hevy import adds a file picker.
+### Added
+- **Strength workouts in Apple Health**: finishing a workout started from a template saves a *Traditional Strength Training* workout to Health (real start and end time, shows in Fitness) and checks off your strength-workout routine for that day. Starting one also asks a paired Apple Watch to open a strength workout (only works with a Watch app, otherwise it does nothing). Workouts you edit later or import never do this.
+- **Hevy import** (Workout settings → Import Hevy CSV): brings in your logged workouts as History and makes a template from each workout name you repeat (Upper 1, Lower 1, …) with its exercises and number of sets; weights and reps pre-fill from your last session. Safe to run again: nothing is added twice.
+- New figures for **Lying Leg Curl, Incline Chest Press (machine), Pec Deck, Reverse Pec Deck / rear-delt machine, Leg Raise (parallel bars), Reverse Crunch, Crunch (machine) and Behind-the-back Wrist Curl**.
+### Changed
+- **Body tab**: two sections, **Workouts** and **Weight logging**. History now lives inside Workouts (Templates | History).
+- **Start empty workout** is gone: every workout starts from a template.
+### Fixed
+- "Update template?" no longer pops up after every workout for templates whose weights and reps are left empty (like the imported ones).
+- Exercise animations that showed the wrong movement: lying leg curl (was drawn seated), pec deck (was a press), rear-delt machines (were drawn bent over with no seat), leg-press leg positions, and exercises with custom names, which now get the right figure instead of a guess from the muscle.
+
 ## v1.17.0 — 2026-11-08
 ### Added
 - **Start a workout**: a **Start** button on every template and **Start empty workout** (Body → Workouts). Log weight and reps per set, see last time's numbers beside each set (tap to copy), tick sets off to start the rest timer, add sets/exercises/warm-ups, reorder, replace or superset exercises mid-workout. The workout survives closing the app and resumes where you left off (banner on Today and Body).

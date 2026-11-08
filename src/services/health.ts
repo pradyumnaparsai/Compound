@@ -35,7 +35,8 @@ export function ensureHealthAuthorized(): Promise<boolean> {
       if (!h) return false;
       try {
         if (!(await h.isHealthDataAvailable())) return false;
-        await h.requestAuthorization({ toRead: [STEPS, WORKOUT] });
+        // toShare lets us write the finished strength workout to Health (needs NSHealthUpdateUsageDescription in the build).
+        await h.requestAuthorization({ toShare: [WORKOUT], toRead: [STEPS, WORKOUT] });
         return true;
       } catch (e) {
         if (__DEV__) console.warn('HealthKit authorization failed', e);
@@ -96,5 +97,36 @@ export async function getWorkoutCounts(fromDate: string, toDate: string): Promis
   } catch (e) {
     if (__DEV__) console.warn('Reading workouts failed', e);
     return null;
+  }
+}
+
+/** Saves a finished Traditional Strength Training workout to Apple Health (shows up in Fitness). False if it could not be saved. */
+export async function saveStrengthWorkout(start: Date, end: Date): Promise<boolean> {
+  const h = lib();
+  if (!h || !(await ensureHealthAuthorized())) return false;
+  try {
+    if (!(end.getTime() > start.getTime())) return false;
+    await h.saveWorkoutSample(h.WorkoutActivityType.traditionalStrengthTraining, [], start, end);
+    return true;
+  } catch (e) {
+    if (__DEV__) console.warn('Saving workout to Health failed', e);
+    return false;
+  }
+}
+
+/**
+ * Best effort: asks the paired Apple Watch to open a strength-training workout. iOS only does this for an app that has a
+ * watchOS companion, so without one it simply fails and we ignore it.
+ */
+export async function nudgeWatchStrengthWorkout(): Promise<boolean> {
+  const h = lib();
+  if (!h || !(await ensureHealthAuthorized())) return false;
+  try {
+    return await h.startWatchApp({
+      activityType: h.WorkoutActivityType.traditionalStrengthTraining,
+      locationType: h.WorkoutSessionLocationType.indoor,
+    });
+  } catch {
+    return false;
   }
 }

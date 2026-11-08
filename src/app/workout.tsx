@@ -14,6 +14,7 @@ import { completedSets, incompleteSetCount } from '@/domain/session';
 import { formatVolume } from '@/domain/workoutFormat';
 import { formatDuration, supersetBadges, workoutDurationSeconds, workoutVolume, type Workout } from '@/domain/workout';
 import { weightOn } from '@/domain/weight';
+import { onLiveWorkoutFinished } from '@/services/workoutHealth';
 import { useUnitStore } from '@/store/useUnitStore';
 import { useWeightStore } from '@/store/useWeightStore';
 import { useWorkoutHistory } from '@/store/useWorkoutHistory';
@@ -108,6 +109,7 @@ export default function WorkoutScreen() {
     setBusy(true);
     try {
       const saved = await session().finish({ countFilled });
+      if (live) await onLiveWorkoutFinished(saved);
       if (live) router.replace(`/workout-summary?id=${saved.id}` as Href);
       else router.back();
     } catch (e) {

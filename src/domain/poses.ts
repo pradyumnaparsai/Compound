@@ -57,6 +57,10 @@ export const PATTERNS = {
   inclineBench: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ torso: 228, thigh: 88, shin: 0, uarm: 180, farm: 180 }), b: P({ torso: 228, thigh: 88, shin: 0, uarm: -12, farm: 178 }) },
   fly: { root: 'hip', scenery: 'bench', load: 'hand', a: P({ ...LYING, uarm: 180, farm: 180 }), b: P({ ...LYING, uarm: 28, farm: 18 }) },
   crossover: { root: 'foot', load: 'hand', floor: true, a: P({ uarm: 135, farm: 135 }), b: P({ torso: 168, uarm: 28, farm: 18 }) },
+  // Seat back reclined about 25°, handles pushed up and forward.
+  inclineMachinePress: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ torso: 205, thigh: 88, shin: 0, uarm: 118, farm: 118 }), b: P({ torso: 205, thigh: 88, shin: 0, uarm: 10, farm: 112 }) },
+  // Pads at forearm height: elbows lead, hands come together in front of the chest.
+  pecDeck: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ ...SEATED, uarm: 55, farm: 140 }), b: P({ ...SEATED, uarm: 100, farm: 178 }) },
   machinePress: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ ...SEATED, uarm: 92, farm: 92 }), b: P({ ...SEATED, uarm: -22, farm: 98 }) },
   pushup: { root: 'foot', floor: true, a: P({ torso: 116, thigh: -64, shin: -64, uarm: 0, farm: 0 }), b: P({ torso: 98, thigh: -80, shin: -80, uarm: -105, farm: 0 }) },
   plank: { root: 'foot', floor: true, a: P({ torso: 103, thigh: -77, shin: -77, uarm: 0, farm: 90 }), b: P({ torso: 105, thigh: -77, shin: -77, uarm: 0, farm: 90 }) },
@@ -64,6 +68,8 @@ export const PATTERNS = {
   ohp: { root: 'foot', load: 'hand', floor: true, a: P({ uarm: 15, farm: 175 }), b: P({ uarm: 180, farm: 180 }) },
   ohpSeated: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ ...SEATED, uarm: 15, farm: 175 }), b: P({ ...SEATED, uarm: 180, farm: 180 }) },
   raise: { root: 'foot', load: 'hand', floor: true, a: P({}), b: P({ uarm: 82, farm: 90 }) },
+  // Seated facing the pad, arms swung out and back at shoulder height (the side-on view shows a small sweep).
+  reverseFlyMachine: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ torso: 170, thigh: 88, shin: 0, uarm: 98, farm: 98 }), b: P({ torso: 170, thigh: 88, shin: 0, uarm: 78, farm: 78 }) },
   rearFly: { root: 'foot', load: 'hand', floor: true, a: P({ ...BENT }), b: P({ ...BENT, uarm: -65, farm: -45 }) },
   shrug: { root: 'foot', load: 'hand', floor: true, a: P({}), b: P({ tl: 1.32 }) },
   upright: { root: 'foot', load: 'hand', floor: true, a: P({}), b: P({ uarm: 150, farm: 10 }) },
@@ -78,6 +84,8 @@ export const PATTERNS = {
   curl: { root: 'foot', load: 'hand', floor: true, a: P({}), b: P({ uarm: 5, farm: 148 }) },
   inclineCurl: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ torso: 228, thigh: 88, shin: 0 }), b: P({ torso: 228, thigh: 88, shin: 0, uarm: 5, farm: 148 }) },
   preacher: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ torso: 172, thigh: 88, shin: 0, uarm: 50, farm: 52 }), b: P({ torso: 172, thigh: 88, shin: 0, uarm: 50, farm: 172 }) },
+  // Standing, bar held behind the thighs; the hands roll the bar up toward the back.
+  behindBackWristCurl: { root: 'foot', load: 'hand', floor: true, a: P({ uarm: -4, farm: -4, hand: -4 }), b: P({ uarm: -4, farm: -4, hand: -110 }) },
   wristCurl: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ torso: 150, thigh: 88, shin: 0, uarm: 28, farm: 86, hand: 30 }), b: P({ torso: 150, thigh: 88, shin: 0, uarm: 28, farm: 86, hand: 150 }) },
   pushdown: { root: 'foot', load: 'hand', floor: true, a: P({ torso: 175, uarm: 5, farm: 100 }), b: P({ torso: 175, uarm: 5, farm: 0 }) },
   skull: { root: 'hip', scenery: 'bench', load: 'hand', a: P({ ...LYING, uarm: 184, farm: 184 }), b: P({ ...LYING, uarm: 184, farm: 252 }) },
@@ -85,8 +93,11 @@ export const PATTERNS = {
   dip: { root: 'hand', scenery: 'bar', a: P({ torso: 175, thigh: 5, shin: -35, uarm: 0, farm: 0 }), b: P({ torso: 150, thigh: 5, shin: -35, uarm: -120, farm: 0 }) },
 
   lunge: { root: 'foot', load: 'hand', floor: true, a: P({ thigh2: 0, shin2: 0 }), b: P({ thigh: 80, shin: -15, thigh2: -35, shin2: -100 }) },
-  legPress: { root: 'hip', scenery: 'seat', a: P({ torso: 235, thigh: 125, shin: 116, uarm: 30, farm: 80 }), b: P({ torso: 235, thigh: 152, shin: 82, uarm: 30, farm: 80 }) },
+  // Reclined on the sled seat: legs extended along the 45° platform, then knees brought to about 90° at the bottom.
+  legPress: { root: 'hip', scenery: 'seat', a: P({ torso: 235, thigh: 138, shin: 128, uarm: 30, farm: 80 }), b: P({ torso: 235, thigh: 162, shin: 82, uarm: 30, farm: 80 }) },
   legExt: { root: 'hip', scenery: 'seat', a: P({ ...SEATED, uarm: 10, farm: 70 }), b: P({ ...SEATED, shin: 90, uarm: 10, farm: 70 }) },
+  // Face down on the pad (head to the right), heels curl toward the glutes.
+  lyingLegCurl: { root: 'hip', scenery: 'bench', a: P({ torso: 90, thigh: 270, shin: 268, uarm: 88, farm: 92 }), b: P({ torso: 90, thigh: 270, shin: 140, uarm: 88, farm: 92 }) },
   legCurl: { root: 'hip', scenery: 'seat', a: P({ ...SEATED, shin: 84, uarm: 10, farm: 70 }), b: P({ ...SEATED, shin: -22, uarm: 10, farm: 70 }) },
   calf: { root: 'foot', load: 'shoulder', floor: true, a: P({ uarm: 20, farm: 190 }), b: P({ uarm: 20, farm: 190, rise: 0.34 }) },
   seatedCalf: { root: 'hip', scenery: 'seat', load: 'knee', a: P({ ...SEATED, uarm: 30, farm: 70 }), b: P({ ...SEATED, uarm: 30, farm: 70, rise: 0.16 }) },
@@ -95,6 +106,12 @@ export const PATTERNS = {
 
   crunch: { root: 'hip', scenery: 'none', a: P({ torso: 270, thigh: 120, shin: 10, uarm: 250, farm: 90 }), b: P({ torso: 235, thigh: 120, shin: 10, uarm: 215, farm: 55 }) },
   cableCrunch: { root: 'hip', scenery: 'none', load: 'hand', a: P({ torso: 185, thigh: 0, shin: -90, uarm: 150, farm: 20 }), b: P({ torso: 118, thigh: 0, shin: -90, uarm: 83, farm: -47 }) },
+  // Back against the pad, forearms on the rests: legs hang, then swing up to horizontal.
+  parallelBarLegRaise: { root: 'hip', scenery: 'bench', a: P({ torso: 180, uarm: 0, farm: 90, thigh: 0, shin: 0 }), b: P({ torso: 184, uarm: 0, farm: 90, thigh: 88, shin: 82 }) },
+  // Seated ab machine: crunch forward from the waist, arms move with the torso.
+  crunchMachine: { root: 'hip', scenery: 'seat', a: P({ torso: 186, thigh: 88, shin: 0, uarm: 20, farm: 150 }), b: P({ torso: 150, thigh: 88, shin: 0, uarm: -16, farm: 114 }) },
+  // On the back: knees over the hips, then hips curl up and the knees come toward the chest.
+  reverseCrunch: { root: 'hip', scenery: 'none', a: P({ torso: 270, thigh: 160, shin: 105, uarm: 90, farm: 90 }), b: P({ torso: 270, thigh: 205, shin: 130, uarm: 90, farm: 90 }) },
   lyingLegRaise: { root: 'hip', scenery: 'none', a: P({ torso: 270, thigh: 85, shin: 85, uarm: 90, farm: 90 }), b: P({ torso: 270, thigh: 175, shin: 175, uarm: 90, farm: 90 }) },
   russianTwist: { root: 'hip', scenery: 'none', load: 'hand', a: P({ torso: 205, thigh: 138, shin: 62, uarm: 70, farm: 70 }), b: P({ torso: 205, thigh: 138, shin: 62, uarm: 112, farm: 112 }) },
   abWheel: { root: 'hip', scenery: 'none', load: 'hand', a: P({ torso: 185, thigh: 0, shin: -90, uarm: 5, farm: 5 }), b: P({ torso: 100, thigh: 0, shin: -90, uarm: 45, farm: 40 }) },
@@ -110,13 +127,13 @@ export type PatternName = keyof typeof PATTERNS;
 
 const SLUG_PATTERN: Record<string, PatternName> = {
   'barbell-bench-press': 'bench', 'dumbbell-bench-press': 'bench', 'close-grip-bench-press': 'bench', 'incline-dumbbell-press': 'inclineBench',
-  'incline-barbell-bench-press': 'inclineBench', 'dumbbell-fly': 'fly', 'machine-chest-press': 'machinePress', 'pec-deck': 'machinePress',
+  'incline-barbell-bench-press': 'inclineBench', 'dumbbell-fly': 'fly', 'machine-chest-press': 'machinePress', 'pec-deck': 'pecDeck',
   'cable-crossover': 'crossover', 'push-up': 'pushup', 'chest-dip': 'dip', 'triceps-dip': 'dip', 'assisted-dip': 'dip',
   deadlift: 'deadlift', 'sumo-deadlift': 'deadlift', 'romanian-deadlift': 'rdl', 'good-morning': 'goodMorning', 'back-extension': 'backExtension',
   'barbell-row': 'row', 'one-arm-dumbbell-row': 'row', 'dumbbell-row': 'row', 'seated-cable-row': 'seatedRow', 'face-pull': 'seatedRow',
   'pull-up': 'pullup', 'chin-up': 'pullup', 'assisted-pull-up': 'pullup', 'lat-pulldown': 'pulldown', 'dead-hang': 'hang',
   'overhead-press': 'ohp', 'dumbbell-shoulder-press': 'ohpSeated', 'machine-shoulder-press': 'ohpSeated', 'arnold-press': 'ohpSeated',
-  'lateral-raise': 'raise', 'rear-delt-fly': 'rearFly', 'reverse-pec-deck': 'rearFly', 'barbell-shrug': 'shrug', 'dumbbell-shrug': 'shrug', 'upright-row': 'upright',
+  'lateral-raise': 'raise', 'rear-delt-fly': 'rearFly', 'reverse-pec-deck': 'reverseFlyMachine', 'barbell-shrug': 'shrug', 'dumbbell-shrug': 'shrug', 'upright-row': 'upright',
   'barbell-curl': 'curl', 'dumbbell-curl': 'curl', 'hammer-curl': 'curl', 'ez-bar-curl': 'curl', 'cable-curl': 'curl', 'reverse-curl': 'curl',
   'incline-dumbbell-curl': 'inclineCurl', 'preacher-curl': 'preacher', 'machine-preacher-curl': 'preacher', 'concentration-curl': 'preacher',
   'seated-palms-up-wrist-curl': 'wristCurl', 'seated-palms-down-wrist-curl': 'wristCurl', 'barbell-wrist-curl': 'wristCurl',
@@ -131,6 +148,16 @@ const SLUG_PATTERN: Record<string, PatternName> = {
   'farmers-carry': 'carry', 'treadmill-run': 'run', elliptical: 'run', 'rowing-machine': 'rowMachine', 'stationary-bike': 'bike', 'jump-rope': 'jumpRope',
 };
 
+/** Animations for the custom exercises the Hevy import creates (ids `hevy:<slug>`). */
+export const HEVY_SLUG_PATTERN: Record<string, PatternName> = {
+  'back-extension-weighted': 'backExtension', 'behind-back-wrist-curl': 'behindBackWristCurl', 'crunch-machine': 'crunchMachine',
+  'incline-chest-press-machine': 'inclineMachinePress', 'lat-pulldown-machine': 'pulldown', 'lat-pulldown-close-grip': 'pulldown',
+  'leg-raise-parallel-bars': 'parallelBarLegRaise', 'lying-leg-curl-machine': 'lyingLegCurl', 'rear-delt-fly-cable': 'rearFly',
+  'reverse-crunch': 'reverseCrunch', 'romanian-deadlift-dumbbell': 'rdl', 'seated-row-machine': 'seatedRow',
+  'single-arm-lateral-raise-cable': 'raise', 'single-leg-calf-raise-machine': 'calf', 'split-squat-dumbbell': 'lunge',
+  'squat-machine': 'hackSquat', 't-bar-row': 'row',
+};
+
 const MUSCLE_PATTERN: Partial<Record<Muscle, PatternName>> = {
   chest: 'bench', lats: 'pulldown', upper_back: 'row', lower_back: 'deadlift', shoulders: 'ohp', traps: 'shrug', biceps: 'curl', triceps: 'pushdown',
   forearms: 'wristCurl', abs: 'crunch', quads: 'squat', hamstrings: 'rdl', glutes: 'glute', calves: 'calf', full_body: 'deadlift', cardio: 'run',
@@ -138,8 +165,8 @@ const MUSCLE_PATTERN: Partial<Record<Muscle, PatternName>> = {
 
 /** The animation for an exercise: its own for built-ins, otherwise a sensible guess from the main muscle. */
 export function patternFor(id: string, primary?: Muscle): PatternName | null {
-  const slug = id.startsWith('seed:') ? id.slice(5) : null;
-  if (slug && SLUG_PATTERN[slug]) return SLUG_PATTERN[slug];
+  if (id.startsWith('seed:') && SLUG_PATTERN[id.slice(5)]) return SLUG_PATTERN[id.slice(5)];
+  if (id.startsWith('hevy:') && HEVY_SLUG_PATTERN[id.slice(5)]) return HEVY_SLUG_PATTERN[id.slice(5)];
   return (primary && MUSCLE_PATTERN[primary]) || null;
 }
 
@@ -250,7 +277,8 @@ function scenery(root: Root, kind: Scenery, a: Pose, first: Solved): Partial<Rec
   const hip: Pt = [t[0], t[1]];
   const d = dir(a.torso);
   if (kind === 'bench' || kind === 'seat') {
-    const n: Pt = [Math.cos(rad(a.torso)), -Math.sin(rad(a.torso))]; // behind/below the back
+    let n: Pt = [Math.cos(rad(a.torso)), -Math.sin(rad(a.torso))]; // behind/below the back
+    if (Math.sin(rad(a.torso)) > 0.9) n = [-n[0], -n[1]]; // face down (torso pointing right): the pad is under the chest
     const off = 0.24;
     const p1 = add(add(hip, d, -0.15), n, off);
     const p2 = add(add(hip, d, L.torso + 0.55), n, off);

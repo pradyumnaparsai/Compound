@@ -3,11 +3,10 @@ import { StyleSheet, Text } from 'react-native';
 import { Screen } from '@/components/Screen';
 import { Segmented } from '@/components/Segmented';
 import { WeightPanel } from '@/components/WeightPanel';
-import { HistoryPanel } from '@/components/workouts/HistoryPanel';
 import { WorkoutsPanel } from '@/components/workouts/WorkoutsPanel';
 import { useTheme } from '@/theme';
 
-type Section = 'workouts' | 'history' | 'weight';
+type Section = 'workouts' | 'weight';
 
 export default function BodyScreen() {
   const t = useTheme();
@@ -18,13 +17,12 @@ export default function BodyScreen() {
       <Segmented
         options={[
           { value: 'workouts', label: 'Workouts' },
-          { value: 'history', label: 'History' },
-          { value: 'weight', label: 'Weight' },
+          { value: 'weight', label: 'Weight logging' },
         ]}
         value={section}
         onChange={setSection}
       />
-      {section === 'workouts' ? <WorkoutsPanel /> : section === 'history' ? <HistoryPanel /> : <WeightPanel />}
+      {section === 'workouts' ? <WorkoutsPanel /> : <WeightPanel />}
     </Screen>
   );
 }

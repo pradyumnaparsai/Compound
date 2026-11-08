@@ -45,6 +45,16 @@ describe('diffTemplate', () => {
     expect(shouldOfferTemplateUpdate(d, true)).toBe(true);
   });
 
+  it('empty template weights and reps are "no target", so logging numbers is not a change (imported templates)', () => {
+    const blank = tpl([tex('bench', [{}, {}]), tex('ohp', [{ type: 'warmup' }])]);
+    const same = diffTemplate(blank, workout('2026-01-01', [ex('bench', [set(80, 8), set(82.5, 6)]), ex('ohp', [set(20, 10, { type: 'warmup' })])]));
+    expect(same).toMatchObject({ major: false, minor: false });
+    // still a change when the set count or type differs, or a filled target is missed
+    expect(diffTemplate(blank, workout('2026-01-01', [ex('bench', [set(80, 8)]), ex('ohp', [set(20, 10, { type: 'warmup' })])])).minor).toBe(true);
+    expect(diffTemplate(blank, workout('2026-01-01', [ex('bench', [set(80, 8), set(80, 8)]), ex('ohp', [set(20, 10)])])).minor).toBe(true);
+    expect(diffTemplate(tpl([tex('bench', [{ w: 80 }])]), workout('2026-01-01', [ex('bench', [set(85, 8)])])).minor).toBe(true);
+  });
+
   it('adding or removing an exercise is major', () => {
     const added = diffTemplate(template, workout('2026-01-01', [ex('bench', [set(80, 8), set(80, 8)]), ex('ohp', [set(40, 10)]), ex('dips', [set(0, 10)])]));
     expect(added).toMatchObject({ major: true, addedExerciseIds: ['dips'] });
