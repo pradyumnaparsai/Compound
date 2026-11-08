@@ -13,7 +13,7 @@ Two separate things happen, on two different schedules:
    It was built locally by Xcode (`scripts/install-ios.sh release`).
 2. On launch it asks `updates.url` (Expo's server, project in `app.json`) for the newest update on
    channel `main` (the `expo-channel-name` header in `app.json`) that matches its **runtime version**.
-   `runtimeVersion` is a fixed string (`"1"` in `app.json`), NOT the fingerprint policy: with a local
+   `runtimeVersion` is a fixed string (currently `"3"` in `app.json`), NOT the fingerprint policy: with a local
    `ios/` folder the fingerprint never matched between the Xcode build and `eas update`.
    Only change it (e.g. to `"2"`) when you make a native change, then rebuild with the install script.
 3. `npm run update` bundles your JS + assets and uploads them to that channel.

@@ -16,7 +16,7 @@ case "$MODE" in
 esac
 
 [ -d ios ] || npx expo prebuild -p ios --no-install
-[ -d ios/Pods ] || (cd ios && pod install)
+(cd ios && pod install) # always: picks up newly added native modules (e.g. expo-speech)
 
 WORKSPACE="$(ls -d ios/*.xcworkspace | head -n 1)"
 SCHEME="$(basename "$WORKSPACE" .xcworkspace)"

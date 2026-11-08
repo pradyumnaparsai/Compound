@@ -21,15 +21,15 @@ const tick = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
  * Tap once to start recording, tap again to stop. The audio is transcribed and handed to `onText`.
  * Failures go to `onError` (already a thrown error; format it with friendlyError).
  */
-export function useVoiceInput(onText: (text: string) => void, onError: (e: unknown) => void) {
+export function useVoiceInput(onText: (text: string) => void, onError: (e: unknown) => void, hint?: string) {
   const recorder = useAudioRecorder(SPEECH_PRESET);
   const [state, setState] = useState<VoiceState>('idle');
   const stateRef = useRef<VoiceState>('idle');
   const abortRef = useRef<AbortController | null>(null);
   const autoStop = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const handlers = useRef({ onText, onError });
+  const handlers = useRef({ onText, onError, hint });
   useEffect(() => {
-    handlers.current = { onText, onError }; // always call the latest callbacks (they close over fresh state)
+    handlers.current = { onText, onError, hint }; // always call the latest callbacks (they close over fresh state)
   });
 
   const set = (s: VoiceState) => {
@@ -48,7 +48,7 @@ export function useVoiceInput(onText: (text: string) => void, onError: (e: unkno
       setAudioModeAsync({ allowsRecording: false }).catch(() => {}); // leave record mode so playback/other audio recovers
       const uri = recorder.uri;
       if (!uri) throw new UserError('Nothing was recorded. Try again.');
-      const text = cleanTranscript(await transcribeAudio(uri, ctrl.signal));
+      const text = cleanTranscript(await transcribeAudio(uri, ctrl.signal, handlers.current.hint));
       if (ctrl.signal.aborted) return;
       if (!text) throw new UserError('Could not hear anything. Try again a little closer to the mic.');
       handlers.current.onText(text);
@@ -86,6 +86,16 @@ export function useVoiceInput(onText: (text: string) => void, onError: (e: unkno
     }
   }, [start, finish]);
 
+  /** Drops the current take (recording or upload) without delivering any text. */
+  const cancel = useCallback(() => {
+    if (autoStop.current) clearTimeout(autoStop.current);
+    autoStop.current = null;
+    abortRef.current?.abort();
+    if (stateRef.current === 'recording') recorder.stop().catch(() => {});
+    if (stateRef.current !== 'idle') setAudioModeAsync({ allowsRecording: false }).catch(() => {});
+    set('idle');
+  }, [recorder]);
+
   // Leaving the screen mid-recording: drop the take and release the mic.
   useEffect(
     () => () => {
@@ -97,5 +107,5 @@ export function useVoiceInput(onText: (text: string) => void, onError: (e: unkno
     [recorder],
   );
 
-  return { state, toggle };
+  return { state, toggle, cancel };
 }

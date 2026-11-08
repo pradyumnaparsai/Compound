@@ -143,7 +143,7 @@ export function buildRefineText(prev: { title: string; ingredients: Ingredient[]
 }
 
 /** Strips <think> blocks, markdown fences and stray prose around the JSON object. */
-const stripFences = (raw: string) => {
+export const stripFences = (raw: string) => {
   const s = raw
     .replace(/<think>[\s\S]*?<\/think>/gi, '')
     .trim()
@@ -199,6 +199,22 @@ export const dayTotals = (meals: Meal[]) => ({
   carbsG: r1(meals.reduce((a, m) => a + m.carbsG, 0)),
   fatG: r1(meals.reduce((a, m) => a + m.fatG, 0)),
 });
+
+/** Diary entry from an AI analysis (totals recomputed from the ingredients). */
+export function mealFromAnalysis(a: MealAnalysis, slot: MealSlot, date: string, now: Date, id: string): Meal {
+  return {
+    id,
+    date,
+    slot,
+    loggedAt: now.toISOString(),
+    title: a.title,
+    inputType: a.input_type,
+    confidence: a.meal_confidence_score,
+    ingredients: a.ingredients,
+    ...totalsOf(a.ingredients),
+    assumptions: a.assumptions_made,
+  };
+}
 
 /** Diary entry for a saved meal logged by hand into the chosen section, stamped now. */
 export function mealFromSaved(tpl: SavedMeal, slot: MealSlot, date: string, now: Date, id: string): Meal {

@@ -51,7 +51,7 @@ export type AnalyzeInput = {
   signal?: AbortSignal;
 };
 
-type CallResult = { ok: true; text: string } | { ok: false; status: number; message: string };
+export type CallResult = { ok: true; text: string } | { ok: false; status: number; message: string };
 type Target = { label: string; call: (signal?: AbortSignal) => Promise<CallResult> };
 
 /**
@@ -160,7 +160,7 @@ export async function testProvider(
 
 type Posted = { res: Response } | { fail: CallResult };
 
-async function post(url: string, headers: Record<string, string>, body: unknown, external?: AbortSignal): Promise<Posted> {
+export async function post(url: string, headers: Record<string, string>, body: unknown, external?: AbortSignal): Promise<Posted> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   const onAbort = () => ctrl.abort();
@@ -186,7 +186,7 @@ async function post(url: string, headers: Record<string, string>, body: unknown,
 }
 
 /** Never echoes the request (it contains the key); surfaces only the API's message. */
-async function readError(res: Response): Promise<CallResult> {
+export async function readError(res: Response): Promise<CallResult> {
   let message = `HTTP ${res.status}`;
   try {
     const err = await res.json();

@@ -10,7 +10,7 @@ const TIMEOUT_MS = 30_000;
 const HINT = 'Food log: packets, grams, Lays, paneer, roti, dal, rice, curd, ghee, 80 g, 200 g.';
 
 /** Speech → text via Groq Whisper (uses the Groq key already saved for meal analysis). */
-export async function transcribeAudio(uri: string, signal?: AbortSignal): Promise<string> {
+export async function transcribeAudio(uri: string, signal?: AbortSignal, hint: string = HINT): Promise<string> {
   const key = await getGroqKey();
   if (!key) throw new UserError('Voice needs a Groq API key. Add one in Meal settings.');
 
@@ -25,7 +25,7 @@ export async function transcribeAudio(uri: string, signal?: AbortSignal): Promis
   const boundary = `----compound${Date.now().toString(16)}${Math.random().toString(16).slice(2)}`;
   const body = buildMultipart(
     boundary,
-    { model: MODEL, response_format: 'json', temperature: '0', prompt: HINT },
+    { model: MODEL, response_format: 'json', temperature: '0', prompt: hint },
     { field: 'file', filename: 'voice.m4a', type: 'audio/m4a', bytes },
   );
 
