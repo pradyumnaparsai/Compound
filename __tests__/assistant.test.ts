@@ -215,6 +215,36 @@ describe('parseAssistantReply', () => {
     expect(p.actions).toEqual([{ type: 'log_weight', kg: 72.5, date: TODAY }]);
     expect(p.skipped).toHaveLength(2);
   });
+  describe('weight units', () => {
+    const lbCtx = () =>
+      buildContext({ routines: [], done: new Set(), tasks: [], meals: [], goals: null, weights: [{ date: '2026-11-07', kg: 81.6466 }], unit: 'lb', now: NOW });
+    const log = (action: object, c: AssistantContext) => parseAssistantReply(reply([action]), c, NOW).actions;
+
+    it('tells the model the unit and shows the last weight in it', () => {
+      const c = lbCtx();
+      expect(c.unit).toBe('lb');
+      expect(c.text).toContain('Last weight: 180 lb on 2026-11-07');
+      expect(c.text).toContain('Weight unit: lb');
+      expect(ctx().text).not.toContain('Weight unit:');
+    });
+    it('converts spoken pounds to kg regardless of the app unit', () => {
+      expect(log({ type: 'log_weight', value: 180, unit: 'lb' }, ctx())).toEqual([{ type: 'log_weight', kg: 81.65, date: TODAY }]);
+      expect(log({ type: 'log_weight', value: 82, unit: 'kg' }, lbCtx())).toEqual([{ type: 'log_weight', kg: 82, date: TODAY }]);
+    });
+    it('reads a bare value in the app unit, and still accepts the old {kg} shape', () => {
+      expect(log({ type: 'log_weight', value: 180 }, lbCtx())).toEqual([{ type: 'log_weight', kg: 81.65, date: TODAY }]);
+      expect(log({ type: 'log_weight', value: 72.4 }, ctx())).toEqual([{ type: 'log_weight', kg: 72.4, date: TODAY }]);
+      expect(log({ type: 'log_weight', kg: 72.4 }, lbCtx())).toEqual([{ type: 'log_weight', kg: 72.4, date: TODAY }]);
+    });
+    it('rejects implausible pounds', () => {
+      expect(log({ type: 'log_weight', value: 30, unit: 'lb' }, ctx())).toEqual([]); // 13.6 kg
+    });
+    it('describes the action in the app unit', () => {
+      const a = { type: 'log_weight' as const, kg: 81.65, date: TODAY };
+      expect(describeAction(a, TODAY, 'lb')).toBe('Log weight 180 lb');
+      expect(describeAction(a, TODAY)).toBe('Log weight 81.7 kg');
+    });
+  });
   it('merges partial goals with the existing ones and enforces ranges', () => {
     const p = parseAssistantReply(
       reply([{ type: 'set_goals', protein_g: 150 }, { type: 'set_goals', calories: 100 }, { type: 'set_goals' }]),

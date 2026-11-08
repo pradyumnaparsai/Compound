@@ -24,7 +24,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index" options={{ title: 'Today', tabBarIcon: icon('checkmark-circle-outline', 'checkmark-circle') }} />
       <Tabs.Screen name="calendar" options={{ title: 'Calendar', tabBarIcon: icon('calendar-outline', 'calendar') }} />
-      <Tabs.Screen name="weight" options={{ title: 'Weight', tabBarIcon: icon('scale-outline', 'scale') }} />
+      <Tabs.Screen name="body" options={{ title: 'Body', tabBarIcon: icon('barbell-outline', 'barbell') }} />
       <Tabs.Screen name="meals" options={{ title: 'Meals', tabBarIcon: icon('restaurant-outline', 'restaurant') }} />
       <Tabs.Screen name="routines" options={{ title: 'Routines', tabBarIcon: icon('repeat-outline', 'repeat') }} />
     </Tabs>

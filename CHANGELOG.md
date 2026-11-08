@@ -3,6 +3,16 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.16.0 — 2026-11-08
+### Added
+- **Body tab** replaces Weight: a **Workouts | Weight** switch. Weight works as before.
+- **Exercise library**: about 50 built-in exercises with search and muscle/equipment filters, plus your own custom exercises (reps, bodyweight, assisted, weight + time, time, reps only, distance + time).
+- **Workout templates**: folders, drag to reorder, add exercises, per-set type (normal, warm-up, drop, failure), rep ranges, rest timer, supersets, notes (pin to keep them), duplicate and delete.
+- **kg / lb** display setting and plate setup (Workout settings) for the weights in the app; everything is still stored in kg.
+- Workout data is included in the cloud backup.
+- Atomic understands pounds: say "log 180 pounds" (or a bare number, read in your chosen unit) and it is stored in kg.
+### Notes
+- Logging a live workout, history, PRs and import from Hevy follow in the next releases.
 ## v1.15.3 — 2026-11-08
 ### Changed
 - The "Long-press and drag to reorder", "Long-press a routine to archive it" and "Long-press an entry to delete it" footer hints now appear only the first time (fresh install) and are gone afterwards.

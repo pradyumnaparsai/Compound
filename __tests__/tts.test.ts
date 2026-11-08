@@ -4,6 +4,7 @@ describe('cleanForSpeech', () => {
   it('says units and symbols the way a person would', () => {
     expect(cleanForSpeech('Paneer wrap is 420 kcal · 22 g protein')).toBe('Paneer wrap is 420 calories, 22 grams protein');
     expect(cleanForSpeech('Weight 72.5 kg')).toBe('Weight 72.5 kilograms');
+    expect(cleanForSpeech('Weight 180 lb')).toBe('Weight 180 pounds');
     expect(cleanForSpeech('Salt & pepper')).toBe('Salt and pepper');
   });
   it('turns ISO dates into spoken dates', () => {

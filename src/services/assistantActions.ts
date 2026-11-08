@@ -3,10 +3,12 @@ import { completionKey, isScheduled } from '@/domain/recurrence';
 import { goalLabel } from '@/domain/goal';
 import { UserError } from '@/domain/errors';
 import { mealFromAnalysis } from '@/domain/meal';
+import { formatWeight } from '@/domain/units';
 import { analyzeMeal } from '@/services/mealAnalyzer';
 import { useMealStore } from '@/store/useMealStore';
 import { useRoutineStore } from '@/store/useRoutineStore';
 import { useTaskStore } from '@/store/useTaskStore';
+import { useUnitStore } from '@/store/useUnitStore';
 import { useWeightStore } from '@/store/useWeightStore';
 
 export type Applied = {
@@ -82,7 +84,7 @@ export async function applyAction(a: Action, now: Date, signal?: AbortSignal): P
       const { entries, log, remove } = useWeightStore.getState();
       const prev = entries.find((e) => e.date === a.date);
       await log(a.date, a.kg);
-      return { text: `Weight logged: ${a.kg} kg`, undo: () => (prev ? log(a.date, prev.kg) : remove(a.date)) };
+      return { text: `Weight logged: ${formatWeight(a.kg, useUnitStore.getState().unit)}`, undo: () => (prev ? log(a.date, prev.kg) : remove(a.date)) };
     }
     case 'set_goals': {
       const prev = useMealStore.getState().goals;

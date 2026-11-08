@@ -14,6 +14,8 @@ import { syncWidget } from '@/services/widgetSync';
 import { useMealStore } from '@/store/useMealStore';
 import { useRoutineStore } from '@/store/useRoutineStore';
 import { useTaskStore } from '@/store/useTaskStore';
+import { useUnitStore } from '@/store/useUnitStore';
+import { useWorkoutLibraryStore } from '@/store/useWorkoutLibraryStore';
 import { useWeightStore } from '@/store/useWeightStore';
 import { useTheme } from '@/theme';
 
@@ -32,6 +34,8 @@ export default function RootLayout() {
     useWeightStore.getState().load().catch((e) => console.error('Failed to load weights', e));
     useMealStore.getState().load().catch((e) => console.error('Failed to load meals', e));
     useTaskStore.getState().load().catch((e) => console.error('Failed to load tasks', e));
+    useUnitStore.getState().load().catch((e) => console.error('Failed to load units', e));
+    useWorkoutLibraryStore.getState().load().catch((e) => console.error('Failed to load workouts', e));
   }, [load]);
 
   // Apple Health → auto-check goal routines: on open, on every return to foreground, every minute while open,
@@ -114,6 +118,10 @@ export default function RootLayout() {
             <Stack.Screen name="meal-builder" options={{ presentation: 'modal' }} />
             <Stack.Screen name="meal-settings" options={{ presentation: 'modal' }} />
             <Stack.Screen name="backup" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="exercises" />
+            <Stack.Screen name="exercise-form" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="template" />
+            <Stack.Screen name="workout-settings" options={{ presentation: 'modal' }} />
           </Stack>
           <AtomicHost />
           <StartupSplash />

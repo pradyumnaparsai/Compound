@@ -1,16 +1,19 @@
 import { useMemo, useState } from 'react';
 import { Alert, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { notifyError, onFail } from '@/components/notify';
-import { Screen } from '@/components/Screen';
 import { WeeklyChart } from '@/components/WeeklyChart';
 import { useOneTimeHint } from '@/hooks/useOneTimeHint';
 import { MONTH_NAMES, fromKey, todayKey } from '@/domain/date';
+import { formatNumber, formatWeight, kgToUnit, parseWeightInput } from '@/domain/units';
 import { weeklyAverages } from '@/domain/weight';
+import { useUnitStore } from '@/store/useUnitStore';
 import { useWeightStore } from '@/store/useWeightStore';
 import { radius, useTheme } from '@/theme';
 
-export default function WeightScreen() {
+/** Body-weight log and weekly average chart. Stored in kg, shown in the chosen unit. */
+export function WeightPanel() {
   const t = useTheme();
+  const unit = useUnitStore((s) => s.unit);
   const { entries, log, remove } = useWeightStore();
   const today = todayKey();
   const todayEntry = entries.find((e) => e.date === today);
@@ -18,16 +21,18 @@ export default function WeightScreen() {
   const showHint = useOneTimeHint('delete-entry', entries.length > 0);
 
   const weeks = useMemo(() => weeklyAverages(entries, today, 12), [entries, today]);
+  const chartData = useMemo(() => weeks.map((w) => ({ ...w, avg: kgToUnit(w.avg, unit) })), [weeks, unit]);
   const latest = entries[entries.length - 1];
   const change =
     weeks.length >= 2 ? weeks[weeks.length - 1].avg - weeks[weeks.length - 2].avg : null;
 
-  const parsed = Number(text.replace(',', '.'));
-  const valid = text.trim() !== '' && Number.isFinite(parsed) && parsed >= 20 && parsed <= 400;
+  const parsedKg = parseWeightInput(text, unit);
+  const valid = parsedKg !== null && parsedKg >= 20 && parsedKg <= 400;
 
   const save = async () => {
     try {
-      await log(today, Math.round(parsed * 10) / 10);
+      // 0.1 kg is enough; lb entries keep 0.01 kg so a typed 135 lb still reads 135.
+      await log(today, Math.round((parsedKg as number) * (unit === 'kg' ? 10 : 100)) / (unit === 'kg' ? 10 : 100));
       setText('');
       Keyboard.dismiss();
     } catch (e) {
@@ -36,26 +41,23 @@ export default function WeightScreen() {
   };
 
   return (
-    <Screen>
       <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets contentContainerStyle={{ paddingBottom: 32 }}>
-        <Text style={[styles.title, { color: t.text }]}>Weight</Text>
-
         <View style={[styles.card, { backgroundColor: t.surface, borderColor: t.border }]}>
           <Text style={{ color: t.textDim, fontSize: 13 }}>
-            {todayEntry ? `Today: ${todayEntry.kg.toFixed(1)} kg — enter a new value to update` : 'Log today’s weight'}
+            {todayEntry ? `Today: ${formatWeight(todayEntry.kg, unit)} — enter a new value to update` : 'Log today’s weight'}
           </Text>
           <View style={styles.inputRow}>
             <TextInput
               value={text}
               onChangeText={setText}
               keyboardType="decimal-pad"
-              placeholder={latest ? latest.kg.toFixed(1) : '70.0'}
+              placeholder={latest ? formatNumber(kgToUnit(latest.kg, unit)) : unit === 'kg' ? '70.0' : '155'}
               placeholderTextColor={t.textDim}
               style={[styles.input, { backgroundColor: t.surfaceAlt, color: t.text }]}
               returnKeyType="done"
               onSubmitEditing={() => valid && save()}
             />
-            <Text style={{ color: t.textDim, fontSize: 16, fontWeight: '600' }}>kg</Text>
+            <Text style={{ color: t.textDim, fontSize: 16, fontWeight: '600' }}>{unit}</Text>
             <Pressable
               disabled={!valid}
               onPress={save}
@@ -72,14 +74,14 @@ export default function WeightScreen() {
             {change !== null && (
               <Text style={{ color: change <= 0 ? t.success : t.danger, fontWeight: '700' }}>
                 {change > 0 ? '+' : ''}
-                {change.toFixed(1)} kg vs last week
+                {formatNumber(kgToUnit(change, unit))} {unit} vs last week
               </Text>
             )}
           </View>
           {weeks.length === 0 ? (
             <Text style={{ color: t.textDim, marginTop: 8 }}>Log a few days to see your trend.</Text>
           ) : (
-            <WeeklyChart data={weeks} />
+            <WeeklyChart data={chartData} />
           )}
           <Text style={{ color: t.textDim, fontSize: 11, marginTop: 8 }}>Weeks start Sunday · last 12 weeks</Text>
         </View>
@@ -91,7 +93,7 @@ export default function WeightScreen() {
             <Pressable
               key={e.date}
               onLongPress={() =>
-                Alert.alert('Delete entry?', `${e.kg.toFixed(1)} kg on ${e.date}`, [
+                Alert.alert('Delete entry?', `${formatWeight(e.kg, unit)} on ${e.date}`, [
                   { text: 'Cancel', style: 'cancel' },
                   { text: 'Delete', style: 'destructive', onPress: () => remove(e.date).catch(onFail()) },
                 ])
@@ -101,7 +103,7 @@ export default function WeightScreen() {
               <Text style={{ color: t.text, fontSize: 16 }}>
                 {MONTH_NAMES[d.getMonth()].slice(0, 3)} {d.getDate()}
               </Text>
-              <Text style={{ color: t.text, fontSize: 16, fontWeight: '700' }}>{e.kg.toFixed(1)} kg</Text>
+              <Text style={{ color: t.text, fontSize: 16, fontWeight: '700' }}>{formatWeight(e.kg, unit)}</Text>
             </Pressable>
           );
         })}
@@ -111,12 +113,10 @@ export default function WeightScreen() {
           </Text>
         )}
       </ScrollView>
-    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 34, fontWeight: '800', marginBottom: 16 },
   card: { borderRadius: radius.lg, borderWidth: 1, padding: 16, marginBottom: 16, gap: 10 },
   cardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   h2: { fontSize: 18, fontWeight: '700' },

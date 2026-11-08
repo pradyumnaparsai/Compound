@@ -24,3 +24,10 @@ drop policy if exists "own backups delete" on public.backups;
 create policy "own backups delete" on public.backups
   for delete to authenticated using (user_id = (select auth.uid()));
 -- No update policy: backups are append-only; the app prunes old ones (keeps the latest 5).
+
+-- Workout tracking (schema v10) adds no Supabase tables: it travels inside the same `data` jsonb snapshot, as the
+-- keys exercises, workout_folders, workout_templates, template_exercises, template_sets, workouts,
+-- workout_exercises and workout_sets (src/services/backup.ts). Built-in exercises are in code, not in the snapshot.
+-- Size: a snapshot is one jsonb row (Postgres allows far more than the app will ever send), but PostgREST/the API
+-- gateway request-size limit is the real ceiling. Years of logged sets can reach several MB per snapshot, and the
+-- app keeps the latest 5. If inserts start failing with 413 / "payload too large", raise the limit or thin KEEP.

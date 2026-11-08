@@ -3,6 +3,7 @@ import type { Goals, Meal, SavedMeal } from '@/domain/meal';
 import type { MealSchedule } from '@/domain/mealSchedule';
 import type { Completion, Routine, RoutineInput, Task } from '@/domain/types';
 import type { WeightEntry } from '@/domain/weight';
+import type { ExerciseDef, WorkoutFolder, WorkoutTemplate } from '@/domain/workout';
 
 export interface RoutineRepository {
   list(): Promise<Routine[]>; // includes archived (history needs them)
@@ -58,6 +59,9 @@ export interface SettingsRepository {
   /** One-time markers (e.g. 'a default row was already created'); stored in the settings table. */
   getFlag(key: string): Promise<boolean>;
   setFlag(key: string): Promise<void>;
+  /** Plain string settings (weight unit, plate setup, ...). Part of the cloud backup. */
+  getValue(key: string): Promise<string | null>;
+  setValue(key: string, value: string): Promise<void>;
 }
 
 export interface FoodCacheRepository {
@@ -69,4 +73,32 @@ export interface WeightRepository {
   list(): Promise<WeightEntry[]>;
   upsert(date: string, kg: number): Promise<void>;
   remove(date: string): Promise<void>;
+}
+
+/** Custom and imported exercises only; the built-in catalog lives in code. */
+export interface ExerciseRepository {
+  list(): Promise<ExerciseDef[]>;
+  add(e: ExerciseDef): Promise<void>;
+  update(e: ExerciseDef): Promise<void>;
+  remove(id: string): Promise<void>;
+}
+
+export interface WorkoutFolderRepository {
+  list(): Promise<WorkoutFolder[]>;
+  add(f: WorkoutFolder): Promise<void>;
+  rename(id: string, title: string): Promise<void>;
+  /** Templates inside the folder move out of it (they are not deleted). */
+  remove(id: string): Promise<void>;
+  /** Persists the display order; `ids` is the full folder list in the desired order. */
+  reorder(ids: string[]): Promise<void>;
+}
+
+export interface WorkoutTemplateRepository {
+  list(): Promise<WorkoutTemplate[]>;
+  /** Inserts or replaces the whole template (exercises and sets) in one transaction. */
+  save(t: WorkoutTemplate): Promise<void>;
+  /** Also deletes its exercises and sets. */
+  remove(id: string): Promise<void>;
+  /** Persists the display order; `ids` is the full template list in the desired order. */
+  reorder(ids: string[]): Promise<void>;
 }

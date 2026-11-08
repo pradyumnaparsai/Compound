@@ -15,6 +15,7 @@ export function cleanForSpeech(raw: string): string {
     .replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (_m, _y, mo: string, d: string) => `${Number(d)} ${monthName(Number(mo))}`)
     .replace(/\bkcal\b/gi, 'calories')
     .replace(/\bkgs?\b/gi, 'kilograms')
+    .replace(/\blbs?\b/gi, 'pounds')
     .replace(/(\d)\s?g\b/g, '$1 grams')
     .replace(/\s*[·•|]\s*/g, ', ')
     .replace(/\s*&\s*/g, ' and ')

@@ -5,10 +5,31 @@ import { UserError } from '@/domain/errors';
 import { useMealStore } from '@/store/useMealStore';
 import { useRoutineStore } from '@/store/useRoutineStore';
 import { useTaskStore } from '@/store/useTaskStore';
+import { useUnitStore } from '@/store/useUnitStore';
+import { useWorkoutLibraryStore } from '@/store/useWorkoutLibraryStore';
 import { useWeightStore } from '@/store/useWeightStore';
 
 // food_cache is rebuildable and intentionally excluded.
-const TABLES = ['routines', 'completions', 'weights', 'meals', 'saved_meals', 'meal_schedules', 'settings', 'tasks'] as const;
+const TABLES = [
+  'routines',
+  'completions',
+  'weights',
+  'meals',
+  'saved_meals',
+  'meal_schedules',
+  'settings',
+  'tasks',
+  // Workout tracking (v10). Built-in exercises live in code, so `exercises` holds only custom ones and a
+  // fresh install still counts as empty.
+  'exercises',
+  'workout_folders',
+  'workout_templates',
+  'template_exercises',
+  'template_sets',
+  'workouts',
+  'workout_exercises',
+  'workout_sets',
+] as const;
 const KEEP = 5;
 const AUTO_MIN_INTERVAL_MS = 2 * 60_000;
 // `backup_*` settings are device-local bookkeeping and never part of a snapshot.
@@ -151,6 +172,8 @@ export async function restoreLatest(): Promise<void> {
     useWeightStore.getState().load(),
     useMealStore.getState().load(),
     useTaskStore.getState().load(),
+    useUnitStore.getState().load(),
+    useWorkoutLibraryStore.getState().load(),
   ]);
 }
 

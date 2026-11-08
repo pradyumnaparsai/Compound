@@ -19,6 +19,7 @@ iOS app to track daily routines and todos. Local-only storage for now. Dark them
 | UC8 | Yearly view of days completed | 1 | Built |
 | UC9 | Daily body-weight log + weekly average graph | 1 | Built |
 | UC10 | Food photo → calories/protein estimate via Gemini API (MyFitnessPal-style logging) | 4 | Built, untested on device (see §11) |
+| UC11 | Workout tracking (templates, live logging, history, PRs, Hevy import) | 5 | In progress: exercise catalog + templates built (see §13) |
 
 ### UC1 — Daily routines
 - Create / edit / archive a routine (title, recurrence, optional reminder time).
@@ -157,3 +158,14 @@ A day's status = completed scheduled routines / scheduled routines for that date
 - **Safety:** adds, check-offs, reschedules and weight apply immediately with Undo. `set_goals`, `archive_routine`, `delete_task`, `delete_meal` wait for a tap or a spoken yes/no (`confirmIntent`). Unresolvable or ambiguous references are skipped and reported, never guessed. `log_meal` runs the existing `analyzeMeal` (text note); totals are recomputed from its ingredients.
 - **Native:** `expo-speech` is only the fallback voice; `speak.ts` loads it lazily, so no runtime-version bump is needed (runtime stays `"2"`; the installed build's `Expo.plist` must match `app.json`, see `docs/DEPLOY.md`).
 - **Not built:** wake word, navigation commands, editing meal items by voice, un-archive undo.
+
+## 13. Workouts (UC11)
+- **Naming:** "Routine" already means a daily habit, so planned sessions are **WorkoutTemplate**s, logged sessions are **Workout**s, catalog entries are **ExerciseDef**s.
+- **Tab:** the old Weight tab became **Body** (`src/app/(tabs)/body.tsx`) with a Workouts | Weight switch (`Segmented`), keeping five tabs. Weight lives in `src/components/WeightPanel.tsx`; workouts in `src/components/workouts/`.
+- **Schema (migration v10, append-only):** `exercises` (custom/imported only), `workout_folders`, `workout_templates`, `template_exercises`, `template_sets`, `workouts`, `workout_exercises`, `workout_sets`. No foreign keys (cloud restore rewrites whole tables, so repositories cascade deletes). Imported rows carry `source`/`source_id`; `workouts` has a unique partial index on them so a re-import cannot duplicate. All weights are stored in kg; `weight_kg` is signed for assisted exercises (negative = assistance).
+- **Built-in catalog lives in code** (`src/domain/exerciseCatalog.ts`, ids `seed:<slug>`, ~50 original entries), not in SQLite: seeded rows would make a fresh install look non-empty to `checkCloud` (so it would report a conflict instead of offering restore), and restores would delete them. Custom exercises can't be deleted while a template or workout uses them.
+- **Units:** `settings` keys `weight_unit` (`kg`|`lb`) and `plate_config` (bar + plates, kg). `src/domain/units.ts` converts for display/input; the Weight tab honours it too. Atomic's `log_weight` takes `{value, unit}` (the old `{kg}` still works): spoken pounds are converted, and a bare number uses the user's unit, which is passed in the assistant context.
+- **Pure logic (tested):** `workout.ts` (set types, volume with the include-warm-up option, Epley 1RM, set labels W/D/F, supersets, typo guard), `records.ts` (PRs: heaviest weight, best 1RM, most reps at a weight, best set volume; warm-ups excluded; no PRs without history), `template.ts` (template diff: added/removed exercises = major, sets/weights/reps/order = minor; update-template; duplicate), `overload.ts` (opt-in `suggestNextWeight`, warm-up ramp, rounding to loadable weights).
+- **Template builder:** the draft lives in `useTemplateDraft` so the exercise picker (`/exercises?pick=1`) can add to it and return, like the meal builder. Folders are filter chips on the Workouts panel (long-press a chip: rename, move, delete). Leaving with unsaved edits asks first.
+- **Tests:** migration v9 → v10 and the repositories run against real SQLite through `testutils/nodeSqlite.ts` (Node's built-in `node:sqlite`).
+- **Not yet built:** live workout screen, finish flow, history, calendar badge, progress charts, Hevy import, Atomic voice actions, HealthKit write (needs `NSHealthUpdateUsageDescription` + a native rebuild), rest-timer alerts while backgrounded (would need `expo-notifications`, which may add `aps-environment`).

@@ -2,7 +2,7 @@ import * as SQLite from 'expo-sqlite';
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
-const MIGRATIONS: string[] = [
+export const MIGRATIONS: string[] = [
   // v1 (never edit a shipped migration; append a new one)
   `CREATE TABLE routines (
      id TEXT PRIMARY KEY NOT NULL,
@@ -95,9 +95,103 @@ const MIGRATIONS: string[] = [
      last_applied TEXT
    );
    CREATE INDEX idx_meal_schedules_meal ON meal_schedules(saved_meal_id);`,
+  // v10: workout tracking. Built-in exercises live in code; `exercises` holds only custom/imported ones.
+  // No foreign keys on purpose: cloud restore rewrites whole tables, so repositories cascade deletes themselves.
+  // source/source_id mark imported rows (e.g. 'hevy') so a re-import can skip what it already wrote.
+  `CREATE TABLE exercises (
+     id TEXT PRIMARY KEY NOT NULL,
+     title TEXT NOT NULL,
+     type TEXT NOT NULL,
+     primary_muscle TEXT NOT NULL,
+     secondary_muscles TEXT NOT NULL DEFAULT '[]',
+     equipment TEXT NOT NULL,
+     created_at TEXT NOT NULL,
+     source TEXT,
+     source_id TEXT
+   );
+   CREATE TABLE workout_folders (
+     id TEXT PRIMARY KEY NOT NULL,
+     title TEXT NOT NULL,
+     position INTEGER NOT NULL DEFAULT 0,
+     source TEXT,
+     source_id TEXT
+   );
+   CREATE TABLE workout_templates (
+     id TEXT PRIMARY KEY NOT NULL,
+     title TEXT NOT NULL,
+     notes TEXT NOT NULL DEFAULT '',
+     folder_id TEXT,
+     position INTEGER NOT NULL DEFAULT 0,
+     created_at TEXT NOT NULL,
+     source TEXT,
+     source_id TEXT
+   );
+   CREATE TABLE template_exercises (
+     id TEXT PRIMARY KEY NOT NULL,
+     template_id TEXT NOT NULL,
+     exercise_id TEXT NOT NULL,
+     position INTEGER NOT NULL,
+     superset_id TEXT,
+     rest_seconds INTEGER,
+     notes TEXT NOT NULL DEFAULT '',
+     notes_pinned INTEGER NOT NULL DEFAULT 0
+   );
+   CREATE INDEX idx_template_exercises_template ON template_exercises(template_id);
+   CREATE TABLE template_sets (
+     id TEXT PRIMARY KEY NOT NULL,
+     template_exercise_id TEXT NOT NULL,
+     idx INTEGER NOT NULL,
+     set_type TEXT NOT NULL DEFAULT 'normal',
+     rep_min INTEGER,
+     rep_max INTEGER,
+     weight_kg REAL,
+     reps INTEGER,
+     duration_seconds INTEGER,
+     distance_meters REAL
+   );
+   CREATE INDEX idx_template_sets_exercise ON template_sets(template_exercise_id);
+   CREATE TABLE workouts (
+     id TEXT PRIMARY KEY NOT NULL,
+     title TEXT NOT NULL,
+     template_id TEXT,
+     started_at TEXT NOT NULL,
+     ended_at TEXT,
+     date TEXT NOT NULL,
+     notes TEXT NOT NULL DEFAULT '',
+     source TEXT,
+     source_id TEXT
+   );
+   CREATE INDEX idx_workouts_date ON workouts(date);
+   CREATE UNIQUE INDEX idx_workouts_source ON workouts(source, source_id) WHERE source IS NOT NULL;
+   CREATE TABLE workout_exercises (
+     id TEXT PRIMARY KEY NOT NULL,
+     workout_id TEXT NOT NULL,
+     exercise_id TEXT NOT NULL,
+     position INTEGER NOT NULL,
+     superset_id TEXT,
+     rest_seconds INTEGER,
+     notes TEXT NOT NULL DEFAULT '',
+     notes_pinned INTEGER NOT NULL DEFAULT 0
+   );
+   CREATE INDEX idx_workout_exercises_workout ON workout_exercises(workout_id);
+   CREATE INDEX idx_workout_exercises_exercise ON workout_exercises(exercise_id);
+   CREATE TABLE workout_sets (
+     id TEXT PRIMARY KEY NOT NULL,
+     workout_exercise_id TEXT NOT NULL,
+     idx INTEGER NOT NULL,
+     set_type TEXT NOT NULL DEFAULT 'normal',
+     weight_kg REAL,
+     reps INTEGER,
+     duration_seconds INTEGER,
+     distance_meters REAL,
+     rpe REAL,
+     is_completed INTEGER NOT NULL DEFAULT 0,
+     completed_at TEXT
+   );
+   CREATE INDEX idx_workout_sets_exercise ON workout_sets(workout_exercise_id);`,
 ];
 
-async function migrate(db: SQLite.SQLiteDatabase) {
+export async function migrate(db: SQLite.SQLiteDatabase) {
   await db.execAsync('PRAGMA journal_mode = WAL;');
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
   let version = row?.user_version ?? 0;

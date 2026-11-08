@@ -5,6 +5,7 @@ import { goalLabel } from './goal';
 import { dayTotals, isMealSlot, slotForTime, slotLabel, stripFences, type Goals, type Meal, type MealSlot } from './meal';
 import { completionKey, isScheduled, recurrenceLabel } from './recurrence';
 import type { Routine, Task } from './types';
+import { formatNumber, kgToUnit, unitToKg, type WeightUnit } from './units';
 import type { WeightEntry } from './weight';
 
 export type Action =
@@ -28,6 +29,8 @@ export type AssistantContext = {
   tasks: RefItem[];
   meals: RefItem[];
   goals: Goals | null;
+  /** The user's weight unit; a bare number in a spoken weight is read in this unit. */
+  unit: WeightUnit;
 };
 
 export type ContextInput = {
@@ -38,6 +41,8 @@ export type ContextInput = {
   goals: Goals | null;
   weights: WeightEntry[];
   now: Date;
+  /** Weight unit shown in the app (default kg). */
+  unit?: WeightUnit;
 };
 
 export type ParsedReply = { reply: string; actions: Action[]; skipped: string[] };
@@ -60,7 +65,7 @@ Reply with JSON only: {"reply": string, "actions": Action[]}
   {"type":"set_routine_done","ref":str,"done":bool,"date":"YYYY-MM-DD"}  date defaults to today
   {"type":"set_task_done","ref":str,"done":bool}
   {"type":"reschedule_task","ref":str,"date":"YYYY-MM-DD"}
-  {"type":"log_weight","kg":number,"date":"YYYY-MM-DD"}
+  {"type":"log_weight","value":number,"unit":"kg|lb","date":"YYYY-MM-DD"}  unit = what the user said (kilos/kg or pounds/lb); for a bare number use the weight unit in the context (kg when none is given)
   {"type":"set_goals","calories":number,"protein_g":number}  daily meal goals; give only what the user changes
   {"type":"archive_routine","ref":str}
   {"type":"delete_task","ref":str}
@@ -108,6 +113,7 @@ export function buildContext(input: ContextInput): AssistantContext {
   }).join(', ');
   const eaten = dayTotals(input.meals.filter((m) => m.date === today));
   const lastWeight = input.weights.length ? input.weights[input.weights.length - 1] : null;
+  const unit = input.unit ?? 'kg';
 
   const lines = [
     `Today: ${today} (${FULL_DAY_NAMES[weekday(today)]}), time ${String(input.now.getHours()).padStart(2, '0')}:${String(input.now.getMinutes()).padStart(2, '0')}`,
@@ -115,7 +121,10 @@ export function buildContext(input: ContextInput): AssistantContext {
     input.goals
       ? `Meal goals: ${input.goals.calories} kcal, ${input.goals.proteinG} g protein. Eaten today: ${eaten.calories} kcal, ${eaten.proteinG} g protein`
       : `Meal goals: not set. Eaten today: ${eaten.calories} kcal, ${eaten.proteinG} g protein`,
-    lastWeight ? `Last weight: ${lastWeight.kg} kg on ${lastWeight.date}` : 'Last weight: none',
+    lastWeight
+      ? `Last weight: ${unit === 'kg' ? lastWeight.kg : formatNumber(kgToUnit(lastWeight.kg, unit))} ${unit} on ${lastWeight.date}`
+      : 'Last weight: none',
+    ...(unit === 'kg' ? [] : [`Weight unit: ${unit} (a bare number is in ${unit})`]),
     'Routines (ref|title|schedule|today):',
     ...(routineItems.length
       ? routineItems.map(({ r, ref }) => {
@@ -135,6 +144,7 @@ export function buildContext(input: ContextInput): AssistantContext {
     tasks: taskItems.map(({ t, ref }) => ({ ref, id: t.id, title: t.title })),
     meals: mealItems.map(({ m, ref }) => ({ ref, id: m.id, title: m.title })),
     goals: input.goals,
+    unit,
   };
 }
 
@@ -307,13 +317,16 @@ export function parseAssistantReply(raw: string, ctx: AssistantContext, now: Dat
         break;
       }
       case 'log_weight': {
-        const kg = num(e.kg);
+        // New shape {value, unit}; the older {kg} is still accepted. A bare value uses the user's unit.
+        const unit: WeightUnit = e.unit === 'lb' || e.unit === 'kg' ? e.unit : e.value === undefined ? 'kg' : ctx.unit;
+        const typed = num(e.value ?? e.kg);
+        const kg = typed === null ? null : unitToKg(typed, unit);
         const date = resolveDate(e.date, today);
         if (kg === null || kg < 20 || kg > 400 || !date) {
           skipped.push('Could not understand the weight');
           break;
         }
-        push({ type: 'log_weight', kg: Math.round(kg * 10) / 10, date });
+        push({ type: 'log_weight', kg: unit === 'kg' ? Math.round(kg * 10) / 10 : Math.round(kg * 100) / 100, date });
         break;
       }
       case 'set_goals': {
@@ -357,7 +370,7 @@ const relative = (date: string, today: string): string =>
   date === today ? 'today' : date === addDays(today, 1) ? 'tomorrow' : date === addDays(today, -1) ? 'yesterday' : date;
 
 /** Short human description shown on action chips and confirm cards. */
-export function describeAction(a: Action, today: string): string {
+export function describeAction(a: Action, today: string, unit: WeightUnit = 'kg'): string {
   switch (a.type) {
     case 'add_routine':
       return `New routine: ${a.title} (${a.days ? a.days.map((d) => DAY_NAMES[d]).join(' · ') : 'every day'})`;
@@ -372,7 +385,7 @@ export function describeAction(a: Action, today: string): string {
     case 'reschedule_task':
       return `Move task "${a.title}" to ${relative(a.date, today)}`;
     case 'log_weight':
-      return `Log weight ${a.kg} kg${a.date === today ? '' : ` (${relative(a.date, today)})`}`;
+      return `Log weight ${formatNumber(kgToUnit(a.kg, unit))} ${unit}${a.date === today ? '' : ` (${relative(a.date, today)})`}`;
     case 'set_goals':
       return `Set meal goals: ${a.calories} kcal, ${a.proteinG} g protein`;
     case 'archive_routine':

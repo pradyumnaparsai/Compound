@@ -441,6 +441,18 @@ export const sqliteSettingsRepo: SettingsRepository = {
     const db = await getDb();
     await db.runAsync("INSERT OR REPLACE INTO settings (key, value) VALUES (?, '1')", `flag_${key}`);
   },
+  async getValue(key) {
+    const db = await getDb();
+    return (await db.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = ?', key))?.value ?? null;
+  },
+  async setValue(key, value) {
+    const db = await getDb();
+    await db.runAsync(
+      'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+      key,
+      value,
+    );
+  },
 };
 
 type FoodRow = {

@@ -9,6 +9,7 @@ import { useAssistantStore, type Chip } from '@/store/useAssistantStore';
 import { useMealStore } from '@/store/useMealStore';
 import { useRoutineStore } from '@/store/useRoutineStore';
 import { useTaskStore } from '@/store/useTaskStore';
+import { useUnitStore } from '@/store/useUnitStore';
 import { useWeightStore } from '@/store/useWeightStore';
 
 const store = () => useAssistantStore.getState();
@@ -165,6 +166,7 @@ export async function submit(raw: string): Promise<void> {
       meals: useMealStore.getState().meals,
       goals: useMealStore.getState().goals,
       weights: useWeightStore.getState().entries,
+      unit: useUnitStore.getState().unit,
       now,
     });
     const parsed = await askAssistant({ text, context, history, now, signal });
@@ -174,7 +176,7 @@ export async function submit(raw: string): Promise<void> {
 
     const batch = await runBatch(safe, now, signal);
     const chips: Chip[] = [...batch.chips, ...parsed.skipped.map((s) => ({ id: newId(), text: s, ok: false }))];
-    const labels = risky.map((a) => describeAction(a, today));
+    const labels = risky.map((a) => describeAction(a, today, useUnitStore.getState().unit));
     const reply = parsed.reply || (chips.some((c) => c.ok) ? 'Done.' : 'I could not do that.');
 
     respond(reply, chips);

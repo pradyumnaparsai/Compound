@@ -9,7 +9,7 @@ A personal iOS app for tracking daily routines, todos, body weight and meals. Bu
 
 - **Routines & todos** — daily or weekday-based routines, one-off todos, reorderable lists
 - **Calendar & year view** — see completed days at a glance
-- **Weight log** — daily entries with a weekly-average chart
+- **Body tab** — **Workouts** (exercise library with search and muscle/equipment filters plus your own custom exercises, workout templates with folders, drag reorder, set types, rep ranges, rest timers, supersets and pinned notes) and the **Weight** log (daily entries, weekly-average chart). kg or lb display, stored in kg. Live workout logging, history and PRs are rolling out in follow-up releases
 - **Meals** — photo or barcode → calories/protein estimate (Groq / Gemini, Open Food Facts); AI-named meal header shown in the diary, remove wrong items with ➖, and correct an estimate with a text follow-up
 - **Atomic (voice)** — a floating button on every screen (drag it anywhere): tap, say what you need, and Atomic adds routines and tasks, logs meals, ticks things off, logs weight and sets goals, then answers out loud (natural voice via Groq, device voice as fallback). Deletes and goal changes ask first; everything else has Undo. Uses your Groq key (Whisper, chat, voice) with Gemini as chat fallback; about 1–3k tokens per command
 - **Apple Health** — steps and workouts auto-check goal routines
@@ -77,7 +77,7 @@ docs/            design notes, workflow checklist, Supabase schema
 
 ## Testing & contributing
 
-Unit tests live in `__tests__/` (Jest + jest-expo) and cover the domain logic. Run `npm test` before every commit.
+Unit tests live in `__tests__/` (Jest + jest-expo) and cover the domain logic. Database tests (`__tests__/workoutDb.test.ts`) run the real migrations and repositories on Node's built-in SQLite (`node:sqlite`, Node 22.13+), so no extra dependency is needed. Run `npm test` before every commit.
 New features follow the checklist in [`docs/FEATURE_WORKFLOW.md`](docs/FEATURE_WORKFLOW.md).
 
 See [`docs/DESIGN.md`](docs/DESIGN.md) for design notes.
