@@ -3,6 +3,9 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.13.1 — 2026-11-08
+### Fixed
+- Over-the-air updates were not reaching the phone: v1.12.0 and v1.13.0 were published for runtime version 3, but the installed app was built with runtime 2 (the generated iOS project was never regenerated). Updates are published for runtime 2 again, so they arrive without a reinstall.
 ## v1.13.0 — 2026-11-08
 ### Changed
 - **Atomic:** the assistant is now called Atomic and has a simple look that follows the app theme: a round accent-coloured button and a clean bottom card that shows only what it heard and its answer. The glowing orb, chat list and typing box are gone; it just listens and responds.
