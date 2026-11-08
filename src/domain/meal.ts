@@ -200,6 +200,14 @@ export const dayTotals = (meals: Meal[]) => ({
   fatG: r1(meals.reduce((a, m) => a + m.fatG, 0)),
 });
 
+/** Meal without the ingredient at `index`, totals recomputed. null when nothing would be left. Never mutates. */
+export function withoutIngredient(meal: Meal, index: number): Meal | null {
+  if (!Number.isInteger(index) || index < 0 || index >= meal.ingredients.length) return meal;
+  const ingredients = meal.ingredients.filter((_, k) => k !== index);
+  if (ingredients.length === 0) return null;
+  return { ...meal, ingredients, ...totalsOf(ingredients) };
+}
+
 /** Diary entry from an AI analysis (totals recomputed from the ingredients). */
 export function mealFromAnalysis(a: MealAnalysis, slot: MealSlot, date: string, now: Date, id: string): Meal {
   return {

@@ -3,6 +3,9 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.14.0 — 2026-11-08
+### Added
+- Diary: expand a logged meal and tap the **−** next to any item to remove it (e.g. something you logged but did not eat). Calories and macros update; removing the last item offers to delete the meal.
 ## v1.13.1 — 2026-11-08
 ### Fixed
 - Over-the-air updates were not reaching the phone: v1.12.0 and v1.13.0 were published for runtime version 3, but the installed app was built with runtime 2 (the generated iOS project was never regenerated). Updates are published for runtime 2 again, so they arrive without a reinstall.

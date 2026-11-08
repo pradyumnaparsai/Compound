@@ -6,7 +6,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { onFail } from '@/components/notify';
 import { Screen } from '@/components/Screen';
 import { addDays, fromKey, todayKey } from '@/domain/date';
-import { dayTotals, MEAL_SLOTS, type Meal, type MealSlot } from '@/domain/meal';
+import { dayTotals, MEAL_SLOTS, type Meal, type MealSlot, withoutIngredient } from '@/domain/meal';
 import { useMealStore } from '@/store/useMealStore';
 import { radius, useTheme } from '@/theme';
 
@@ -51,6 +51,13 @@ export default function DiaryScreen() {
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: () => remove(m.id).catch(onFail()) },
     ]);
+
+  const removeItem = (m: Meal, index: number) => {
+    tap();
+    const next = withoutIngredient(m, index);
+    if (next) update(next).catch(onFail());
+    else confirmDelete(m); // last item: removing it deletes the whole meal
+  };
 
   const addTo = (s: MealSlot) => {
     tap();
@@ -132,10 +139,19 @@ export default function DiaryScreen() {
                   {open === m.id && (
                     <View style={styles.detail}>
                       {m.ingredients.map((i, k) => (
-                        <Text key={k} style={{ color: t.textDim, fontSize: 12, marginTop: k ? 2 : 0 }}>
-                          {i.name}
-                          {i.estimated_quantity ? ` · ${i.estimated_quantity}` : ''} · {i.calories} kcal
-                        </Text>
+                        <View key={k} style={styles.ingRow}>
+                          <Text style={{ color: t.textDim, fontSize: 12, flex: 1 }}>
+                            {i.name}
+                            {i.estimated_quantity ? ` · ${i.estimated_quantity}` : ''} · {i.calories} kcal
+                          </Text>
+                          <Pressable
+                            onPress={() => removeItem(m, k)}
+                            hitSlop={10}
+                            accessibilityLabel={`Remove ${i.name}`}
+                          >
+                            <Ionicons name="remove-circle-outline" size={22} color={t.danger} />
+                          </Pressable>
+                        </View>
                       ))}
                       <View style={styles.detailActions}>
                         <Pressable onPress={() => relog(m)} hitSlop={8}>
@@ -170,5 +186,6 @@ const styles = StyleSheet.create({
   divider: { borderTopWidth: StyleSheet.hairlineWidth },
   logRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
   detail: { paddingBottom: 12 },
+  ingRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 },
   detailActions: { flexDirection: 'row', gap: 20, marginTop: 10 },
 });

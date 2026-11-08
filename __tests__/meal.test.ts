@@ -9,6 +9,7 @@ import {
   parseAnalysis,
   slotForTime,
   totalsOf,
+  withoutIngredient,
   type Meal,
   type SavedMeal,
 } from '@/domain/meal';
@@ -183,5 +184,51 @@ describe('mealFromSaved', () => {
     expect(m.proteinG).toBeCloseTo(30);
     expect(m.loggedAt).toBe(now.toISOString());
     expect(m.ingredients).toEqual(tpl.ingredients);
+  });
+});
+
+describe('withoutIngredient', () => {
+  const base = (): Meal => {
+    const ingredients = [ing({ name: 'A', calories: 100 }), ing({ name: 'B', calories: 50 }), ing({ name: 'C', calories: 25 })];
+    return {
+      id: 'x',
+      date: '2026-11-08',
+      slot: 'lunch',
+      loggedAt: '2026-11-08T12:00:00.000Z',
+      title: 'Plate',
+      inputType: 'image_only',
+      confidence: 7,
+      ingredients,
+      ...totalsOf(ingredients),
+      assumptions: [],
+    };
+  };
+
+  it('drops the item and recomputes totals', () => {
+    const next = withoutIngredient(base(), 1)!;
+    expect(next.ingredients.map((i) => i.name)).toEqual(['A', 'C']);
+    expect(next.calories).toBe(125);
+    expect(next.proteinG).toBe(5.4);
+    expect(next.id).toBe('x');
+    expect(next.slot).toBe('lunch');
+  });
+
+  it('returns null when the last item is removed', () => {
+    const one = withoutIngredient(base(), 0)!;
+    const two = withoutIngredient(one, 0)!;
+    expect(withoutIngredient(two, 0)).toBeNull();
+  });
+
+  it('ignores an out-of-range index', () => {
+    const m = base();
+    expect(withoutIngredient(m, 3)).toBe(m);
+    expect(withoutIngredient(m, -1)).toBe(m);
+  });
+
+  it('does not mutate the input', () => {
+    const m = base();
+    withoutIngredient(m, 0);
+    expect(m.ingredients).toHaveLength(3);
+    expect(m.calories).toBe(175);
   });
 });
