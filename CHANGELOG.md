@@ -3,6 +3,12 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.15.2 — 2026-11-08
+### Fixed
+- Startup splash: it now uses a full-screen portrait poster with the **COMPOUND** heading, filling the whole iPhone screen instead of a cropped or mis-sized picture.
+## v1.15.0 — 2026-11-08
+### Added
+- Startup splash: on launch the app fades in a full-screen artwork with the **COMPOUND** heading, holds briefly and fades into the home screen (~2s). Tap anywhere to skip; skipped automatically when Reduce Motion is on.
 ## v1.14.0 — 2026-11-08
 ### Added
 - Diary: expand a logged meal and tap the **−** next to any item to remove it (e.g. something you logged but did not eat). Calories and macros update; removing the last item offers to delete the meal.
