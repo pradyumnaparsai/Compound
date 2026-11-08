@@ -13,7 +13,7 @@ Two separate things happen, on two different schedules:
    It was built locally by Xcode (`scripts/install-ios.sh release`).
 2. On launch it asks `updates.url` (Expo's server, project in `app.json`) for the newest update on
    channel `main` (the `expo-channel-name` header in `app.json`) that matches its **runtime version**.
-   `runtimeVersion` is a fixed string (currently `"3"` in `app.json`), NOT the fingerprint policy: with a local
+   `runtimeVersion` is a fixed string (currently `"2"` in `app.json`), NOT the fingerprint policy: with a local
    `ios/` folder the fingerprint never matched between the Xcode build and `eas update`.
    Only change it (e.g. to `"2"`) when you make a native change, then rebuild with the install script.
 3. `npm run update` bundles your JS + assets and uploads them to that channel.
@@ -76,6 +76,7 @@ scripts/install-ios.sh release
 
 - **Update not showing:** the update's runtime version must equal the installed build's.
   If you changed anything native, bump `runtimeVersion`, rebuild with the install script, then publish.
+  **The generated `ios/` folder keeps the old value** (`ios/Compound/Supporting/Expo.plist` → `EXUpdatesRuntimeVersion`); the install script does not regenerate it. After bumping `runtimeVersion`, run `npx expo prebuild -p ios --no-install` (or edit that plist) before `scripts/install-ios.sh`, otherwise the phone stays on the old runtime and never sees updates published for the new one. Check with `grep -A1 RuntimeVersion ios/Compound/Supporting/Expo.plist`.
 - **App won't open ("unable to verify"):** the 7 days expired. Run the install script.
 - **Nothing downloads:** `npx eas-cli whoami` (must be logged in to publish); phone needs internet.
 - **Mac asleep / different Wi-Fi:** wireless install fails. Use a cable.
