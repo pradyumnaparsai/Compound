@@ -3,6 +3,7 @@ import { Alert, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, Vi
 import { notifyError, onFail } from '@/components/notify';
 import { Screen } from '@/components/Screen';
 import { WeeklyChart } from '@/components/WeeklyChart';
+import { useOneTimeHint } from '@/hooks/useOneTimeHint';
 import { MONTH_NAMES, fromKey, todayKey } from '@/domain/date';
 import { weeklyAverages } from '@/domain/weight';
 import { useWeightStore } from '@/store/useWeightStore';
@@ -14,6 +15,7 @@ export default function WeightScreen() {
   const today = todayKey();
   const todayEntry = entries.find((e) => e.date === today);
   const [text, setText] = useState('');
+  const showHint = useOneTimeHint('delete-entry', entries.length > 0);
 
   const weeks = useMemo(() => weeklyAverages(entries, today, 12), [entries, today]);
   const latest = entries[entries.length - 1];
@@ -103,7 +105,7 @@ export default function WeightScreen() {
             </Pressable>
           );
         })}
-        {entries.length > 0 && (
+        {showHint && (
           <Text style={{ color: t.textDim, fontSize: 12, textAlign: 'center', marginTop: 6 }}>
             Long-press an entry to delete it
           </Text>

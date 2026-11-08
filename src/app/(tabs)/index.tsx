@@ -9,6 +9,7 @@ import { RoutineRow } from '@/components/RoutineRow';
 import { Screen } from '@/components/Screen';
 import { TaskAdder } from '@/components/TaskAdder';
 import { TaskRow } from '@/components/TaskRow';
+import { useOneTimeHint } from '@/hooks/useOneTimeHint';
 import { MONTH_NAMES, fromKey, todayKey } from '@/domain/date';
 import { completionKey, currentStreak, scheduledOn } from '@/domain/recurrence';
 import { dayProgress, overdueTasks, tasksOn } from '@/domain/task';
@@ -40,6 +41,7 @@ export default function TodayScreen() {
   const progress = dayProgress(doneCount, scheduled.length, todayTasks, overdue);
   const streak = useMemo(() => currentStreak(routines, done), [routines, done]);
   const d = fromKey(today);
+  const showReorderHint = useOneTimeHint('reorder', scheduled.length > 1);
 
   return (
     <Screen>
@@ -120,7 +122,7 @@ export default function TodayScreen() {
           ) : undefined
         }
       />
-      {scheduled.length > 1 && (
+      {showReorderHint && (
         <Text style={{ color: t.textDim, fontSize: 12, textAlign: 'center', paddingBottom: 12 }}>
           Long-press and drag to reorder
         </Text>

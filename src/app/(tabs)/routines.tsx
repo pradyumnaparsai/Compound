@@ -5,6 +5,7 @@ import { onFail } from '@/components/notify';
 import { Screen } from '@/components/Screen';
 import { VersionInfo } from '@/components/VersionInfo';
 import { goalLabel } from '@/domain/goal';
+import { useOneTimeHint } from '@/hooks/useOneTimeHint';
 import { recurrenceLabel } from '@/domain/recurrence';
 import { useRoutineStore } from '@/store/useRoutineStore';
 import { radius, useTheme } from '@/theme';
@@ -13,6 +14,7 @@ export default function RoutinesScreen() {
   const t = useTheme();
   const { routines, archiveRoutine } = useRoutineStore();
   const active = routines.filter((r) => !r.archivedAt);
+  const showHint = useOneTimeHint('archive-routine', active.length > 0);
 
   const confirmArchive = (id: string, title: string) =>
     Alert.alert('Archive routine?', `"${title}" will stop appearing from today. Past history is kept.`, [
@@ -63,7 +65,7 @@ export default function RoutinesScreen() {
           </Pressable>
         )}
       />
-      {active.length > 0 && (
+      {showHint && (
         <Text style={{ color: t.textDim, fontSize: 12, textAlign: 'center', paddingBottom: 12 }}>
           Long-press a routine to archive it
         </Text>
