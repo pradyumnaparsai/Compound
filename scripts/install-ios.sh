@@ -15,6 +15,10 @@ case "$MODE" in
   *) echo "usage: $0 [release|debug]" >&2; exit 2 ;;
 esac
 
+# Build Expo modules from source. The precompiled ExpoModulesWorklets xcframework links React.framework dynamically,
+# but React is not embedded in the app, so it crashes at launch with "Library not loaded: @rpath/React.framework/React".
+export EXPO_USE_PRECOMPILED_MODULES=0
+
 [ -d ios ] || npx expo prebuild -p ios --no-install
 (cd ios && pod install) # always: picks up newly added native modules (e.g. expo-speech)
 

@@ -3,6 +3,10 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.18.1 — 2026-11-08
+### Fixed
+- App crashed on launch after the v1.18.0 rebuild (`Library not loaded: @rpath/React.framework/React`). `scripts/install-ios.sh` now builds the Expo modules from source instead of using the precompiled ExpoModulesWorklets framework.
+
 ## v1.18.0 — 2026-11-08
 Needs a native rebuild (`scripts/install-ios.sh release`): the app asks Apple Health for permission to save workouts, and Hevy import adds a file picker.
 ### Added
