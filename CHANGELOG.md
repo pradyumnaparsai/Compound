@@ -3,6 +3,11 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.19.1 — 2026-11-09
+### Changed
+- Startup splash plays at normal speed and runs 3s (was 2s with the clip sped up 2x). The clip is trimmed to 3s.
+- Removed the Gemini watermark from the splash video (bottom-right corner).
+
 ## v1.19.0 — 2026-11-09
 Needs a native rebuild (`scripts/install-ios.sh release`): adds `expo-video` and bumps `runtimeVersion` to 4. Not published OTA.
 ### Changed
