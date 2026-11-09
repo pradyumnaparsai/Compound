@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
-import { router, useFocusEffect, type Href } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -22,7 +22,7 @@ import { InlineNotice } from '@/components/InlineNotice';
 import { MicButton } from '@/components/MicButton';
 import { notifyError, onFail } from '@/components/notify';
 import { Screen } from '@/components/Screen';
-import { todayKey } from '@/domain/date';
+import { dateParam, dayTitle, todayKey } from '@/domain/date';
 import { friendlyError } from '@/domain/errors';
 import { mergeTranscript } from '@/domain/voice';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
@@ -45,6 +45,7 @@ import { radius, useTheme, type Theme } from '@/theme';
 
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 const tap = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+const MEALS_TAB = '/(tabs)/meals' as Href;
 const done = () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 
 type Photo = { uri: string; base64: string; mimeType: string };
@@ -53,7 +54,8 @@ export default function LogMealScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const { saved, schedules, goals, add, saveTemplate, removeTemplate } = useMealStore();
-  const today = todayKey();
+  const params = useLocalSearchParams<{ date?: string | string[] }>();
+  const date = dateParam(params.date); // the day being logged (today unless opened from another day)
   const [hasAiKey, setHasAiKey] = useState<boolean | null>(null);
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [viewPhoto, setViewPhoto] = useState(false);
@@ -208,7 +210,7 @@ export default function LogMealScreen() {
     const fromPending = cur?.fromPending ?? false;
     if (photo && !pendingId) {
       try {
-        pendingId = savePending(photo.uri, { note: noteText, slot, date: today, mimeType: photo.mimeType }).id;
+        pendingId = savePending(photo.uri, { note: noteText, slot, date, mimeType: photo.mimeType }).id;
         setCur({ id: pendingId, fromPending: false });
         refreshPending();
       } catch (e) {
@@ -321,7 +323,7 @@ export default function LogMealScreen() {
     const tt = totalsOf(ingredients);
     return {
       id: newId(),
-      date: today,
+      date,
       slot: mealSlot,
       loggedAt: new Date().toISOString(),
       title: name.trim() || 'Meal',
@@ -356,6 +358,7 @@ export default function LogMealScreen() {
       const m = toMeal(title, draft.input_type, draft.meal_confidence_score, draft.ingredients, draft.assumptions_made, logAs?.slot);
       await add(logAs ? { ...m, date: logAs.date } : m);
       done();
+      router.dismissTo(MEALS_TAB); // back to the Meals tab to see the diary and totals update
       setDraft(null);
       clearPhoto();
       setNote('');
@@ -371,7 +374,7 @@ export default function LogMealScreen() {
     try {
       await saveTemplate(toTemplate(title, draft.ingredients));
       tap();
-      Alert.alert('Saved', `“${title.trim() || 'Meal'}” is in your quick-log chips.`);
+      Alert.alert('Saved', `“${title.trim() || 'Meal'}” is in My meals.`);
     } catch (e) {
       notifyError(e, 'Could not save favorite', 'Could not save this favorite. Please try again.');
     }
@@ -415,7 +418,9 @@ export default function LogMealScreen() {
 
         <View onLayout={(e) => (composerPos.current.wrap = e.nativeEvent.layout.y)}>
         {/* Which section new food goes into */}
-        <Text style={[styles.section, { color: t.textDim, marginTop: 20, marginBottom: 8 }]}>ADDING TO</Text>
+        <Text style={[styles.section, { color: t.textDim, marginTop: 20, marginBottom: 8 }]}>
+          {`ADDING TO${date !== todayKey() ? ` · ${dayTitle(date).toUpperCase()}` : ''}`}
+        </Text>
         <View style={styles.slotRow}>
           {MEAL_SLOTS.map((s) => (
             <Pressable
@@ -435,8 +440,8 @@ export default function LogMealScreen() {
         <View style={styles.actions}>
           <Action t={t} icon="camera-outline" label="Photo" onPress={() => pick('camera')} />
           <Action t={t} icon="images-outline" label="Library" onPress={() => pick('library')} />
-          <Action t={t} icon="search-outline" label="Search" onPress={() => { tap(); router.push(`/scan?slot=${slot}&mode=search` as Href); }} />
-          <Action t={t} icon="barcode-outline" label="Scan" onPress={() => { tap(); router.push(`/scan?slot=${slot}&mode=scan` as Href); }} />
+          <Action t={t} icon="search-outline" label="Search" onPress={() => { tap(); router.push(`/scan?slot=${slot}&mode=search&date=${date}` as Href); }} />
+          <Action t={t} icon="barcode-outline" label="Scan" onPress={() => { tap(); router.push(`/scan?slot=${slot}&mode=scan&date=${date}` as Href); }} />
         </View>
 
         {photo && (
@@ -681,15 +686,17 @@ export default function LogMealScreen() {
               onPress={save}
               style={[styles.primary, { backgroundColor: t.success, opacity: draft.ingredients.length ? 1 : 0.4 }]}
             >
-              <Text style={{ color: '#06231B', fontWeight: '800' }}>Add to {slotLabel(slot)}</Text>
+              <Text style={{ color: '#06231B', fontWeight: '800' }}>
+                Add to {slotLabel(logAs?.slot ?? slot)}{(logAs?.date ?? date) !== todayKey() ? ` · ${dayTitle(logAs?.date ?? date)}` : ''}
+              </Text>
             </Pressable>
           </View>
         )}
 
-        {/* Quick log */}
+        {/* My meals: tap one to review it and add it to the day */}
         <View style={{ marginTop: 20 }}>
           <View style={styles.quickHead}>
-            <Text style={[styles.section, { color: t.textDim, marginBottom: 0 }]}>QUICK LOG</Text>
+            <Text style={[styles.section, { color: t.textDim, marginBottom: 0 }]}>MY MEALS</Text>
             <Pressable
               onPress={() => router.push('/meal-builder' as Href)}
               hitSlop={10}
@@ -705,13 +712,16 @@ export default function LogMealScreen() {
               Combine foods you repeat (e.g. a protein shake) into one meal, then log it in a tap or on a schedule.
             </Text>
           ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-              {saved.map((m) => {
+            <View style={[styles.card, { backgroundColor: t.surface, borderColor: t.border, paddingVertical: 6 }]}>
+              {saved.map((m, i) => {
                 const sched = schedules.find((s) => s.savedMealId === m.id && s.enabled);
                 return (
                   <Pressable
                     key={m.id}
-                    onPress={() => router.push(`/saved-meal?id=${m.id}` as Href)}
+                    onPress={() => {
+                      tap();
+                      router.push(`/saved-meal?id=${m.id}&date=${date}` as Href);
+                    }}
                     onLongPress={() =>
                       Alert.alert(m.title, sched ? `Auto-logs ${formatDays(sched.days).toLowerCase()} at ${formatTime(sched.time)}.` : undefined, [
                         { text: 'Edit', onPress: () => router.push(`/meal-builder?id=${m.id}` as Href) },
@@ -727,20 +737,25 @@ export default function LogMealScreen() {
                         { text: 'Cancel', style: 'cancel' },
                       ])
                     }
-                    style={({ pressed }) => [
-                      styles.chip,
-                      { backgroundColor: t.surface, borderColor: t.border, opacity: pressed ? 0.7 : 1 },
-                    ]}
+                    style={[styles.mealRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.border }]}
+                    accessibilityLabel={`Open ${m.title}`}
                   >
-                    <Ionicons name={sched ? 'time-outline' : 'add'} size={14} color={t.accent} />
-                    <Text style={{ color: t.text, fontSize: 14, fontWeight: '600', maxWidth: 140 }} numberOfLines={1}>
-                      {m.title}
-                    </Text>
-                    <Text style={{ color: t.textDim, fontSize: 12 }}>{m.calories}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: t.text, fontSize: 16, fontWeight: '600' }} numberOfLines={1}>
+                        {m.title}
+                      </Text>
+                      <Text style={{ color: t.textDim, fontSize: 12 }} numberOfLines={1}>
+                        {m.ingredients.length} {m.ingredients.length === 1 ? 'item' : 'items'} · {m.proteinG} g protein
+                        {sched ? ` · ${formatDays(sched.days)} ${formatTime(sched.time)}` : ''}
+                      </Text>
+                    </View>
+                    {sched && <Ionicons name="time-outline" size={14} color={t.accent} />}
+                    <Text style={{ color: t.text, fontSize: 15, fontWeight: '700' }}>{m.calories}</Text>
+                    <Ionicons name="chevron-forward" size={16} color={t.textDim} />
                   </Pressable>
                 );
               })}
-            </ScrollView>
+            </View>
           )}
         </View>
 
@@ -828,5 +843,5 @@ const styles = StyleSheet.create({
   quickHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   newMeal: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   chips: { gap: 8, paddingRight: 8 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 10 },
+  mealRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14 },
 });

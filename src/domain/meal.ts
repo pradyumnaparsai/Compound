@@ -208,6 +208,12 @@ export function withoutIngredient(meal: Meal, index: number): Meal | null {
   return { ...meal, ingredients, ...totalsOf(ingredients) };
 }
 
+/** Meal with a new title (trimmed; blank keeps the old one). Never mutates. */
+export function renameMeal(meal: Meal, title: string): Meal {
+  const next = title.replace(/\s+/g, ' ').trim().slice(0, 80);
+  return !next || next === meal.title ? meal : { ...meal, title: next };
+}
+
 /** Diary entry from an AI analysis (totals recomputed from the ingredients). */
 export function mealFromAnalysis(a: MealAnalysis, slot: MealSlot, date: string, now: Date, id: string): Meal {
   return {

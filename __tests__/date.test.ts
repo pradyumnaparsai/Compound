@@ -1,4 +1,4 @@
-import { addDays, fromKey, monthGrid, toKey, weekday } from '@/domain/date';
+import { addDays, dateParam, dayTitle, fromKey, isDateKey, monthGrid, toKey, weekday } from '@/domain/date';
 
 describe('date helpers', () => {
   it('round-trips keys in local time', () => {
@@ -23,5 +23,31 @@ describe('date helpers', () => {
     expect(grid.every((row) => row.length === 7)).toBe(true);
     expect(grid.flat().filter(Boolean)).toHaveLength(30);
     expect(grid.flat().slice(-1)[0]).toBeNull();
+  });
+});
+
+describe('date params', () => {
+  afterEach(() => jest.useRealTimers());
+
+  it('validates real date keys only', () => {
+    expect(isDateKey('2026-11-09')).toBe(true);
+    expect(isDateKey('2026-02-31')).toBe(false);
+    expect(isDateKey('2026-2-3')).toBe(false);
+    expect(isDateKey(undefined)).toBe(false);
+  });
+
+  it('falls back to today for missing or invalid params', () => {
+    jest.useFakeTimers({ now: new Date(2026, 10, 9, 12) });
+    expect(dateParam(undefined)).toBe('2026-11-09');
+    expect(dateParam('garbage')).toBe('2026-11-09');
+    expect(dateParam('2026-11-10')).toBe('2026-11-10');
+    expect(dateParam(['2026-11-08', 'x'])).toBe('2026-11-08');
+  });
+
+  it('titles days relative to today', () => {
+    expect(dayTitle('2026-11-09', '2026-11-09')).toBe('Today');
+    expect(dayTitle('2026-11-08', '2026-11-09')).toBe('Yesterday');
+    expect(dayTitle('2026-11-10', '2026-11-09')).toBe('Tomorrow');
+    expect(dayTitle('2026-11-20', '2026-11-09')).not.toMatch(/Today|Tomorrow|Yesterday/);
   });
 });

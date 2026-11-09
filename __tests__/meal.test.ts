@@ -7,6 +7,7 @@ import {
   mealFromSaved,
   normalizeIngredient,
   parseAnalysis,
+  renameMeal,
   slotForTime,
   totalsOf,
   withoutIngredient,
@@ -230,5 +231,41 @@ describe('withoutIngredient', () => {
     withoutIngredient(m, 0);
     expect(m.ingredients).toHaveLength(3);
     expect(m.calories).toBe(175);
+  });
+});
+
+describe('renameMeal', () => {
+  const m = (): Meal => {
+    const ingredients = [ing()];
+    return {
+      id: 'x',
+      date: '2026-11-08',
+      slot: 'lunch',
+      loggedAt: '2026-11-08T12:00:00.000Z',
+      title: 'Wrong dish',
+      inputType: 'image_only',
+      confidence: 7,
+      ingredients,
+      ...totalsOf(ingredients),
+      assumptions: [],
+    };
+  };
+
+  it('renames with trimmed, collapsed whitespace without mutating', () => {
+    const orig = m();
+    const next = renameMeal(orig, '  Rajma   Rice ');
+    expect(next.title).toBe('Rajma Rice');
+    expect(orig.title).toBe('Wrong dish');
+    expect(next.ingredients).toBe(orig.ingredients);
+  });
+
+  it('keeps the old title for blank input and returns the same object when unchanged', () => {
+    const orig = m();
+    expect(renameMeal(orig, '   ')).toBe(orig);
+    expect(renameMeal(orig, 'Wrong dish')).toBe(orig);
+  });
+
+  it('caps very long titles', () => {
+    expect(renameMeal(m(), 'x'.repeat(200)).title).toHaveLength(80);
   });
 });

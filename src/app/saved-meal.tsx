@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { notifyError } from '@/components/notify';
 import { Screen } from '@/components/Screen';
-import { todayKey } from '@/domain/date';
+import { dateParam, dayTitle, todayKey } from '@/domain/date';
 import { MEAL_SLOTS, mealFromSaved, slotForTime, slotLabel, totalsOf, type MealSlot } from '@/domain/meal';
 import { formatDays, formatTime } from '@/domain/mealSchedule';
 import { useMealStore } from '@/store/useMealStore';
@@ -13,10 +13,11 @@ import { radius, useTheme } from '@/theme';
 
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
-/** A saved meal: review what's in it, pick Breakfast/Lunch/Snacks/Dinner, then add it to today's diary. */
+/** A saved meal: review what's in it, pick Breakfast/Lunch/Snacks/Dinner, then add it to the day's diary. */
 export default function SavedMealScreen() {
   const t = useTheme();
-  const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const params = useLocalSearchParams<{ id?: string | string[]; date?: string | string[] }>();
+  const date = dateParam(params.date);
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const { saved, schedules, add, removeTemplate } = useMealStore();
   const meal = saved.find((m) => m.id === id);
@@ -28,9 +29,9 @@ export default function SavedMealScreen() {
     if (!meal || busy) return;
     setBusy(true);
     try {
-      await add(mealFromSaved(meal, slot, todayKey(), new Date(), newId()));
+      await add(mealFromSaved(meal, slot, date, new Date(), newId()));
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      router.back();
+      router.dismissTo('/(tabs)/meals' as Href); // land on the Meals tab with the day updated
     } catch (e) {
       notifyError(e, 'Could not log', 'Could not log this meal. Please try again.');
       setBusy(false);
@@ -135,7 +136,9 @@ export default function SavedMealScreen() {
             style={[styles.primary, { backgroundColor: t.success, opacity: busy ? 0.4 : 1 }]}
             accessibilityLabel={`Add to ${slotLabel(slot)}`}
           >
-            <Text style={{ color: '#06231B', fontWeight: '800', fontSize: 16 }}>Add to {slotLabel(slot)}</Text>
+            <Text style={{ color: '#06231B', fontWeight: '800', fontSize: 16 }}>
+              Add to {slotLabel(slot)}{date !== todayKey() ? ` · ${dayTitle(date)}` : ''}
+            </Text>
           </Pressable>
         </>
       )}

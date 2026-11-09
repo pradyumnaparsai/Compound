@@ -122,7 +122,6 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="routine-form" options={{ presentation: 'modal' }} />
             <Stack.Screen name="scan" options={{ presentation: 'modal' }} />
-            <Stack.Screen name="diary" />
             <Stack.Screen name="log-meal" />
             <Stack.Screen name="saved-meal" />
             <Stack.Screen name="meal-builder" options={{ presentation: 'modal' }} />

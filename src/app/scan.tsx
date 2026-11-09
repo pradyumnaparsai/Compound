@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -17,7 +17,7 @@ import { InlineNotice } from '@/components/InlineNotice';
 import { MicButton } from '@/components/MicButton';
 import { notifyError } from '@/components/notify';
 import { Screen } from '@/components/Screen';
-import { todayKey } from '@/domain/date';
+import { dateParam, dayTitle, todayKey } from '@/domain/date';
 import { friendlyError } from '@/domain/errors';
 import { foodTitle, scaleFood, type Food } from '@/domain/food';
 import { isMealSlot, slotForTime, slotLabel, totalsOf, type Meal } from '@/domain/meal';
@@ -47,7 +47,8 @@ export default function ScanScreen() {
   const { add, saveTemplate } = useMealStore();
   const [perm, requestPerm] = useCameraPermissions();
   const locked = useRef(false);
-  const params = useLocalSearchParams<{ slot?: string | string[]; mode?: string | string[]; target?: string | string[] }>();
+  const params = useLocalSearchParams<{ slot?: string | string[]; mode?: string | string[]; target?: string | string[]; date?: string | string[] }>();
+  const date = dateParam(params.date);
   const slotParam = Array.isArray(params.slot) ? params.slot[0] : params.slot;
   // target=builder: the food is added to the meal being built instead of being logged.
   const toBuilder = (Array.isArray(params.target) ? params.target[0] : params.target) === 'builder';
@@ -285,7 +286,7 @@ export default function ScanScreen() {
     try {
       const meal: Meal = {
         id: newId(),
-        date: todayKey(),
+        date,
         slot,
         loggedAt: new Date().toISOString(),
         title: ing.name,
@@ -316,7 +317,7 @@ export default function ScanScreen() {
           createdAt: new Date().toISOString(),
         });
       }
-      router.back();
+      router.dismissTo('/(tabs)/meals' as Href); // land on the Meals tab with the day updated
     } catch (e) {
       notifyError(e, 'Could not log', 'Could not log this food. Please try again.');
     }
@@ -511,7 +512,7 @@ export default function ScanScreen() {
                   onPress={() => log(false)}
                   style={[styles.btn, { backgroundColor: t.success, opacity: valid ? 1 : 0.4, marginTop: 14 }]}
                 >
-                  <Text style={{ color: '#06231B', fontWeight: '800' }}>Log to {slotLabel(slot)}</Text>
+                  <Text style={{ color: '#06231B', fontWeight: '800' }}>Log to {slotLabel(slot)}{date !== todayKey() ? ` · ${dayTitle(date)}` : ''}</Text>
                 </Pressable>
                 <Pressable
                   disabled={!valid}

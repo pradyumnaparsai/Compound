@@ -41,3 +41,22 @@ export const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
+
+/** True for a real local YYYY-MM-DD key (rejects 2026-02-31 and junk). */
+export function isDateKey(v: unknown): v is string {
+  return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && toKey(fromKey(v)) === v;
+}
+
+/** A `?date=` route param as a valid key, falling back to today. */
+export function dateParam(v: string | string[] | undefined): string {
+  const s = Array.isArray(v) ? v[0] : v;
+  return isDateKey(s) ? s : todayKey();
+}
+
+/** "Today" / "Yesterday" / "Tomorrow" / "Mon, Nov 9" */
+export function dayTitle(key: string, today: string = todayKey()): string {
+  if (key === today) return 'Today';
+  if (key === addDays(today, -1)) return 'Yesterday';
+  if (key === addDays(today, 1)) return 'Tomorrow';
+  return fromKey(key).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+}
