@@ -3,10 +3,8 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import {
-  SPLASH_CLIP_SECONDS,
   SPLASH_READY_TIMEOUT_MS,
   SPLASH_SKIP_FADE_MS,
-  splashPlaybackRate,
   splashTimeline,
 } from '@/domain/splash';
 import { darkTheme } from '@/theme';
@@ -16,7 +14,7 @@ const VIDEO = require('../../assets/BruceLee.mov');
 const BACKDROP = '#1C1208';
 
 /**
- * Full-screen intro shown once per launch: a muted ~2s clip (sped up to fit) with the "COMPOUND" title,
+ * Full-screen intro shown once per launch: a muted 3s clip with the "COMPOUND" title,
  * then the whole splash fades out onto the home screen. Tap to skip.
  */
 export function StartupSplash() {
@@ -40,7 +38,6 @@ function SplashContent({ onDone }: { onDone: () => void }) {
     p.loop = false;
     p.audioMixingMode = 'mixWithOthers';
     p.showNowPlayingNotification = false;
-    p.playbackRate = splashPlaybackRate(SPLASH_CLIP_SECONDS, splashTimeline(false).total);
   });
 
   const finish = useCallback(() => {
