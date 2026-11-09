@@ -6,7 +6,7 @@ export const GEMINI_MODEL_STORE = 'gemini.model';
 export const GROQ_KEY_STORE = 'groq.apiKey';
 export const GROQ_MODEL_STORE = 'groq.model';
 
-// Default models. Both are editable in the Meal settings screen.
+// Default models. Both are editable in the AI settings screen.
 export const DEFAULT_MODEL = 'gemini-3.8-flash';
 export const DEFAULT_GROQ_MODEL = 'qwen/qwen3.8-27b'; // per Groq vision docs
 

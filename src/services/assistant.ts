@@ -40,7 +40,7 @@ export async function askAssistant({ text, context, history, now, signal }: Ask)
   ensureActive();
   const [groqKey, geminiKey] = await Promise.all([getGroqKey(), getApiKey()]);
   ensureActive();
-  if (!groqKey && !geminiKey) throw new UserError('Add a Groq or Gemini API key in Meal settings to use Atomic.');
+  if (!groqKey && !geminiKey) throw new UserError('Add a Groq or Gemini API key in Settings (Routines tab) to use Atomic.');
 
   const recent = normalizeHistory(history, HISTORY_TURNS * 2);
   const targets: { label: string; call: () => Promise<CallResult> }[] = [];

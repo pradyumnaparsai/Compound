@@ -7,6 +7,7 @@ import {
   mealFromSaved,
   normalizeIngredient,
   parseAnalysis,
+  parseGoalsInput,
   renameMeal,
   slotForTime,
   totalsOf,
@@ -267,5 +268,24 @@ describe('renameMeal', () => {
 
   it('caps very long titles', () => {
     expect(renameMeal(m(), 'x'.repeat(200)).title).toHaveLength(80);
+  });
+});
+
+describe('parseGoalsInput', () => {
+  it('all blank clears the goals', () => {
+    expect(parseGoalsInput('', ' ', '', '')).toBeNull();
+  });
+  it('accepts calories + protein with derived carbs/fat', () => {
+    expect(parseGoalsInput('2200', '150', '', '')).toEqual({ calories: 2200, proteinG: 150, carbsG: undefined, fatG: undefined });
+  });
+  it('accepts explicit carbs/fat and decimal commas', () => {
+    expect(parseGoalsInput('2200,4', '150', '250', '70')).toEqual({ calories: 2200, proteinG: 150, carbsG: 250, fatG: 70 });
+  });
+  it('rejects missing/zero/out-of-range values', () => {
+    expect(parseGoalsInput('', '150', '', '')).toBe('invalid');
+    expect(parseGoalsInput('2200', '0', '', '')).toBe('invalid');
+    expect(parseGoalsInput('20000', '150', '', '')).toBe('invalid');
+    expect(parseGoalsInput('2200', '150', 'abc', '')).toBe('invalid');
+    expect(parseGoalsInput('2200', '150', '', '-5')).toBe('invalid');
   });
 });

@@ -29,7 +29,11 @@ export type Root = 'foot' | 'hip' | 'hand';
 export type Scenery = 'none' | 'bench' | 'seat' | 'bar';
 export type Load = 'hand' | 'shoulder' | 'hip' | 'knee' | 'none';
 
-export type Pattern = { root: Root; a: Pose; b: Pose; scenery?: Scenery; load?: Load; floor?: boolean };
+export type Grip = 'bar' | 'handle' | 'rope';
+/** A cable machine: `at` is the pulley (same units as the figure, relative to the root joint); the line runs to the hand. */
+export type Cable = { at: [number, number]; grip: Grip };
+
+export type Pattern = { root: Root; a: Pose; b: Pose; scenery?: Scenery; load?: Load; floor?: boolean; cable?: Cable };
 
 const BASE: Pose = { torso: 180, uarm: 0, farm: 0, thigh: 0, shin: 0 };
 const P = (o: Partial<Pose>): Pose => ({ ...BASE, ...o });
@@ -54,11 +58,11 @@ export const PATTERNS = {
   backExtension: { root: 'hip', scenery: 'none', a: P({ torso: 25, thigh: -78, shin: -78 }), b: P({ torso: 100, thigh: -78, shin: -78 }) },
 
   bench: { root: 'hip', scenery: 'bench', load: 'hand', a: P({ ...LYING, uarm: 180, farm: 180 }), b: P({ ...LYING, uarm: 8, farm: 180 }) },
-  inclineBench: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ torso: 228, thigh: 88, shin: 0, uarm: 180, farm: 180 }), b: P({ torso: 228, thigh: 88, shin: 0, uarm: -12, farm: 178 }) },
+  inclineBench: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ torso: 228, thigh: 88, shin: 0, uarm: 180, farm: 180 }), b: P({ torso: 228, thigh: 88, shin: 0, uarm: 55, farm: 178 }) },
   fly: { root: 'hip', scenery: 'bench', load: 'hand', a: P({ ...LYING, uarm: 180, farm: 180 }), b: P({ ...LYING, uarm: 28, farm: 18 }) },
-  crossover: { root: 'foot', load: 'hand', floor: true, a: P({ uarm: 135, farm: 135 }), b: P({ torso: 168, uarm: 28, farm: 18 }) },
+  crossover: { root: 'foot', cable: { at: [-0.3, -4.5], grip: 'handle' }, floor: true, a: P({ uarm: 135, farm: 135 }), b: P({ torso: 168, uarm: 28, farm: 18 }) },
   // Seat back reclined about 25°, handles pushed up and forward.
-  inclineMachinePress: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ torso: 205, thigh: 88, shin: 0, uarm: 118, farm: 118 }), b: P({ torso: 205, thigh: 88, shin: 0, uarm: 10, farm: 112 }) },
+  inclineMachinePress: { root: 'hip', scenery: 'seat', load: 'none', a: P({ torso: 205, thigh: 88, shin: 0, uarm: 118, farm: 118 }), b: P({ torso: 205, thigh: 88, shin: 0, uarm: 45, farm: 112 }) },
   // Pads at forearm height: elbows lead, hands come together in front of the chest.
   pecDeck: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ ...SEATED, uarm: 55, farm: 140 }), b: P({ ...SEATED, uarm: 100, farm: 178 }) },
   machinePress: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ ...SEATED, uarm: 92, farm: 92 }), b: P({ ...SEATED, uarm: -22, farm: 98 }) },
@@ -67,28 +71,35 @@ export const PATTERNS = {
 
   ohp: { root: 'foot', load: 'hand', floor: true, a: P({ uarm: 15, farm: 175 }), b: P({ uarm: 180, farm: 180 }) },
   ohpSeated: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ ...SEATED, uarm: 15, farm: 175 }), b: P({ ...SEATED, uarm: 180, farm: 180 }) },
+  cableRaise: { root: 'foot', cable: { at: [0.5, 0.05], grip: 'handle' }, floor: true, a: P({}), b: P({ uarm: 82, farm: 90 }) },
   raise: { root: 'foot', load: 'hand', floor: true, a: P({}), b: P({ uarm: 82, farm: 90 }) },
   // Seated facing the pad, arms swung out and back at shoulder height (the side-on view shows a small sweep).
   reverseFlyMachine: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ torso: 170, thigh: 88, shin: 0, uarm: 98, farm: 98 }), b: P({ torso: 170, thigh: 88, shin: 0, uarm: 78, farm: 78 }) },
+  rearFlyCable: { root: 'foot', cable: { at: [1.0, 0.05], grip: 'handle' }, floor: true, a: P({ ...BENT, uarm: 5, farm: 5 }), b: P({ ...BENT, uarm: -65, farm: -45 }) },
   rearFly: { root: 'foot', load: 'hand', floor: true, a: P({ ...BENT }), b: P({ ...BENT, uarm: -65, farm: -45 }) },
   shrug: { root: 'foot', load: 'hand', floor: true, a: P({}), b: P({ tl: 1.32 }) },
   upright: { root: 'foot', load: 'hand', floor: true, a: P({}), b: P({ uarm: 150, farm: 10 }) },
 
   row: { root: 'foot', load: 'hand', floor: true, a: P({ ...BENT }), b: P({ ...BENT, uarm: -72, farm: -8 }) },
-  seatedRow: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ torso: 190, thigh: 82, shin: 12, uarm: 90, farm: 90 }), b: P({ torso: 190, thigh: 82, shin: 12, uarm: -95, farm: 85 }) },
+  seatedRow: { root: 'hip', scenery: 'seat', cable: { at: [2.4, 0.4], grip: 'handle' }, a: P({ torso: 190, thigh: 82, shin: 12, uarm: 72, farm: 78 }), b: P({ torso: 190, thigh: 82, shin: 12, uarm: -95, farm: 85 }) },
+  machineRow: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ torso: 190, thigh: 82, shin: 12, uarm: 90, farm: 90 }), b: P({ torso: 190, thigh: 82, shin: 12, uarm: -95, farm: 85 }) },
+  facePull: { root: 'hip', scenery: 'seat', cable: { at: [2.4, -1.0], grip: 'rope' }, a: P({ torso: 190, thigh: 82, shin: 12, uarm: 90, farm: 90 }), b: P({ torso: 190, thigh: 82, shin: 12, uarm: -95, farm: 85 }) },
   pullup: { root: 'hand', scenery: 'bar', a: P({ shin: -20, uarm: 180, farm: 180 }), b: P({ torso: 175, thigh: -10, shin: -30, uarm: 25, farm: 185 }) },
   hang: { root: 'hand', scenery: 'bar', a: P({ shin: -12, uarm: 180, farm: 180 }), b: P({ shin: -12, uarm: 180, farm: 180 }) },
-  pulldown: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ torso: 190, thigh: 88, shin: 0, uarm: 180, farm: 180 }), b: P({ torso: 192, thigh: 88, shin: 0, uarm: 22, farm: 170 }) },
+  pulldown: { root: 'hip', scenery: 'seat', cable: { at: [0.05, -3.2], grip: 'bar' }, a: P({ torso: 190, thigh: 88, shin: 0, uarm: 180, farm: 180 }), b: P({ torso: 192, thigh: 88, shin: 0, uarm: 22, farm: 170 }) },
   hangingLegRaise: { root: 'hand', scenery: 'bar', a: P({ uarm: 180, farm: 180, thigh: 0, shin: 0 }), b: P({ uarm: 180, farm: 180, torso: 190, thigh: 86, shin: 86 }) },
 
+  cableCurl: { root: 'foot', cable: { at: [1.2, -0.1], grip: 'bar' }, floor: true, a: P({}), b: P({ uarm: 5, farm: 148 }) },
   curl: { root: 'foot', load: 'hand', floor: true, a: P({}), b: P({ uarm: 5, farm: 148 }) },
   inclineCurl: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ torso: 228, thigh: 88, shin: 0 }), b: P({ torso: 228, thigh: 88, shin: 0, uarm: 5, farm: 148 }) },
   preacher: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ torso: 172, thigh: 88, shin: 0, uarm: 50, farm: 52 }), b: P({ torso: 172, thigh: 88, shin: 0, uarm: 50, farm: 172 }) },
   // Standing, bar held behind the thighs; the hands roll the bar up toward the back.
   behindBackWristCurl: { root: 'foot', load: 'hand', floor: true, a: P({ uarm: -4, farm: -4, hand: -4 }), b: P({ uarm: -4, farm: -4, hand: -110 }) },
   wristCurl: { root: 'hip', scenery: 'seat', load: 'hand', a: P({ torso: 150, thigh: 88, shin: 0, uarm: 28, farm: 86, hand: 30 }), b: P({ torso: 150, thigh: 88, shin: 0, uarm: 28, farm: 86, hand: 150 }) },
-  pushdown: { root: 'foot', load: 'hand', floor: true, a: P({ torso: 175, uarm: 5, farm: 100 }), b: P({ torso: 175, uarm: 5, farm: 0 }) },
+  pushdown: { root: 'foot', cable: { at: [0.9, -4.0], grip: 'bar' }, floor: true, a: P({ torso: 175, uarm: 5, farm: 100 }), b: P({ torso: 175, uarm: 5, farm: 0 }) },
+  ropePushdown: { root: 'foot', cable: { at: [0.9, -4.0], grip: 'rope' }, floor: true, a: P({ torso: 175, uarm: 5, farm: 100 }), b: P({ torso: 175, uarm: 5, farm: 0 }) },
   skull: { root: 'hip', scenery: 'bench', load: 'hand', a: P({ ...LYING, uarm: 184, farm: 184 }), b: P({ ...LYING, uarm: 184, farm: 252 }) },
+  cableOverheadExt: { root: 'foot', cable: { at: [-1.5, -0.6], grip: 'rope' }, floor: true, a: P({ uarm: 180, farm: 180 }), b: P({ uarm: 180, farm: 330 }) },
   overheadExt: { root: 'foot', load: 'hand', floor: true, a: P({ uarm: 180, farm: 180 }), b: P({ uarm: 180, farm: 330 }) },
   dip: { root: 'hand', scenery: 'bar', a: P({ torso: 175, thigh: 5, shin: -35, uarm: 0, farm: 0 }), b: P({ torso: 150, thigh: 5, shin: -35, uarm: -120, farm: 0 }) },
 
@@ -105,7 +116,7 @@ export const PATTERNS = {
   stepUp: { root: 'foot', load: 'hand', floor: true, a: P({ thigh: 75, shin: -20, thigh2: 20, shin2: 10 }), b: P({ thigh: 0, shin: 0, thigh2: 10, shin2: 0 }) },
 
   crunch: { root: 'hip', scenery: 'none', a: P({ torso: 270, thigh: 120, shin: 10, uarm: 250, farm: 90 }), b: P({ torso: 235, thigh: 120, shin: 10, uarm: 215, farm: 55 }) },
-  cableCrunch: { root: 'hip', scenery: 'none', load: 'hand', a: P({ torso: 185, thigh: 0, shin: -90, uarm: 150, farm: 20 }), b: P({ torso: 118, thigh: 0, shin: -90, uarm: 83, farm: -47 }) },
+  cableCrunch: { root: 'hip', scenery: 'none', cable: { at: [0.6, -3.3], grip: 'rope' }, a: P({ torso: 185, thigh: 0, shin: -90, uarm: 150, farm: 20 }), b: P({ torso: 118, thigh: 0, shin: -90, uarm: 83, farm: -47 }) },
   // Back against the pad, forearms on the rests: legs hang, then swing up to horizontal.
   parallelBarLegRaise: { root: 'hip', scenery: 'bench', a: P({ torso: 180, uarm: 0, farm: 90, thigh: 0, shin: 0 }), b: P({ torso: 184, uarm: 0, farm: 90, thigh: 88, shin: 82 }) },
   // Seated ab machine: crunch forward from the waist, arms move with the torso.
@@ -130,15 +141,15 @@ const SLUG_PATTERN: Record<string, PatternName> = {
   'incline-barbell-bench-press': 'inclineBench', 'dumbbell-fly': 'fly', 'machine-chest-press': 'machinePress', 'pec-deck': 'pecDeck',
   'cable-crossover': 'crossover', 'push-up': 'pushup', 'chest-dip': 'dip', 'triceps-dip': 'dip', 'assisted-dip': 'dip',
   deadlift: 'deadlift', 'sumo-deadlift': 'deadlift', 'romanian-deadlift': 'rdl', 'good-morning': 'goodMorning', 'back-extension': 'backExtension',
-  'barbell-row': 'row', 'one-arm-dumbbell-row': 'row', 'dumbbell-row': 'row', 'seated-cable-row': 'seatedRow', 'face-pull': 'seatedRow',
+  'barbell-row': 'row', 'one-arm-dumbbell-row': 'row', 'dumbbell-row': 'row', 'seated-cable-row': 'seatedRow', 'face-pull': 'facePull',
   'pull-up': 'pullup', 'chin-up': 'pullup', 'assisted-pull-up': 'pullup', 'lat-pulldown': 'pulldown', 'dead-hang': 'hang',
   'overhead-press': 'ohp', 'dumbbell-shoulder-press': 'ohpSeated', 'machine-shoulder-press': 'ohpSeated', 'arnold-press': 'ohpSeated',
   'lateral-raise': 'raise', 'rear-delt-fly': 'rearFly', 'reverse-pec-deck': 'reverseFlyMachine', 'barbell-shrug': 'shrug', 'dumbbell-shrug': 'shrug', 'upright-row': 'upright',
-  'barbell-curl': 'curl', 'dumbbell-curl': 'curl', 'hammer-curl': 'curl', 'ez-bar-curl': 'curl', 'cable-curl': 'curl', 'reverse-curl': 'curl',
+  'barbell-curl': 'curl', 'dumbbell-curl': 'curl', 'hammer-curl': 'curl', 'ez-bar-curl': 'curl', 'cable-curl': 'cableCurl', 'reverse-curl': 'curl',
   'incline-dumbbell-curl': 'inclineCurl', 'preacher-curl': 'preacher', 'machine-preacher-curl': 'preacher', 'concentration-curl': 'preacher',
   'seated-palms-up-wrist-curl': 'wristCurl', 'seated-palms-down-wrist-curl': 'wristCurl', 'barbell-wrist-curl': 'wristCurl',
-  'triceps-pushdown': 'pushdown', 'rope-triceps-pushdown': 'pushdown', 'skull-crusher': 'skull',
-  'overhead-triceps-extension': 'overheadExt', 'cable-overhead-triceps-extension': 'overheadExt',
+  'triceps-pushdown': 'pushdown', 'rope-triceps-pushdown': 'ropePushdown', 'skull-crusher': 'skull',
+  'overhead-triceps-extension': 'overheadExt', 'cable-overhead-triceps-extension': 'cableOverheadExt',
   'back-squat': 'squat', 'front-squat': 'frontSquat', 'goblet-squat': 'goblet', 'hack-squat': 'hackSquat', 'wall-sit': 'wallSit',
   'leg-press': 'legPress', 'walking-lunge': 'lunge', 'bulgarian-split-squat': 'lunge', 'step-up': 'stepUp',
   'leg-extension': 'legExt', 'leg-curl': 'legCurl', 'hip-thrust': 'glute', 'glute-bridge': 'glute',
@@ -152,9 +163,9 @@ const SLUG_PATTERN: Record<string, PatternName> = {
 export const HEVY_SLUG_PATTERN: Record<string, PatternName> = {
   'back-extension-weighted': 'backExtension', 'behind-back-wrist-curl': 'behindBackWristCurl', 'crunch-machine': 'crunchMachine',
   'incline-chest-press-machine': 'inclineMachinePress', 'lat-pulldown-machine': 'pulldown', 'lat-pulldown-close-grip': 'pulldown',
-  'leg-raise-parallel-bars': 'parallelBarLegRaise', 'lying-leg-curl-machine': 'lyingLegCurl', 'rear-delt-fly-cable': 'rearFly',
-  'reverse-crunch': 'reverseCrunch', 'romanian-deadlift-dumbbell': 'rdl', 'seated-row-machine': 'seatedRow',
-  'single-arm-lateral-raise-cable': 'raise', 'single-leg-calf-raise-machine': 'calf', 'split-squat-dumbbell': 'lunge',
+  'leg-raise-parallel-bars': 'parallelBarLegRaise', 'lying-leg-curl-machine': 'lyingLegCurl', 'rear-delt-fly-cable': 'rearFlyCable',
+  'reverse-crunch': 'reverseCrunch', 'romanian-deadlift-dumbbell': 'rdl', 'seated-row-machine': 'machineRow',
+  'single-arm-lateral-raise-cable': 'cableRaise', 'single-leg-calf-raise-machine': 'calf', 'split-squat-dumbbell': 'lunge',
   'squat-machine': 'hackSquat', 't-bar-row': 'row',
 };
 
@@ -180,7 +191,7 @@ const dir = (deg: number): Pt => [Math.sin(rad(deg)), Math.cos(rad(deg))];
 const add = (p: Pt, d: Pt, len: number): Pt => [p[0] + d[0] * len, p[1] + d[1] * len];
 const sub = (p: Pt, d: Pt, len: number): Pt => [p[0] - d[0] * len, p[1] - d[1] * len];
 
-export const SEGMENTS = ['torso', 'uarm', 'farm', 'hand', 'thigh', 'shin', 'foot', 'thigh2', 'shin2', 'foot2', 'floor', 'bench', 'seat', 'bar'] as const;
+export const SEGMENTS = ['torso', 'uarm', 'farm', 'hand', 'thigh', 'shin', 'foot', 'thigh2', 'shin2', 'foot2', 'floor', 'bench', 'seat', 'bar', 'pulley', 'cable', 'grip', 'grip2'] as const;
 export type SegKey = (typeof SEGMENTS)[number];
 type Seg = [number, number, number, number]; // x1,y1,x2,y2 (y grows downward)
 
@@ -227,6 +238,29 @@ function solve(root: Root, p: Pose): Solved {
   return { segs, head, load: null };
 }
 
+const GRIP_LEN: Record<Grip, number> = { bar: 0.8, handle: 0.32, rope: 0.34 };
+
+/** Adds the pulley, the cable (pulley → hand) and the attachment to a solved frame. */
+function addCable(s: Solved, c: Cable) {
+  const hand = s.segs.hand as Seg;
+  const tip: Pt = [hand[2], hand[3]];
+  const len = Math.hypot(tip[0] - c.at[0], tip[1] - c.at[1]) || 1;
+  const u: Pt = [(tip[0] - c.at[0]) / len, (tip[1] - c.at[1]) / len]; // pulley → hand
+  s.segs.pulley = [c.at[0] - 0.08, c.at[1], c.at[0] + 0.08, c.at[1]];
+  s.segs.cable = [c.at[0], c.at[1], tip[0], tip[1]];
+  const turn = (v: Pt, deg: number): Pt => [v[0] * Math.cos(rad(deg)) - v[1] * Math.sin(rad(deg)), v[0] * Math.sin(rad(deg)) + v[1] * Math.cos(rad(deg))];
+  const half = GRIP_LEN[c.grip] / 2;
+  if (c.grip === 'rope') {
+    const a = add(tip, turn(u, 35), GRIP_LEN.rope);
+    const b = add(tip, turn(u, -35), GRIP_LEN.rope);
+    s.segs.grip = [tip[0], tip[1], a[0], a[1]];
+    s.segs.grip2 = [tip[0], tip[1], b[0], b[1]];
+  } else {
+    const perp: Pt = [-u[1], u[0]];
+    s.segs.grip = [...sub(tip, perp, half), ...add(tip, perp, half)] as Seg;
+  }
+}
+
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 function mix(a: Pose, b: Pose, t: number): Pose {
   const f = (x: number | undefined, y: number | undefined, d: number) => lerp(x ?? y ?? d, y ?? x ?? d, t);
@@ -255,6 +289,8 @@ export type Drawn = {
   cy: number[];
   rot: number[]; // degrees, unwrapped so interpolation never spins the long way round
   soft: boolean; // the far-side leg and scenery are drawn fainter
+  /** Cable only: horizontal stretch per keyframe (its length changes as the hand moves). */
+  sx?: number[];
 };
 export type Layout = {
   size: number;
@@ -268,7 +304,7 @@ export type Layout = {
 
 const THICK: Record<SegKey, number> = {
   torso: 0.26, uarm: 0.17, farm: 0.15, hand: 0.12, thigh: 0.22, shin: 0.17, foot: 0.12, thigh2: 0.2, shin2: 0.16, foot2: 0.11,
-  floor: 0.05, bench: 0.16, seat: 0.12, bar: 0.07,
+  floor: 0.05, bench: 0.16, seat: 0.12, bar: 0.07, pulley: 0.16, cable: 0.035, grip: 0.08, grip2: 0.07,
 };
 
 function scenery(root: Root, kind: Scenery, a: Pose, first: Solved): Partial<Record<SegKey, Seg>> {
@@ -297,6 +333,7 @@ export function layoutPattern(name: PatternName, size: number, frames = KEYFRAME
   const pat: Pattern = PATTERNS[name];
   const solved: Solved[] = [];
   for (let i = 0; i < frames; i++) solved.push(solve(pat.root, mix(pat.a, pat.b, i / (frames - 1))));
+  if (pat.cable) for (const s of solved) addCable(s, pat.cable);
   const first = solved[0];
   const extra = scenery(pat.root, pat.scenery ?? 'none', pat.a, first);
   const lowest = Math.max(...solved.map((s) => (s.segs.foot as Seg)[1]));
@@ -304,6 +341,7 @@ export function layoutPattern(name: PatternName, size: number, frames = KEYFRAME
 
   const loadAt = (s: Solved): Pt | null => {
     const g = s.segs;
+    if (pat.cable) return null; // a cable replaces the dumbbell dot
     switch (pat.load) {
       case 'hand': return [(g.hand as Seg)[2], (g.hand as Seg)[3]];
       case 'shoulder': return [(g.torso as Seg)[2] - 0.04, (g.torso as Seg)[3] - 0.02];
@@ -334,7 +372,8 @@ export function layoutPattern(name: PatternName, size: number, frames = KEYFRAME
   const addPart = (key: SegKey, segAt: (i: number) => Seg | undefined, soft: boolean) => {
     const f0 = segAt(0);
     if (!f0) return;
-    const cx: number[] = [], cy: number[] = [], rot: number[] = [];
+    const cx: number[] = [], cy: number[] = [], rot: number[] = [], sx: number[] = [];
+    const len0 = Math.hypot(f0[2] - f0[0], f0[3] - f0[1]) || 1;
     let prev = 0;
     for (let i = 0; i < frames; i++) {
       const s = segAt(i) as Seg;
@@ -344,18 +383,20 @@ export function layoutPattern(name: PatternName, size: number, frames = KEYFRAME
       if (i > 0) while (a - prev > 180) a -= 360; // keep it continuous with the previous keyframe
       if (i > 0) while (a - prev < -180) a += 360;
       rot.push(a);
+      sx.push(Math.hypot(s[2] - s[0], s[3] - s[1]) / len0);
       prev = a;
     }
     const length = Math.hypot(f0[2] - f0[0], f0[3] - f0[1]) * scale;
-    parts.push({ key, length: Math.max(length, 1), thick: Math.max(THICK[key] * scale, 2.5), cx, cy, rot, soft });
+    parts.push({ key, length: Math.max(length, 1), thick: Math.max(THICK[key] * scale, 2.5), cx, cy, rot, soft, ...(key === 'cable' ? { sx } : {}) });
   };
   const withHand = pat.a.hand !== undefined || pat.b.hand !== undefined;
-  for (const key of ['bench', 'seat', 'bar', 'floor', 'foot2', 'shin2', 'thigh2'] as SegKey[]) {
+  for (const key of ['bench', 'seat', 'bar', 'floor', 'pulley', 'cable', 'foot2', 'shin2', 'thigh2'] as SegKey[]) {
     if (key in extra) addPart(key, () => extra[key], true);
-    else if (key.endsWith('2') && first.segs[key]) addPart(key, (i) => solved[i].segs[key], true);
+    else if ((key.endsWith('2') || key === 'pulley' || key === 'cable') && first.segs[key]) addPart(key, (i) => solved[i].segs[key], true);
   }
   for (const key of ['foot', 'shin', 'thigh', 'torso', 'uarm', 'farm'] as SegKey[]) addPart(key, (i) => solved[i].segs[key], false);
   if (withHand) addPart('hand', (i) => solved[i].segs.hand, false);
+  for (const key of ['grip', 'grip2'] as SegKey[]) if (first.segs[key]) addPart(key, (i) => solved[i].segs[key], false);
 
   const loadR = Math.max(0.2 * scale, 4);
   const animated = JSON.stringify(pat.a) !== JSON.stringify(pat.b);

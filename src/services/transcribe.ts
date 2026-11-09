@@ -12,7 +12,7 @@ const HINT = 'Food log: packets, grams, Lays, paneer, roti, dal, rice, curd, ghe
 /** Speech → text via Groq Whisper (uses the Groq key already saved for meal analysis). */
 export async function transcribeAudio(uri: string, signal?: AbortSignal, hint: string = HINT): Promise<string> {
   const key = await getGroqKey();
-  if (!key) throw new UserError('Voice needs a Groq API key. Add one in Meal settings.');
+  if (!key) throw new UserError('Voice needs a Groq API key. Add one in Settings (Routines tab).');
 
   let bytes: Uint8Array;
   try {

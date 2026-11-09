@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { router, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -53,12 +53,12 @@ export default function MealsScreen() {
         <View style={styles.header}>
           <Text style={[styles.title, { color: t.text }]}>Meals</Text>
           <Pressable
-            onPress={() => router.push('/meal-settings' as Href)}
+            onPress={() => router.push('/meal-target' as Href)}
             hitSlop={12}
             style={[styles.iconBtn, { backgroundColor: t.surfaceAlt }]}
-            accessibilityLabel="Meal settings"
+            accessibilityLabel="Meal target"
           >
-            <Ionicons name="settings-outline" size={18} color={t.text} />
+            <MaterialCommunityIcons name="bullseye-arrow" size={20} color={t.text} />
           </Pressable>
         </View>
 

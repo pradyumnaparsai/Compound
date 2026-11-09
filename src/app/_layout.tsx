@@ -127,7 +127,8 @@ export default function RootLayout() {
             <Stack.Screen name="log-meal" />
             <Stack.Screen name="saved-meal" />
             <Stack.Screen name="meal-builder" options={{ presentation: 'modal' }} />
-            <Stack.Screen name="meal-settings" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="meal-target" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="ai-settings" options={{ presentation: 'modal' }} />
             <Stack.Screen name="backup" options={{ presentation: 'modal' }} />
             <Stack.Screen name="exercises" />
             <Stack.Screen name="exercise-info" />
@@ -136,6 +137,7 @@ export default function RootLayout() {
             <Stack.Screen name="workout" options={{ gestureEnabled: false }} />
             <Stack.Screen name="workout-summary" options={{ gestureEnabled: false }} />
             <Stack.Screen name="workout-detail" />
+            <Stack.Screen name="workout-manage" />
             <Stack.Screen name="workout-settings" options={{ presentation: 'modal' }} />
             <Stack.Screen name="memory" options={{ presentation: 'modal' }} />
           </Stack>

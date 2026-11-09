@@ -53,6 +53,47 @@ describe('pose animations', () => {
     });
   });
 
+  describe('cable exercises are drawn with a cable, not a dumbbell', () => {
+    const cables: [string, PatternName][] = [
+      ['seed:seated-cable-row', 'seatedRow'], ['seed:face-pull', 'facePull'], ['seed:lat-pulldown', 'pulldown'],
+      ['seed:triceps-pushdown', 'pushdown'], ['seed:rope-triceps-pushdown', 'ropePushdown'], ['seed:cable-crunch', 'cableCrunch'],
+      ['seed:cable-curl', 'cableCurl'], ['seed:cable-crossover', 'crossover'], ['seed:cable-overhead-triceps-extension', 'cableOverheadExt'],
+      ['hevy:rear-delt-fly-cable', 'rearFlyCable'], ['hevy:lat-pulldown-machine', 'pulldown'], ['hevy:lat-pulldown-close-grip', 'pulldown'],
+      ['hevy:single-arm-lateral-raise-cable', 'cableRaise'],
+    ];
+    it.each(cables)('%s → %s', (id, name) => {
+      expect(patternFor(id)).toBe(name);
+      const lay = layoutPattern(name, 100);
+      const cable = lay.parts.find((p) => p.key === 'cable')!;
+      expect(cable).toBeDefined();
+      expect(cable.sx).toHaveLength(lay.frames);
+      expect(cable.sx!.every((v) => Number.isFinite(v) && v > 0)).toBe(true);
+      expect(lay.parts.some((p) => p.key === 'grip')).toBe(true);
+      expect(lay.load).toBeNull();
+    });
+    it('a rope has two prongs; a bar has one crossbar', () => {
+      expect(layoutPattern('ropePushdown', 100).parts.some((p) => p.key === 'grip2')).toBe(true);
+      expect(layoutPattern('pushdown', 100).parts.some((p) => p.key === 'grip2')).toBe(false);
+    });
+    it('the cable follows the hand: it stretches as the hand moves away from the pulley', () => {
+      const sx = layoutPattern('seatedRow', 100).parts.find((p) => p.key === 'cable')!.sx!;
+      expect(sx[sx.length - 1]).toBeGreaterThan(sx[0]);
+    });
+    it('machine and dumbbell variants keep their weight', () => {
+      expect(patternFor('hevy:seated-row-machine')).toBe('machineRow');
+      expect(layoutPattern('machineRow', 100).load).not.toBeNull();
+      expect(patternFor('seed:rear-delt-fly')).toBe('rearFly');
+      expect(layoutPattern('rearFly', 100).load).not.toBeNull();
+    });
+  });
+
+  it('incline presses keep the elbows out of the pad and the hand above the elbow', () => {
+    for (const name of ['inclineBench', 'inclineMachinePress'] as PatternName[]) {
+      const p = PATTERNS[name];
+      expect(p.b.uarm).toBeGreaterThanOrEqual(30); // elbow stays in front of the backrest instead of sinking into it
+    }
+  });
+
   it('static holds do not animate; movements do', () => {
     expect(layoutPattern('hang', 80).animated).toBe(false);
     expect(layoutPattern('wallSit', 80).animated).toBe(false);

@@ -80,6 +80,28 @@ export function macroGoals(g: Goals): { calories: number; proteinG: number; carb
   };
 }
 
+/**
+ * Validates the Meal target form. All blank → `null` (clear the goals); invalid → `'invalid'`.
+ * Calories and protein are required; carbs and fat are optional (blank = derived).
+ */
+export function parseGoalsInput(
+  calories: string,
+  protein: string,
+  carbs: string,
+  fat: string,
+): Goals | null | 'invalid' {
+  if ([calories, protein, carbs, fat].every((v) => v.trim() === '')) return null;
+  const num = (v: string) => Number(v.replace(',', '.'));
+  const optional = (v: string) => (v.trim() === '' ? undefined : Math.round(num(v)));
+  const gc = num(calories);
+  const gp = num(protein);
+  const gk = optional(carbs);
+  const gf = optional(fat);
+  const optOk = (v: number | undefined, max: number) => v === undefined || (Number.isFinite(v) && v >= 0 && v < max);
+  if (!(gc > 0 && gc < 10000 && gp > 0 && gp < 1000 && optOk(gk, 2000) && optOk(gf, 1000))) return 'invalid';
+  return { calories: Math.round(gc), proteinG: Math.round(gp), carbsG: gk, fatG: gf };
+}
+
 const r1 = (n: number) => Math.round(n * 10) / 10;
 
 export const totalsOf = (ingredients: Ingredient[]) => ({

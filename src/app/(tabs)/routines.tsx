@@ -28,6 +28,13 @@ export default function RoutinesScreen() {
         <Text style={[styles.title, { color: t.text }]}>Routines</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <Pressable
+            onPress={() => router.push('/ai-settings' as Href)}
+            hitSlop={12}
+            accessibilityLabel="Settings"
+          >
+            <Ionicons name="settings-outline" size={24} color={t.text} />
+          </Pressable>
+          <Pressable
             onPress={() => router.push('/backup' as Href)}
             hitSlop={12}
             accessibilityLabel="Cloud backup"

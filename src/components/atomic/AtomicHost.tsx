@@ -15,7 +15,7 @@ const FAB = 52;
 const MARGIN = 14;
 const TAB_BAR = 49;
 // Screens presented as native modals or camera views cover the app, so the button can't (and shouldn't) show there.
-const HIDDEN_ON = new Set(['routine-form', 'scan', 'meal-builder', 'meal-settings', 'backup', 'exercise-form', 'workout-settings', 'memory']);
+const HIDDEN_ON = new Set(['routine-form', 'scan', 'meal-builder', 'meal-target', 'ai-settings', 'backup', 'exercise-form', 'workout-settings', 'memory']);
 
 type Voice = ReturnType<typeof useVoiceInput>;
 // Single floating button for the whole app, so its gesture bookkeeping lives at module level.

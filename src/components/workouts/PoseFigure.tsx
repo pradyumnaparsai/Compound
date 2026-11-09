@@ -27,11 +27,12 @@ export const PoseFigure = memo(function PoseFigure({ pattern, size, body, dim, a
               height: p.thick,
               borderRadius: p.thick / 2,
               backgroundColor: p.soft ? dim : body,
-              opacity: p.soft && p.key !== 'floor' ? 0.55 : p.key === 'floor' ? 0.5 : 1,
+              opacity: p.key === 'cable' ? 0.85 : p.soft && p.key !== 'floor' ? 0.55 : p.key === 'floor' ? 0.5 : 1,
               transform: [
                 { translateX: track(p.cx.map((x) => x - p.cx[0])) },
                 { translateY: track(p.cy.map((y) => y - p.cy[0])) },
                 { rotate: trackDeg(p.rot) },
+                ...(p.sx ? [{ scaleX: track(p.sx) }] : []),
               ],
             },
           ]}

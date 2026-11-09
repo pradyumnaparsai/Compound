@@ -1,11 +1,11 @@
-import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { router, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { notifyError, onFail } from '@/components/notify';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Screen } from '@/components/Screen';
 import { maskKey } from '@/domain/apiKey';
-import { UserError } from '@/domain/errors';
 import {
   clearApiKey,
   clearGroqKey,
@@ -22,12 +22,10 @@ import {
 } from '@/services/mealAnalyzer';
 import { DEFAULT_GROQ_MODEL, DEFAULT_MODEL } from '@/services/mealAnalyzerConstants';
 import { DEFAULT_LIMITS, getLimit, getUsageToday, setLimit, type Provider, type Usage } from '@/services/aiUsage';
-import { useMealStore } from '@/store/useMealStore';
 import { radius, useTheme } from '@/theme';
 
-export default function MealSettingsScreen() {
+export default function AiSettingsScreen() {
   const t = useTheme();
-  const { goals, setGoals } = useMealStore();
 
   const [savedKey, setSavedKey] = useState<string | null>(null);
   const [savedGroq, setSavedGroq] = useState<string | null>(null);
@@ -37,17 +35,6 @@ export default function MealSettingsScreen() {
   const [modelText, setModelText] = useState(DEFAULT_MODEL);
   const [groqKeyText, setGroqKeyText] = useState('');
   const [groqModelText, setGroqModelText] = useState(DEFAULT_GROQ_MODEL);
-  // null = untouched: show the saved goal and leave it alone on save
-  const [goalCalEdit, setGoalCal] = useState<string | null>(null);
-  const [goalProtEdit, setGoalProt] = useState<string | null>(null);
-  const [goalCarbEdit, setGoalCarb] = useState<string | null>(null);
-  const [goalFatEdit, setGoalFat] = useState<string | null>(null);
-  const goalCal = goalCalEdit ?? (goals ? String(goals.calories) : '');
-  const goalProt = goalProtEdit ?? (goals ? String(goals.proteinG) : '');
-  // blank carbs/fat = derived from the calorie and protein goals
-  const goalCarb = goalCarbEdit ?? (goals?.carbsG !== undefined ? String(goals.carbsG) : '');
-  const goalFat = goalFatEdit ?? (goals?.fatG !== undefined ? String(goals.fatG) : '');
-
   const [usage, setUsage] = useState<Record<Provider, Usage> | null>(null);
   const [limits, setLimits] = useState<Record<Provider, string>>({
     groq: String(DEFAULT_LIMITS.groq),
@@ -72,19 +59,6 @@ export default function MealSettingsScreen() {
       await setModel(modelText);
       await setGroqModel(groqModelText);
       await Promise.all((['groq', 'gemini'] as Provider[]).map((p) => setLimit(p, Number(limits[p].replace(/[,\s]/g, '')))));
-      if (goalCalEdit !== null || goalProtEdit !== null || goalCarbEdit !== null || goalFatEdit !== null) {
-        const num = (v: string) => Number(v.replace(',', '.'));
-        const gc = num(goalCal);
-        const gp = num(goalProt);
-        const optional = (v: string) => (v.trim() === '' ? undefined : Math.round(num(v)));
-        const gk = optional(goalCarb);
-        const gf = optional(goalFat);
-        const optOk = (v: number | undefined, max: number) => v === undefined || (Number.isFinite(v) && v >= 0 && v < max);
-        if ([goalCal, goalProt, goalCarb, goalFat].every((v) => v.trim() === '')) await setGoals(null);
-        else if (gc > 0 && gc < 10000 && gp > 0 && gp < 1000 && optOk(gk, 2000) && optOk(gf, 1000))
-          await setGoals({ calories: Math.round(gc), proteinG: Math.round(gp), carbsG: gk, fatG: gf });
-        else throw new UserError('Calories and protein must be positive numbers (carbs and fat are optional), or clear everything.');
-      }
       router.back();
     } catch (e) {
       notifyError(e, 'Could not save', 'Could not save your settings. Please try again.');
@@ -151,24 +125,24 @@ export default function MealSettingsScreen() {
   return (
     <Screen padBottom>
       <View style={styles.head}>
-        <Text style={[styles.title, { color: t.text }]}>Meal settings</Text>
+        <Text style={[styles.title, { color: t.text }]}>AI settings</Text>
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Text style={{ color: t.accent, fontWeight: '600' }}>Cancel</Text>
         </Pressable>
       </View>
 
       <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
-        <Text style={label}>DAILY GOALS</Text>
-        <View style={styles.row}>
-          <TextInput value={goalCal} onChangeText={setGoalCal} keyboardType="number-pad" placeholder="Calories" placeholderTextColor={t.textDim} style={[input, { flex: 1 }]} />
-          <TextInput value={goalProt} onChangeText={setGoalProt} keyboardType="number-pad" placeholder="Protein (g)" placeholderTextColor={t.textDim} style={[input, { flex: 1 }]} />
-        </View>
-        <View style={styles.row}>
-          <TextInput value={goalCarb} onChangeText={setGoalCarb} keyboardType="number-pad" placeholder="Carbs (g) · auto" placeholderTextColor={t.textDim} style={[input, { flex: 1 }]} />
-          <TextInput value={goalFat} onChangeText={setGoalFat} keyboardType="number-pad" placeholder="Fat (g) · auto" placeholderTextColor={t.textDim} style={[input, { flex: 1 }]} />
-        </View>
+        <Pressable
+          onPress={() => router.push('/memory' as Href)}
+          style={[styles.link, { backgroundColor: t.surfaceAlt }]}
+          accessibilityLabel="Assistant memory"
+        >
+          <Ionicons name="sparkles-outline" size={18} color={t.accent} />
+          <Text style={{ color: t.text, fontWeight: '600', flex: 1 }}>Assistant memory</Text>
+          <Ionicons name="chevron-forward" size={18} color={t.textDim} />
+        </Pressable>
         <Text style={{ color: t.textDim, fontSize: 12, marginTop: 8 }}>
-          Leave carbs and fat blank to split the calories left after protein (70 % carbs, 30 % fat).
+          One set of keys powers meal analysis, voice and your personal assistant.
         </Text>
 
         <Text style={[label, { marginTop: 28 }]}>GROQ · TRIED FIRST</Text>
@@ -272,5 +246,6 @@ const styles = StyleSheet.create({
   btnText: { color: '#fff', fontWeight: '700' },
   usageHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   testBtn: { borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: 16, paddingVertical: 8 },
+  link: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: radius.sm, paddingHorizontal: 12, paddingVertical: 14 },
   remove: { fontSize: 13, fontWeight: '600', marginTop: 10 },
 });

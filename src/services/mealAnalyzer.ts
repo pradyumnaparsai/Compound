@@ -71,7 +71,7 @@ export async function analyzeMeal(input: AnalyzeInput): Promise<MealAnalysis & {
 
   const [groqKey, geminiKey] = await Promise.all([getGroqKey(), getApiKey()]);
   ensureActive();
-  if (!groqKey && !geminiKey) throw new UserError('Add a Groq or Gemini API key in Meal settings to use AI.');
+  if (!groqKey && !geminiKey) throw new UserError('Add a Groq or Gemini API key in Settings (Routines tab) to use AI.');
 
   const inputType: InputType = barcode ? 'barcode' : note || refine ? 'image_and_note' : 'image_only';
   const text = refine

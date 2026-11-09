@@ -27,7 +27,7 @@ const MESSAGES: Record<Exclude<ErrorKind, 'user' | 'unknown'>, string> = {
   offline: 'No internet connection. Check your network and try again.',
   timeout: 'That took too long. Please try again.',
   busy: 'The AI is busy right now. Wait a minute and try again.',
-  auth: 'Your API key was not accepted. Check it in Meal settings.',
+  auth: 'Your API key was not accepted. Check it in Settings (Routines tab).',
   server: 'The service is having trouble right now. Try again in a bit.',
   bad_output: 'Could not read the answer. Try again, or describe the food a little differently.',
   credentials: 'Wrong email or password.',

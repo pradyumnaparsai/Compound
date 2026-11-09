@@ -399,19 +399,23 @@ export default function LogMealScreen() {
           </Pressable>
         </View>
 
-        {(!goals || hasAiKey === false) && (
+        {!goals && (
           <Pressable
-            onPress={() => router.push('/meal-settings' as Href)}
+            onPress={() => router.push('/meal-target' as Href)}
+            style={[styles.banner, { backgroundColor: t.accentSoft }]}
+          >
+            <Ionicons name="flag-outline" size={16} color={t.accent} />
+            <Text style={{ color: t.accent, fontWeight: '600', flex: 1 }}>Set daily goals</Text>
+            <Ionicons name="chevron-forward" size={16} color={t.accent} />
+          </Pressable>
+        )}
+        {hasAiKey === false && (
+          <Pressable
+            onPress={() => router.push('/ai-settings' as Href)}
             style={[styles.banner, { backgroundColor: t.accentSoft }]}
           >
             <Ionicons name="sparkles-outline" size={16} color={t.accent} />
-            <Text style={{ color: t.accent, fontWeight: '600', flex: 1 }}>
-              {!goals && hasAiKey === false
-                ? 'Set goals and add an API key'
-                : !goals
-                  ? 'Set daily goals'
-                  : 'Add an API key to analyze photos'}
-            </Text>
+            <Text style={{ color: t.accent, fontWeight: '600', flex: 1 }}>Add an API key to analyze photos</Text>
             <Ionicons name="chevron-forward" size={16} color={t.accent} />
           </Pressable>
         )}
