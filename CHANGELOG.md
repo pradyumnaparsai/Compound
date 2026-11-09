@@ -3,6 +3,13 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.22.0 — 2026-11-09
+### Added
+- **Talkback.** Atomic now keeps the conversation going: after it finishes speaking it listens again by itself, so you no longer tap the mic for every turn. Toggle it with the mic icon in the Atomic sheet header (on by default, remembered). It stops listening after a silent take or an error, or when you tap to interrupt, cancel or close the sheet; tap the mic to resume.
+### Fixed
+- Tapping the Atomic button now shows "Listening…" straight away instead of flashing the idle screen first.
+- Closing Atomic while the mic is still starting no longer leaves it recording.
+
 ## v1.21.0 — 2026-11-09
 ### Added
 - **Atomic remembers you.** In the first chats it asks one short question at a time (name, how you like replies, diet, fitness goals, daily schedule), saves what you say, and tailors its answers to it. Say "remember …", "forget …" or "forget everything" any time; Skip/Later stops a topic being asked again. Memory is kept on the device, included in the cloud backup and sent to your AI provider with each Atomic request.
