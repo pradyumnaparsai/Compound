@@ -22,6 +22,9 @@ jest.mock('@/store/useTaskStore', () => ({
   useTaskStore: { getState: () => ({ tasks: [{ id: 'T1', title: 'Buy milk', date: '2026-11-08', createdAt: '', completedAt: null }] }) },
 }));
 jest.mock('@/store/useMealStore', () => ({ useMealStore: { getState: () => ({ meals: [], goals: null }) } }));
+jest.mock('@/store/useMemoryStore', () => ({
+  useMemoryStore: { getState: () => ({ ready: true, memory: { facts: [], skipped: [] } }) },
+}));
 jest.mock('@/store/useWeightStore', () => ({ useWeightStore: { getState: () => ({ entries: [] }) } }));
 
 /* eslint-disable import/first */

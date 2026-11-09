@@ -17,8 +17,8 @@ const tables = async (db: NodeDb) =>
 const WORKOUT_TABLES = ['exercises', 'workout_folders', 'workout_templates', 'template_exercises', 'template_sets', 'workouts', 'workout_exercises', 'workout_sets'];
 
 describe('migrations', () => {
-  it('has v10 as the workout migration, appended after the 9 shipped ones', () => {
-    expect(MIGRATIONS.length).toBe(10);
+  it('keeps v10 as the workout migration and v11 as the index migration', () => {
+    expect(MIGRATIONS.length).toBe(11);
     expect(MIGRATIONS[9]).toContain('CREATE TABLE workout_sets');
   });
 
@@ -32,20 +32,20 @@ describe('migrations', () => {
 
     await migrate(db as never);
 
-    expect(await version(db)).toBe(10);
+    expect(await version(db)).toBe(11);
     const t = await tables(db);
     for (const name of WORKOUT_TABLES) expect(t).toContain(name);
     expect(await db.getFirstAsync('SELECT kg FROM weights')).toEqual({ kg: 80.5 });
     expect(await db.getFirstAsync('SELECT title FROM routines')).toEqual({ title: 'Read' });
 
     await migrate(db as never); // idempotent
-    expect(await version(db)).toBe(10);
+    expect(await version(db)).toBe(11);
   });
 
   it('creates everything from scratch', async () => {
     const db = createNodeDb();
     await migrate(db as never);
-    expect(await version(db)).toBe(10);
+    expect(await version(db)).toBe(11);
   });
 
   it('enforces one imported workout per (source, source_id) but allows many local ones', async () => {

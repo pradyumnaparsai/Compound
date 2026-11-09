@@ -10,8 +10,8 @@ import { dateToTime, editSchedule, formatTime, parseTime, templateFromItems, tim
 import { useMealDraft } from '@/store/useMealDraft';
 import { useMealStore } from '@/store/useMealStore';
 import { radius, useTheme } from '@/theme';
+import { newId } from '@/domain/id';
 
-const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 const TIME_PRESETS = ['07:00', '08:00', '12:30', '16:00', '19:30', '21:00'];
 
 export default function MealBuilder() {

@@ -43,22 +43,20 @@ export function stepFraction(g: Goal, steps: number | undefined): number {
   return Math.min(1, Math.max(0, (steps ?? 0) / g.target));
 }
 
-/** Progress line for a goal routine on a given day. */
+/** Progress line for a goal routine on a given day. Strength routines have none (the Routines screen labels them). */
 export function goalProgress(
   g: Goal,
   steps: number | undefined,
-  workouts: number | undefined,
   checked: boolean,
   protein = 0,
   calories = 0,
 ): string {
+  if (g.type === 'workout') return '';
   if (g.type === 'meal') {
     return `${Math.round(calories).toLocaleString('en-US')} / ${g.calories.toLocaleString('en-US')} kcal · ${Math.round(protein * 10) / 10} / ${g.proteinG} g protein`;
   }
   // Protein comes from the Meals log, so it is always known (no Apple Health permission involved).
   if (g.type === 'protein') return `${Math.round(protein * 10) / 10} / ${g.target} g protein`;
   if (!checked) return `Auto · ${goalLabel(g)}`;
-  if (g.type === 'steps') return `${(steps ?? 0).toLocaleString('en-US')} / ${g.target.toLocaleString('en-US')} steps`;
-  const n = workouts ?? 0;
-  return n > 0 ? `${n} strength workout${n > 1 ? 's' : ''} logged` : 'No strength workout logged yet';
+  return `${(steps ?? 0).toLocaleString('en-US')} / ${g.target.toLocaleString('en-US')} steps`;
 }

@@ -33,10 +33,13 @@ export function toDoneSet(completions: Completion[]): Set<string> {
 
 /** Consecutive fully-done days ending today (or yesterday if today isn't finished yet). */
 export function currentStreak(routines: Routine[], done: Set<string>): number {
+  if (routines.length === 0) return 0;
   const today = todayKey();
+  // Nothing is scheduled before the oldest routine existed, so there is nothing to walk back to.
+  const earliest = routines.reduce((min, r) => (r.createdAt < min ? r.createdAt : min), routines[0].createdAt);
   let cursor = today;
   let streak = 0;
-  for (let i = 0; i < 3650; i++) {
+  for (let i = 0; i < 3650 && cursor >= earliest; i++) {
     const s = dayStatus(routines, done, cursor);
     if (s === 'all') streak++;
     else if (s === 'empty') {

@@ -16,7 +16,14 @@ export async function transcribeAudio(uri: string, signal?: AbortSignal, hint: s
 
   let bytes: Uint8Array;
   try {
-    bytes = new Uint8Array(await new File(uri).arrayBuffer());
+    const file = new File(uri);
+    bytes = new Uint8Array(await file.arrayBuffer());
+    // The audio now lives in memory; the recording is single-use, so don't let each one pile up in the cache.
+    try {
+      if (file.exists) file.delete();
+    } catch {
+      /* best effort */
+    }
   } catch (e) {
     console.warn('Could not read recording', uri, e);
     throw new UserError('Could not read the recording. Please try again.');

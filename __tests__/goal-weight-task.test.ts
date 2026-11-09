@@ -18,11 +18,14 @@ describe('goals', () => {
   });
 
   it('describes progress', () => {
-    expect(goalProgress({ type: 'protein', target: 100 }, 0, 0, false, 42.26)).toBe('42.3 / 100 g protein');
-    expect(goalProgress({ type: 'steps', target: 8000 }, 100, 0, false)).toBe('Auto · 8,000 steps');
-    expect(goalProgress({ type: 'steps', target: 8000 }, 8100, 0, true)).toBe('8,100 / 8,000 steps');
-    expect(goalProgress({ type: 'workout' }, 0, 2, true)).toBe('2 strength workouts logged');
-    expect(goalProgress({ type: 'workout' }, 0, 0, true)).toBe('No strength workout logged yet');
+    expect(goalProgress({ type: 'protein', target: 100 }, 0, false, 42.26)).toBe('42.3 / 100 g protein');
+    expect(goalProgress({ type: 'steps', target: 8000 }, 100, false)).toBe('Auto · 8,000 steps');
+    expect(goalProgress({ type: 'steps', target: 8000 }, 8100, true)).toBe('8,100 / 8,000 steps');
+  });
+
+  it('shows no progress text for strength routines on the daily views', () => {
+    expect(goalProgress({ type: 'workout' }, 0, true)).toBe('');
+    expect(goalProgress({ type: 'workout' }, 0, false)).toBe('');
   });
 });
 
@@ -68,7 +71,7 @@ describe('meal goal', () => {
 
   it('labels and describes progress', () => {
     expect(goalLabel(g)).toBe('2,000 kcal · 150 g protein');
-    expect(goalProgress(g, 0, 0, false, 120.44, 1850.2)).toBe('1,850 / 2,000 kcal · 120.4 / 150 g protein');
+    expect(goalProgress(g, 0, false, 120.44, 1850.2)).toBe('1,850 / 2,000 kcal · 120.4 / 150 g protein');
   });
 });
 

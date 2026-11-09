@@ -10,8 +10,8 @@ import { MEAL_SLOTS, mealFromSaved, slotForTime, slotLabel, totalsOf, type MealS
 import { formatDays, formatTime } from '@/domain/mealSchedule';
 import { useMealStore } from '@/store/useMealStore';
 import { radius, useTheme } from '@/theme';
+import { newId } from '@/domain/id';
 
-const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
 /** A saved meal: review what's in it, pick Breakfast/Lunch/Snacks/Dinner, then add it to the day's diary. */
 export default function SavedMealScreen() {

@@ -369,28 +369,3 @@ export function layoutPattern(name: PatternName, size: number, frames = KEYFRAME
     loadKind: pat.load ?? 'none',
   };
 }
-
-/** Plain SVG of both end poses side by side; used by the preview script and handy for debugging. */
-export function previewSvg(names: PatternName[], cell = 120): string {
-  const cols = 3;
-  const rows = Math.ceil(names.length / cols);
-  const out: string[] = [`<svg xmlns="http://www.w3.org/2000/svg" width="${cols * cell * 2}" height="${rows * (cell + 16)}" style="background:#fff">`];
-  names.forEach((n, i) => {
-    const lay = layoutPattern(n, cell, 2);
-    const ox = (i % cols) * cell * 2;
-    const oy = Math.floor(i / cols) * (cell + 16);
-    out.push(`<text x="${ox + 4}" y="${oy + 11}" font-size="10" font-family="sans-serif">${n}</text>`);
-    for (let f = 0; f < 2; f++) {
-      const x0 = ox + f * cell;
-      out.push(`<rect x="${x0}" y="${oy + 14}" width="${cell}" height="${cell}" fill="none" stroke="#ddd"/>`);
-      for (const p of lay.parts) {
-        const col = p.soft ? '#aaa' : f === 0 ? '#3b6' : '#c53';
-        out.push(`<rect x="${x0 + p.cx[f] - p.length / 2}" y="${oy + 14 + p.cy[f] - p.thick / 2}" width="${p.length}" height="${p.thick}" rx="${p.thick / 2}" fill="${col}" transform="rotate(${p.rot[f]} ${x0 + p.cx[f]} ${oy + 14 + p.cy[f]})"/>`);
-      }
-      out.push(`<circle cx="${x0 + lay.head.cx[f]}" cy="${oy + 14 + lay.head.cy[f]}" r="${lay.head.r}" fill="${f === 0 ? '#3b6' : '#c53'}"/>`);
-      if (lay.load) out.push(`<circle cx="${x0 + lay.load.cx[f]}" cy="${oy + 14 + lay.load.cy[f]}" r="${lay.load.r}" fill="#333"/>`);
-    }
-  });
-  out.push('</svg>');
-  return out.join('\n');
-}

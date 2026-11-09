@@ -22,7 +22,7 @@ type Props = {
 export function RoutineRow({ routine, date, done, disabled, onToggle, dragProps }: Props) {
   const t = useTheme();
   const goal = routine.goal;
-  const { steps, workouts, checked } = useHealthStore();
+  const { steps, checked } = useHealthStore();
   const protein = useMealStore((s) => s.meals.reduce((a, m) => (m.date === date ? a + m.proteinG : a), 0));
   const calories = useMealStore((s) => s.meals.reduce((a, m) => (m.date === date ? a + m.calories : a), 0));
   return (
@@ -83,10 +83,12 @@ export function RoutineRow({ routine, date, done, disabled, onToggle, dragProps 
         >
           {routine.title}
         </Text>
-        <Text style={[styles.sub, { color: t.textDim }]}>
-          {recurrenceLabel(routine.recurrence)}
-          {goal ? ' · ' + goalProgress(goal, steps[date], workouts[date], checked, protein, calories) : ''}
-        </Text>
+        {goal?.type !== 'workout' && (
+          <Text style={[styles.sub, { color: t.textDim }]}>
+            {recurrenceLabel(routine.recurrence)}
+            {goal ? ' · ' + goalProgress(goal, steps[date], checked, protein, calories) : ''}
+          </Text>
+        )}
       </View>
     </Pressable>
   );

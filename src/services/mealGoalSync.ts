@@ -34,7 +34,7 @@ export async function refreshMealGoals(): Promise<void> {
     for (let d = from; d <= today; d = addDays(d, 1)) {
       const day = totals.get(d) ?? { calories: 0, proteinG: 0 };
       for (const r of goals) {
-        if (d < r.createdAt || !r.goal || !isScheduled(r, d)) continue;
+        if (!r.goal || !isScheduled(r, d)) continue; // isScheduled also excludes days before creation
         if (r.goal.type === 'protein') {
           if (day.proteinG >= r.goal.target) items.push({ routineId: r.id, date: d });
         } else if (r.goal.type === 'meal') {

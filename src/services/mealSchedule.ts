@@ -2,8 +2,8 @@ import { sqliteMealScheduleRepo } from '@/data/sqliteRepository';
 import { toKey } from '@/domain/date';
 import { dueSchedules, mealFromTemplate } from '@/domain/mealSchedule';
 import { useMealStore } from '@/store/useMealStore';
+import { newId } from '@/domain/id';
 
-const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
 let running: Promise<void> | null = null;
 

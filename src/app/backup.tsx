@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
 import { notifyError } from '@/components/notify';
 import { Screen } from '@/components/Screen';
 import { supabaseConfigured } from '@/data/supabase';

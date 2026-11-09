@@ -16,6 +16,7 @@ import type {
   TaskRepository,
   WeightRepository,
 } from './repository';
+import { newId } from '@/domain/id';
 
 type MealRow = {
   id: string;
@@ -33,7 +34,22 @@ type MealRow = {
   assumptions: string;
 };
 
-const mealFromRow = (r: MealRow): Meal => ({
+/** Stored JSON that fails to parse (e.g. from a damaged cloud backup) falls back instead of breaking the whole list. */
+function parseJson<T>(raw: string, fallback: T): T {
+  try {
+    const v = JSON.parse(raw) as T;
+    return v ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+const parseIngredients = (raw: string) => {
+  const list = parseJson<unknown>(raw, []);
+  return (Array.isArray(list) ? (list as Partial<Meal['ingredients'][number]>[]) : []).map(normalizeIngredient);
+};
+
+export const mealFromRow = (r: MealRow): Meal => ({
   id: r.id,
   date: r.date,
   slot: isMealSlot(r.slot) ? r.slot : slotForTime(r.logged_at),
@@ -41,12 +57,12 @@ const mealFromRow = (r: MealRow): Meal => ({
   title: r.title,
   inputType: r.input_type,
   confidence: r.confidence,
-  ingredients: (JSON.parse(r.ingredients) as Partial<Meal['ingredients'][number]>[]).map(normalizeIngredient),
+  ingredients: parseIngredients(r.ingredients),
   calories: r.calories,
   proteinG: r.protein_g,
   carbsG: r.carbs_g,
   fatG: r.fat_g,
-  assumptions: JSON.parse(r.assumptions),
+  assumptions: parseJson<string[]>(r.assumptions, []),
 });
 
 export const sqliteMealRepo: MealRepository = {
@@ -104,7 +120,6 @@ type RoutineRow = {
   archived_at: string | null;
 };
 
-const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
 function parseGoal(raw: string | null): Goal | null {
   if (!raw) return null;
@@ -115,10 +130,16 @@ function parseGoal(raw: string | null): Goal | null {
   }
 }
 
-const toRoutine = (r: RoutineRow): Routine => ({
+function parseRecurrence(raw: string): Recurrence {
+  const v = parseJson<Partial<Recurrence> | null>(raw, null);
+  if (v?.type === 'weekly' && Array.isArray(v.days)) return { type: 'weekly', days: v.days.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6) };
+  return { type: 'daily' };
+}
+
+export const toRoutine = (r: RoutineRow): Routine => ({
   id: r.id,
   title: r.title,
-  recurrence: JSON.parse(r.recurrence) as Recurrence,
+  recurrence: parseRecurrence(r.recurrence),
   goal: parseGoal(r.goal),
   reminderTime: r.reminder_time,
   createdAt: r.created_at,
@@ -283,7 +304,7 @@ export const sqliteSavedMealRepo: SavedMealRepository = {
       (r): SavedMeal => ({
         id: r.id,
         title: r.title,
-        ingredients: (JSON.parse(r.ingredients) as Partial<Meal['ingredients'][number]>[]).map(normalizeIngredient),
+        ingredients: parseIngredients(r.ingredients),
         calories: r.calories,
         proteinG: r.protein_g,
         carbsG: r.carbs_g,
@@ -467,6 +488,8 @@ type FoodRow = {
   serving_g: number | null;
 };
 
+const FOOD_CACHE_MAX = 500;
+
 export const sqliteFoodCacheRepo: FoodCacheRepository = {
   async get(barcode) {
     const db = await getDb();
@@ -503,6 +526,11 @@ export const sqliteFoodCacheRepo: FoodCacheRepository = {
       f.packG,
       f.servingG,
       new Date().toISOString(),
+    );
+    // A rebuildable cache must not grow forever: keep the most recently saved entries only.
+    await db.runAsync(
+      'DELETE FROM food_cache WHERE barcode IN (SELECT barcode FROM food_cache ORDER BY updated_at DESC LIMIT -1 OFFSET ?)',
+      FOOD_CACHE_MAX,
     );
   },
 };

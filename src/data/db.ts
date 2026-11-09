@@ -189,6 +189,11 @@ export const MIGRATIONS: string[] = [
      completed_at TEXT
    );
    CREATE INDEX idx_workout_sets_exercise ON workout_sets(workout_exercise_id);`,
+  // v11: indexes for queries that scanned whole tables (history paging, "is this exercise used", meals by day+time)
+  `CREATE INDEX idx_workouts_started ON workouts(started_at);
+   CREATE INDEX idx_template_exercises_exercise ON template_exercises(exercise_id);
+   CREATE INDEX idx_meals_date_logged ON meals(date, logged_at);
+   DROP INDEX idx_meals_date;`,
 ];
 
 export async function migrate(db: SQLite.SQLiteDatabase) {
@@ -209,7 +214,10 @@ export function getDb(): Promise<SQLite.SQLiteDatabase> {
       const db = await SQLite.openDatabaseAsync('productivity-booster.db');
       await migrate(db);
       return db;
-    })();
+    })().catch((e) => {
+      dbPromise = null; // don't cache a failure: the next call retries instead of failing until restart
+      throw e;
+    });
   }
   return dbPromise;
 }

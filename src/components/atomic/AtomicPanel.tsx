@@ -1,9 +1,11 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { router, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { cancelPending, cancelRequest, closeAssistant, confirmPending, toggleMute, undoLast } from '@/services/assistantRunner';
 import { useAssistantStore } from '@/store/useAssistantStore';
+import { useMemoryStore } from '@/store/useMemoryStore';
 import { radius, space, useTheme } from '@/theme';
 import { AtomicButton, type AtomicState } from './AtomicButton';
 
@@ -24,6 +26,7 @@ export function AtomicPanel({ state, onMicPress }: Props) {
   const pending = useAssistantStore((s) => s.pending);
   const undo = useAssistantStore((s) => s.undo);
   const muted = useAssistantStore((s) => s.muted);
+  const hasMemory = useMemoryStore((s) => s.memory.facts.length > 0);
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [mounted, setMounted] = useState(false);
@@ -71,6 +74,17 @@ export function AtomicPanel({ state, onMicPress }: Props) {
             <MaterialCommunityIcons name="atom" size={20} color={t.accent} />
             <Text style={[styles.title, { color: t.text }]}>Atomic</Text>
             <View style={{ flex: 1 }} />
+            <Pressable
+              onPress={() => {
+                closeAssistant();
+                router.push('/memory' as Href);
+              }}
+              hitSlop={10}
+              accessibilityLabel="What Atomic remembers about you"
+              style={{ marginRight: space.lg }}
+            >
+              <Ionicons name="person-circle-outline" size={23} color={t.textDim} />
+            </Pressable>
             <Pressable onPress={toggleMute} hitSlop={10} accessibilityLabel={muted ? 'Turn voice replies on' : 'Turn voice replies off'}>
               <Ionicons name={muted ? 'volume-mute-outline' : 'volume-high-outline'} size={22} color={t.textDim} />
             </Pressable>
@@ -92,7 +106,9 @@ export function AtomicPanel({ state, onMicPress }: Props) {
             <Text style={[styles.headline, { color: exchange?.error ? t.danger : t.text }]}>{headline}</Text>
             {!exchange && state === 'idle' && (
               <Text style={[styles.hint, { color: t.textDim }]}>
-                Try “add a task to buy milk tomorrow” or “log two rotis and dal for lunch”.
+                {hasMemory
+                  ? 'Try “add a task to buy milk tomorrow” or “log two rotis and dal for lunch”.'
+                  : 'Say hi and I will ask a few quick questions to get to know you. Or try “add a task to buy milk tomorrow”.'}
               </Text>
             )}
             {exchange?.chips.map((c) => (

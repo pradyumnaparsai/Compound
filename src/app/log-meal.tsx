@@ -42,8 +42,8 @@ import { AnalysisCancelled, analyzeMeal, getApiKey, getGroqKey } from '@/service
 import { deletePending, listPending, pendingBase64, savePending, type PendingMeal } from '@/services/pendingMeals';
 import { useMealStore } from '@/store/useMealStore';
 import { radius, useTheme, type Theme } from '@/theme';
+import { newId } from '@/domain/id';
 
-const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 const tap = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 const MEALS_TAB = '/(tabs)/meals' as Href;
 const done = () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});

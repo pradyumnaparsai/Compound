@@ -5,6 +5,7 @@ import type { Workout } from '@/domain/workout';
 
 const repo: WorkoutRepository = sqliteWorkoutRepo;
 const PAGE = 30;
+let loadingMore = false;
 
 type State = {
   ready: boolean;
@@ -33,9 +34,16 @@ export const useWorkoutHistory = create<State>((set, get) => ({
 
   async loadMore() {
     const { recent, hasMore } = get();
-    if (!hasMore || recent.length === 0) return;
-    const next = await repo.listRecent(PAGE, recent[recent.length - 1].startedAt);
-    set({ recent: [...recent, ...next], hasMore: next.length >= PAGE });
+    if (!hasMore || recent.length === 0 || loadingMore) return; // onEndReached fires repeatedly
+    loadingMore = true;
+    try {
+      const next = await repo.listRecent(PAGE, recent[recent.length - 1].startedAt);
+      // A reload (finish, edit, delete) landed meanwhile: this page is stale, the reload already has the data.
+      if (get().recent !== recent) return;
+      set({ recent: [...recent, ...next], hasMore: next.length >= PAGE });
+    } finally {
+      loadingMore = false;
+    }
   },
 
   async remove(id) {

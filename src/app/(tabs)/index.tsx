@@ -11,7 +11,8 @@ import { TaskAdder } from '@/components/TaskAdder';
 import { TaskRow } from '@/components/TaskRow';
 import { ActiveWorkoutBanner } from '@/components/workouts/ActiveWorkoutBanner';
 import { useOneTimeHint } from '@/hooks/useOneTimeHint';
-import { MONTH_NAMES, fromKey, todayKey } from '@/domain/date';
+import { MONTH_NAMES, fromKey } from '@/domain/date';
+import { useToday } from '@/hooks/useToday';
 import { completionKey, currentStreak, scheduledOn } from '@/domain/recurrence';
 import { dayProgress, overdueTasks, tasksOn } from '@/domain/task';
 import { useRoutineStore } from '@/store/useRoutineStore';
@@ -27,7 +28,7 @@ export default function TodayScreen() {
   const t = useTheme();
   const { routines, done, toggle, reorder, ready } = useRoutineStore();
   const { tasks, toggle: toggleTask, remove: removeTask, reschedule } = useTaskStore();
-  const today = todayKey();
+  const today = useToday();
 
   // Open tasks first; done ones sink to the bottom (stable otherwise).
   const todayTasks = useMemo(

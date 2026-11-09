@@ -29,8 +29,8 @@ import { barcodeCandidates, lookupBarcode, RequestCancelled, searchFoods } from 
 import { useMealDraft } from '@/store/useMealDraft';
 import { useMealStore } from '@/store/useMealStore';
 import { radius, useTheme } from '@/theme';
+import { newId } from '@/domain/id';
 
-const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 const fmt = (n: number) => String(Math.round(n * 10) / 10);
 const parse = (s: string) => {
   const n = Number(s.replace(',', '.'));

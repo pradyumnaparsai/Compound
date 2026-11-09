@@ -9,7 +9,8 @@ import { TaskAdder } from '@/components/TaskAdder';
 import { TaskRow } from '@/components/TaskRow';
 import { YearView } from '@/components/YearView';
 import { sqliteWorkoutRepo } from '@/data/sqliteWorkoutLogRepository';
-import { MONTH_NAMES, WEEKDAY_LABELS, fromKey, monthGrid, todayKey } from '@/domain/date';
+import { MONTH_NAMES, WEEKDAY_LABELS, fromKey, monthGrid } from '@/domain/date';
+import { useToday } from '@/hooks/useToday';
 import { completionKey, dayStatus, scheduledOn } from '@/domain/recurrence';
 import { taskCounts, tasksOn } from '@/domain/task';
 import { useRoutineStore } from '@/store/useRoutineStore';
@@ -25,7 +26,7 @@ export default function CalendarScreen() {
   const counts = useMemo(() => taskCounts(tasks), [tasks]);
   const workoutDates = useWorkoutHistory((s) => s.dates);
   const workoutDays = useMemo(() => new Set(workoutDates), [workoutDates]);
-  const today = todayKey();
+  const today = useToday();
   const now = new Date();
   const [cursor, setCursor] = useState({ y: now.getFullYear(), m: now.getMonth() });
   const [selected, setSelected] = useState(today);

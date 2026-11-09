@@ -7,6 +7,7 @@ import { ProgressBar } from '@/components/ProgressBar';
 import { DiarySections } from '@/components/DiarySections';
 import { Screen } from '@/components/Screen';
 import { addDays, dayTitle, todayKey } from '@/domain/date';
+import { useToday } from '@/hooks/useToday';
 import { dayTotals, macroGoals, type MealSlot } from '@/domain/meal';
 import { useMealStore } from '@/store/useMealStore';
 import { radius, useTheme, type Theme } from '@/theme';
@@ -17,7 +18,7 @@ const fmtN = (n: number) => Math.round(n * 10) / 10;
 export default function MealsScreen() {
   const t = useTheme();
   const { meals, goals } = useMealStore();
-  const today = todayKey();
+  const today = useToday();
   // The tab stays mounted: keep following "today" unless the user stepped to another day.
   const [picked, setPicked] = useState<string | null>(null);
   const date = picked ?? today;

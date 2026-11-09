@@ -54,6 +54,7 @@ type State = {
 
 let timer: ReturnType<typeof setTimeout> | null = null;
 let saving: Promise<void> = Promise.resolve();
+let finishing = false;
 
 export const useWorkoutSession = create<State>((set, get) => {
   /** Applies a pure edit and (live mode) schedules the write. `now` is the moment of an immediate-write edit. */
@@ -118,7 +119,10 @@ export const useWorkoutSession = create<State>((set, get) => {
     },
 
     async startFromTemplate(template) {
-      if (get().workout) throw new UserError('Finish or discard the workout in progress first.');
+      if (get().workout) {
+        if (get().mode === 'live') throw new UserError('Finish or discard the workout in progress first.');
+        clear(); // a finished workout left open for editing (never saved) must not block starting a new one
+      }
       await loadHistories(template?.exercises.map((e) => e.exerciseId) ?? []);
       const ids = template?.exercises.map((e) => e.exerciseId) ?? [];
       const w = S.startWorkout({ id: newId(), now: new Date(), template, history: historyFor(ids), makeId: newId });
@@ -140,7 +144,7 @@ export const useWorkoutSession = create<State>((set, get) => {
         timer = null;
       }
       const { workout, mode } = get();
-      if (!workout || mode !== 'live') return;
+      if (!workout || mode !== 'live' || finishing) return; // finish() writes the final version itself
       saving = saving.then(() => repo.save(workout)).catch((e) => console.warn('Saving workout failed', e));
       await saving;
     },
@@ -152,9 +156,17 @@ export const useWorkoutSession = create<State>((set, get) => {
       const filled = opts?.countFilled ? S.completeFilledSets(workout, now) : workout;
       const done = S.finalizeWorkout(filled, now);
       const saved: Workout = mode === 'edit' ? { ...done, endedAt: workout.endedAt } : done;
-      await saving; // let any pending background write land first
-      await repo.save(saved);
-      clear();
+      // A debounced autosave of the old (unfinished) version must not land after the final save and resurrect it.
+      finishing = true;
+      if (timer) clearTimeout(timer);
+      timer = null;
+      try {
+        await saving; // let any pending background write land first
+        await repo.save(saved);
+        clear();
+      } finally {
+        finishing = false;
+      }
       await useWorkoutHistory.getState().load();
       return saved;
     },
@@ -162,8 +174,15 @@ export const useWorkoutSession = create<State>((set, get) => {
     async discard() {
       const { workout, mode } = get();
       if (workout && mode === 'live') {
-        await saving;
-        await repo.remove(workout.id);
+        finishing = true; // no autosave may re-create the workout while it is being deleted
+        if (timer) clearTimeout(timer);
+        timer = null;
+        try {
+          await saving;
+          await repo.remove(workout.id);
+        } finally {
+          finishing = false;
+        }
       }
       clear();
     },

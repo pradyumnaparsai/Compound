@@ -2,10 +2,13 @@ import type { Action } from '@/domain/assistant';
 import { completionKey, isScheduled } from '@/domain/recurrence';
 import { goalLabel } from '@/domain/goal';
 import { UserError } from '@/domain/errors';
+import { newId } from '@/domain/id';
 import { mealFromAnalysis } from '@/domain/meal';
+import { EMPTY_MEMORY } from '@/domain/memory';
 import { formatWeight } from '@/domain/units';
 import { analyzeMeal } from '@/services/mealAnalyzer';
 import { useMealStore } from '@/store/useMealStore';
+import { useMemoryStore } from '@/store/useMemoryStore';
 import { useRoutineStore } from '@/store/useRoutineStore';
 import { useTaskStore } from '@/store/useTaskStore';
 import { useUnitStore } from '@/store/useUnitStore';
@@ -19,8 +22,6 @@ export type Applied = {
   /** Present when the change can be reverted. */
   undo?: () => Promise<void>;
 };
-
-const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
 /** Applies one validated action through the same stores the screens use. Throws UserError for expected failures. */
 export async function applyAction(a: Action, now: Date, signal?: AbortSignal): Promise<Applied> {
@@ -105,6 +106,30 @@ export async function applyAction(a: Action, now: Date, signal?: AbortSignal): P
     case 'delete_meal': {
       await useMealStore.getState().remove(a.id);
       return { text: `Deleted meal ${a.title}` };
+    }
+    case 'remember': {
+      const s = useMemoryStore.getState();
+      const before = s.memory;
+      const { added } = await s.remember(a.category, a.text);
+      if (!added) return { text: `Already remembered: ${a.text}` };
+      return { text: `Remembered: ${added.text}`, undo: () => s.replace(before) };
+    }
+    case 'forget': {
+      const s = useMemoryStore.getState();
+      const before = s.memory;
+      if (!before.facts.some((f) => f.id === a.id)) throw new UserError(`I no longer remember "${a.title}".`);
+      await s.forget(a.id);
+      return { text: `Forgot: ${a.title}`, undo: () => s.replace(before) };
+    }
+    case 'forget_all': {
+      const s = useMemoryStore.getState();
+      const before = s.memory;
+      await s.replace(EMPTY_MEMORY);
+      return { text: 'Forgot everything about you', undo: () => s.replace(before) };
+    }
+    case 'skip_topic': {
+      await useMemoryStore.getState().skip(a.topic);
+      return { text: `Okay, I won't ask about ${a.topic}` };
     }
   }
 }

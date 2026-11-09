@@ -10,6 +10,9 @@ const settings: SettingsRepository = sqliteSettingsRepo;
 const scheduleRepo: MealScheduleRepository = sqliteMealScheduleRepo;
 
 const byTitle = (a: SavedMeal, b: SavedMeal) => a.title.localeCompare(b.title);
+/** Same order as the database (`ORDER BY date, logged_at`); Array.sort is stable. */
+export const byDayThenTime = (a: Meal, b: Meal) =>
+  a.date < b.date ? -1 : a.date > b.date ? 1 : a.loggedAt < b.loggedAt ? -1 : a.loggedAt > b.loggedAt ? 1 : 0;
 
 type State = {
   meals: Meal[]; // ascending by date, then logged time
@@ -45,7 +48,7 @@ export const useMealStore = create<State>((set, get) => ({
   },
   async add(meal) {
     await repo.add(meal);
-    set({ meals: [...get().meals, meal] });
+    set({ meals: [...get().meals, meal].sort(byDayThenTime) }); // a backdated meal must not land at the end
   },
   async update(meal) {
     await repo.update(meal);

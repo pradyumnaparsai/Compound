@@ -1,5 +1,6 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import type { MealSlot } from '@/domain/meal';
+import { newId } from '@/domain/id';
 
 /**
  * Photos whose AI analysis hasn't succeeded yet (503s, rate limits, offline, app killed mid-request).
@@ -9,7 +10,6 @@ export type PendingMeta = { note: string; slot: MealSlot; date: string; mimeType
 export type PendingMeal = PendingMeta & { id: string; uri: string };
 
 const MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;
-const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
 function dir(): Directory {
   const d = new Directory(Paths.document, 'pending-meals');

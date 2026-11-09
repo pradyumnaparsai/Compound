@@ -3,6 +3,7 @@ import { getDb } from '@/data/db';
 import { supabase, supabaseConfigured } from '@/data/supabase';
 import { UserError } from '@/domain/errors';
 import { useMealStore } from '@/store/useMealStore';
+import { useMemoryStore } from '@/store/useMemoryStore';
 import { useRoutineStore } from '@/store/useRoutineStore';
 import { useTaskStore } from '@/store/useTaskStore';
 import { useUnitStore } from '@/store/useUnitStore';
@@ -175,6 +176,7 @@ export async function restoreLatest(): Promise<void> {
     useMealStore.getState().load(),
     useTaskStore.getState().load(),
     useUnitStore.getState().load(),
+    useMemoryStore.getState().load(),
     useWorkoutLibraryStore.getState().load(),
     useWorkoutHistory.getState().load(),
     useWorkoutSession.getState().load(),
@@ -185,10 +187,12 @@ export async function restoreLatest(): Promise<void> {
 export function startAutoBackup(): () => void {
   let last = 0;
   const sub = AppState.addEventListener('change', async (s) => {
+    // 'inactive' can be the last state before the app is killed from the switcher, so it still counts; the claim
+    // below (and the 2 min throttle) stops the usual inactive -> background pair from backing up twice.
     if (s === 'active' || Date.now() - last < AUTO_MIN_INTERVAL_MS) return;
+    last = Date.now(); // claim the slot before any await so two quick events can't both start a backup
     try {
       if (!(await getSession()) || (await getSetting('backup_checked')) !== '1') return;
-      last = Date.now();
       await backupNow();
     } catch (e) {
       console.warn('Auto backup failed', e);

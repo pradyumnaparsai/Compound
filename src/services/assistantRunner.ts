@@ -1,12 +1,14 @@
 import { buildContext, confirmIntent, describeAction, isRisky, type Action, type Turn } from '@/domain/assistant';
 import { toKey } from '@/domain/date';
 import { friendlyError, UserError } from '@/domain/errors';
+import { newId } from '@/domain/id';
 import { applyAction } from '@/services/assistantActions';
 import { askAssistant } from '@/services/assistant';
 import { AnalysisCancelled } from '@/services/mealAnalyzer';
 import { getMuted, setMuted, speak, stopSpeaking } from '@/services/speak';
 import { useAssistantStore, type Chip } from '@/store/useAssistantStore';
 import { useMealStore } from '@/store/useMealStore';
+import { useMemoryStore } from '@/store/useMemoryStore';
 import { useRoutineStore } from '@/store/useRoutineStore';
 import { useTaskStore } from '@/store/useTaskStore';
 import { useUnitStore } from '@/store/useUnitStore';
@@ -15,7 +17,6 @@ import { useWeightStore } from '@/store/useWeightStore';
 const store = () => useAssistantStore.getState();
 /** friendlyError, worded for Atomic (no "the AI"). */
 const errorText = (e: unknown, fallback?: string) => friendlyError(e, fallback).replace(/\bThe AI\b/g, 'Atomic');
-const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
 /** A request that is still running after this long is abandoned with a visible error (never an endless spinner). */
 export const WATCHDOG_MS = 90_000;
@@ -158,8 +159,10 @@ export async function submit(raw: string): Promise<void> {
   listening(text);
   await guarded(async (signal) => {
     const now = new Date();
+    if (!useMemoryStore.getState().ready) await useMemoryStore.getState().load();
     const routines = useRoutineStore.getState();
     const context = buildContext({
+      memory: useMemoryStore.getState().memory,
       routines: routines.routines,
       done: routines.done,
       tasks: useTaskStore.getState().tasks,

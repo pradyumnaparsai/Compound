@@ -3,6 +3,7 @@
 import { addDays, fromKey, toKey, weekday } from './date';
 import { goalLabel } from './goal';
 import { dayTotals, isMealSlot, slotForTime, slotLabel, stripFences, type Goals, type Meal, type MealSlot } from './meal';
+import { EMPTY_MEMORY, isMemoryCategory, memoryContext, MAX_FACT_CHARS, type Memory, type MemoryCategory } from './memory';
 import { completionKey, isScheduled, recurrenceLabel } from './recurrence';
 import type { Routine, Task } from './types';
 import { formatNumber, kgToUnit, unitToKg, type WeightUnit } from './units';
@@ -19,7 +20,11 @@ export type Action =
   | { type: 'set_goals'; calories: number; proteinG: number }
   | { type: 'archive_routine'; id: string; title: string }
   | { type: 'delete_task'; id: string; title: string }
-  | { type: 'delete_meal'; id: string; title: string };
+  | { type: 'delete_meal'; id: string; title: string }
+  | { type: 'remember'; category: MemoryCategory; text: string }
+  | { type: 'forget'; id: string; title: string }
+  | { type: 'forget_all' }
+  | { type: 'skip_topic'; topic: MemoryCategory };
 
 export type RefItem = { ref: string; id: string; title: string };
 
@@ -28,6 +33,8 @@ export type AssistantContext = {
   routines: RefItem[];
   tasks: RefItem[];
   meals: RefItem[];
+  /** Remembered facts shown to the model (title = the fact), so "forget f2" resolves. */
+  facts: RefItem[];
   goals: Goals | null;
   /** The user's weight unit; a bare number in a spoken weight is read in this unit. */
   unit: WeightUnit;
@@ -43,6 +50,8 @@ export type ContextInput = {
   now: Date;
   /** Weight unit shown in the app (default kg). */
   unit?: WeightUnit;
+  /** What Atomic remembers about the user (default: nothing yet). */
+  memory?: Memory;
 };
 
 export type ParsedReply = { reply: string; actions: Action[]; skipped: string[] };
@@ -70,11 +79,18 @@ Reply with JSON only: {"reply": string, "actions": Action[]}
   {"type":"archive_routine","ref":str}
   {"type":"delete_task","ref":str}
   {"type":"delete_meal","ref":str}
+  {"type":"remember","category":"name|tone|diet|fitness|schedule|other","fact":str}  one short fact the user states about themselves (e.g. "vegetarian, no onions", "gym Mon/Wed/Fri 7am", "goal 72 kg"), max 12 words
+  {"type":"forget","ref":"f2"}  drop one remembered fact
+  {"type":"forget_all"}
+  {"type":"skip_topic","topic":"name|tone|diet|fitness|schedule"}  the user declined or said "skip"/"later" to an onboarding question
 Rules:
 - Resolve "tomorrow", "Friday", "next Monday" with the calendar in the context.
 - Several things in one sentence mean several actions; use one log_meal per distinct meal.
 - Never invent routines, tasks or meals. If a reference is unclear or a needed detail is missing, ask in reply with "actions": [].
-- Use archive_routine, delete_* and set_goals only when the user clearly asks for it.
+- Use archive_routine, delete_*, forget_all and set_goals only when the user clearly asks for it.
+- You are the user's personal assistant. Tailor answers to the remembered facts (address them by name, match the tone they asked for, respect diet and schedule) without reciting the facts back.
+- Use remember only for lasting preferences the user states about themselves, never for secrets, passwords, keys or other people's details. One fact per action; do not repeat a fact already remembered.
+- Onboarding: when the context says "Profile still unknown", first do whatever the user asked, then end the reply with ONE short, friendly question about the first topic listed (name: what to call them; tone: short or chatty replies; diet: veg/non-veg, allergies, cuisines; fitness: goal weight and workout days; schedule: wake time, work hours, usual meal times). If they answer, remember it. Never ask more than one question per reply and never ask when the profile is complete.
 - If the user only chats or asks a question (e.g. how many calories are left), answer in reply using the context, with "actions": [].`;
 
 /** Hint for Whisper. Kept short: on near-silent audio Whisper tends to echo its prompt back. */
@@ -114,8 +130,10 @@ export function buildContext(input: ContextInput): AssistantContext {
   const eaten = dayTotals(input.meals.filter((m) => m.date === today));
   const lastWeight = input.weights.length ? input.weights[input.weights.length - 1] : null;
   const unit = input.unit ?? 'kg';
+  const memory = memoryContext(input.memory ?? EMPTY_MEMORY);
 
   const lines = [
+    ...memory.lines,
     `Today: ${today} (${FULL_DAY_NAMES[weekday(today)]}), time ${String(input.now.getHours()).padStart(2, '0')}:${String(input.now.getMinutes()).padStart(2, '0')}`,
     `Calendar: ${calendar}`,
     input.goals
@@ -143,6 +161,7 @@ export function buildContext(input: ContextInput): AssistantContext {
     routines: routineItems.map(({ r, ref }) => ({ ref, id: r.id, title: r.title })),
     tasks: taskItems.map(({ t, ref }) => ({ ref, id: t.id, title: t.title })),
     meals: mealItems.map(({ m, ref }) => ({ ref, id: m.id, title: m.title })),
+    facts: memory.items.map(({ ref, fact }) => ({ ref, id: fact.id, title: fact.text })),
     goals: input.goals,
     unit,
   };
@@ -355,6 +374,26 @@ export function parseAssistantReply(raw: string, ctx: AssistantContext, now: Dat
         if (item) push({ type: 'delete_meal', id: item.id, title: item.title });
         break;
       }
+      case 'remember': {
+        const text = str(e.fact ?? e.text, MAX_FACT_CHARS);
+        if (!text) {
+          skipped.push('Could not understand what to remember');
+          break;
+        }
+        push({ type: 'remember', category: isMemoryCategory(e.category) ? e.category : 'other', text });
+        break;
+      }
+      case 'forget': {
+        const item = need(ctx.facts, e.ref, 'remembered fact');
+        if (item) push({ type: 'forget', id: item.id, title: item.title });
+        break;
+      }
+      case 'forget_all':
+        push({ type: 'forget_all' });
+        break;
+      case 'skip_topic':
+        if (isMemoryCategory(e.topic)) push({ type: 'skip_topic', topic: e.topic });
+        break;
       default:
         skipped.push('Skipped something I do not support');
     }
@@ -364,7 +403,11 @@ export function parseAssistantReply(raw: string, ctx: AssistantContext, now: Dat
 
 /** Deletes, archives and goal changes wait for a tap (or a spoken "yes"); everything else applies with Undo. */
 export const isRisky = (a: Action): boolean =>
-  a.type === 'set_goals' || a.type === 'archive_routine' || a.type === 'delete_task' || a.type === 'delete_meal';
+  a.type === 'set_goals' ||
+  a.type === 'archive_routine' ||
+  a.type === 'delete_task' ||
+  a.type === 'delete_meal' ||
+  a.type === 'forget_all';
 
 const relative = (date: string, today: string): string =>
   date === today ? 'today' : date === addDays(today, 1) ? 'tomorrow' : date === addDays(today, -1) ? 'yesterday' : date;
@@ -394,6 +437,14 @@ export function describeAction(a: Action, today: string, unit: WeightUnit = 'kg'
       return `Delete task: ${a.title}`;
     case 'delete_meal':
       return `Delete meal: ${a.title}`;
+    case 'remember':
+      return `Remember: ${a.text}`;
+    case 'forget':
+      return `Forget: ${a.title}`;
+    case 'forget_all':
+      return 'Forget everything I know about you';
+    case 'skip_topic':
+      return `Skip ${a.topic} questions`;
   }
 }
 

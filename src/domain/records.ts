@@ -1,6 +1,5 @@
 // Personal records and progress per exercise. Warm-up sets never count; unfinished sets never count.
-import { exerciseMap } from './exerciseCatalog';
-import { epley1RM, effectiveLoadKg, type ExerciseDef, type ExerciseType, type Workout, type WorkoutSet } from './workout';
+import { epley1RM, effectiveLoadKg, type ExerciseType, type Workout, type WorkoutSet } from './workout';
 
 export type RecordKind = 'weight' | 'oneRM' | 'reps' | 'setVolume' | 'duration' | 'distance';
 
@@ -130,9 +129,3 @@ export function exerciseProgress(workouts: Workout[], exerciseId: string, type: 
   }
   return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
-
-/** Convenience: type lookup over built-ins plus custom exercises. */
-export const typeLookup = (customs: ExerciseDef[]) => {
-  const m = exerciseMap(customs);
-  return (id: string) => m.get(id)?.type;
-};
