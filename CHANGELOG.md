@@ -3,6 +3,11 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.19.0 — 2026-11-09
+Needs a native rebuild (`scripts/install-ios.sh release`): adds `expo-video` and bumps `runtimeVersion` to 4. Not published OTA.
+### Changed
+- Startup splash now plays the BruceLee.mov clip (muted, sped up to fit 2s) with the COMPOUND title, then fades to the home screen. Tap to skip; skipped with Reduce Motion; never blocks the app if the video fails to load.
+
 ## v1.18.1 — 2026-11-08
 ### Fixed
 - App crashed on launch after the v1.18.0 rebuild (`Library not loaded: @rpath/React.framework/React`). `scripts/install-ios.sh` now builds the Expo modules from source instead of using the precompiled ExpoModulesWorklets framework.
