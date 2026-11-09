@@ -3,6 +3,17 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.20.0 — 2026-11-09
+### Added
+- Meals tab now shows the day's diary (Breakfast / Lunch / Snacks / Dinner) under the calories, macros and Log food button — no separate Diary screen.
+- Day stepper on the Meals tab and in Log food: log or correct food for past days or any future day (e.g. late-night food counted against tomorrow).
+- Edit on a diary entry: rename the meal and remove items with the − icon.
+### Changed
+- My meals moved into Log food and replaces Quick log (one list: tap to add, long-press to edit/delete, New meal, schedules).
+- After logging (AI, search, scan or My meals) you land back on the Meals tab with totals updated.
+### Removed
+- "Log again" on diary entries; the Diary screen; the Quick log chips; the My meals list on the Meals tab.
+
 ## v1.19.1 — 2026-11-09
 ### Changed
 - Startup splash plays at normal speed and runs 3s (was 2s with the clip sped up 2x). The clip is trimmed to 3s.
