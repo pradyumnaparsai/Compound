@@ -3,8 +3,8 @@
     "name": "Compound",
     "slug": "compound",
     "scheme": "compound",
-    "version": "1.18.1",
-    "runtimeVersion": "3",
+    "version": "1.19.0",
+    "runtimeVersion": "4",
     "updates": {
       "requestHeaders": {
         "expo-channel-name": "main"
@@ -60,7 +60,8 @@
           "background": false
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true
