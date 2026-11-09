@@ -3,6 +3,22 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.21.0 — 2026-11-09
+### Added
+- **Atomic remembers you.** In the first chats it asks one short question at a time (name, how you like replies, diet, fitness goals, daily schedule), saves what you say, and tailors its answers to it. Say "remember …", "forget …" or "forget everything" any time; Skip/Later stops a topic being asked again. Memory is kept on the device, included in the cloud backup and sent to your AI provider with each Atomic request.
+- **Memory screen** (person icon in the Atomic sheet): see everything Atomic knows, delete single facts or forget all.
+### Changed
+- Strength routines no longer show the schedule/"No strength workout logged yet" line on Today and Calendar (the Routines tab still labels them).
+### Fixed
+- Opening a finished workout and leaving without changes no longer blocks starting a new workout.
+- Workout history no longer shows duplicate entries when scrolling fast; finishing or discarding a workout can no longer be undone by a late autosave.
+- A failed database open is retried instead of breaking the app until restart; damaged saved meals/routines no longer stop the lists from loading.
+- A backdated meal keeps the diary in order; Today, Calendar and Meals roll over to the new day if left open past midnight.
+- Auto backup no longer fires twice when the app is backgrounded; voice recordings are deleted after transcription.
+### Removed
+- Unused code and image assets (about 0.4 MB); the strength-workout count text.
+- Smaller database work: new indexes for workout history and meals, and the barcode food cache is capped at 500 items.
+
 ## v1.20.0 — 2026-11-09
 ### Added
 - Meals tab now shows the day's diary (Breakfast / Lunch / Snacks / Dinner) under the calories, macros and Log food button — no separate Diary screen.
