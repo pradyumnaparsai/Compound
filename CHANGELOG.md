@@ -3,6 +3,13 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.23.0 — 2026-11-09
+### Changed
+- **Meal target.** The Meals tab button is now a bullseye and opens "Meal target", which holds only your daily calorie/protein/carb/fat goals.
+- **AI settings moved to Routines.** The settings icon on the Routines tab now holds everything shared by meals, voice and the assistant: Groq/Gemini keys and models, key tests, daily usage and limits, plus a link to Assistant memory. Log food shows separate banners for "Set daily goals" and "Add an API key".
+- **Manage workouts.** Templates, exercises and workout settings are reached from one Manage screen on the Workouts tab.
+- Exercise figures: cable exercises (crossover, cable raise) now show the cable and handle; incline press poses corrected.
+
 ## v1.22.0 — 2026-11-09
 ### Added
 - **Talkback.** Atomic now keeps the conversation going: after it finishes speaking it listens again by itself, so you no longer tap the mic for every turn. Toggle it with the mic icon in the Atomic sheet header (on by default, remembered). It stops listening after a silent take or an error, or when you tap to interrupt, cancel or close the sheet; tap the mic to resume.
