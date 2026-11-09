@@ -4,8 +4,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { Animated, PanResponder, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ASSISTANT_VOICE_HINT } from '@/domain/assistant';
+import { shouldAutoListen, TALKBACK_REARM_MS } from '@/domain/talkback';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
-import { initAssistant, openAssistant, reportError, stopAssistantSpeech, submit } from '@/services/assistantRunner';
+import { clearListenNext, initAssistant, openAssistant, reportError, stopAssistantSpeech, submit } from '@/services/assistantRunner';
 import { useAssistantStore } from '@/store/useAssistantStore';
 import { AtomicButton, type AtomicState } from './AtomicButton';
 import { AtomicPanel } from './AtomicPanel';
@@ -30,6 +31,8 @@ export function AtomicHost() {
   const segments = useSegments();
   const open = useAssistantStore((s) => s.open);
   const phase = useAssistantStore((s) => s.phase);
+  const talkback = useAssistantStore((s) => s.talkback);
+  const listenNext = useAssistantStore((s) => s.listenNext);
 
   const voice = useVoiceInput(
     (t) => submit(t),
@@ -65,12 +68,21 @@ export function AtomicHost() {
   const openPanel = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     openAssistant();
-    // Let the sheet start sliding in, then start listening straight away.
-    setTimeout(() => {
-      const v = fab.voice;
-      if (v && useAssistantStore.getState().open && v.state === 'idle') v.toggle();
-    }, 280);
+    // Open the mic in the same tick: the sheet shows "Listening" from its first frame (voice state is 'starting').
+    fab.voice?.toggle();
   }, []);
+
+  // Talkback: after a reply has been spoken, reopen the mic by itself.
+  useEffect(() => {
+    const input = { open, talkback, listenNext, phase, voice: voice.state };
+    if (!shouldAutoListen(input)) return;
+    const id = setTimeout(() => {
+      const s = useAssistantStore.getState();
+      clearListenNext();
+      if (shouldAutoListen({ ...s, voice: fab.voice?.state ?? 'idle' })) fab.voice?.toggle();
+    }, TALKBACK_REARM_MS);
+    return () => clearTimeout(id);
+  }, [open, talkback, listenNext, phase, voice.state]);
 
   const [responder] = useState(() =>
     PanResponder.create({
@@ -101,6 +113,7 @@ export function AtomicHost() {
   const onMicPress = useCallback(() => {
     const v = fab.voice;
     if (!v) return;
+    clearListenNext();
     if (v.state === 'recording') v.toggle();
     else if (v.state === 'idle' && useAssistantStore.getState().phase !== 'thinking') {
       stopAssistantSpeech(); // tapping while it talks interrupts and listens
@@ -109,7 +122,7 @@ export function AtomicHost() {
   }, []);
 
   const mode: AtomicState =
-    voice.state === 'recording'
+    voice.state === 'recording' || voice.state === 'starting'
       ? 'listening'
       : voice.state === 'transcribing' || phase === 'thinking'
         ? 'thinking'

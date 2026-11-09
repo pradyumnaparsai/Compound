@@ -8,6 +8,8 @@ jest.mock('@/services/speak', () => ({
   stopSpeaking: jest.fn(),
   getMuted: jest.fn(async () => false),
   setMuted: jest.fn(),
+  getTalkback: jest.fn(async () => true),
+  setTalkback: jest.fn(),
 }));
 jest.mock('@/services/mealAnalyzer', () => ({
   AnalysisCancelled: class AnalysisCancelled extends Error {
@@ -31,7 +33,7 @@ jest.mock('@/store/useWeightStore', () => ({ useWeightStore: { getState: () => (
 import { askAssistant } from '@/services/assistant';
 import { applyAction } from '@/services/assistantActions';
 import { AnalysisCancelled } from '@/services/mealAnalyzer';
-import { cancelPending, closeAssistant, openAssistant, submit, WATCHDOG_MS } from '@/services/assistantRunner';
+import { cancelPending, closeAssistant, openAssistant, submit, toggleTalkback, WATCHDOG_MS } from '@/services/assistantRunner';
 import { speak } from '@/services/speak';
 import { useAssistantStore } from '@/store/useAssistantStore';
 
@@ -47,7 +49,7 @@ const deleteTask: Action = { type: 'delete_task', id: 'T1', title: 'Buy milk' };
 beforeEach(() => {
   jest.clearAllMocks();
   jest.spyOn(console, 'warn').mockImplementation(() => {});
-  useAssistantStore.setState({ muted: false });
+  useAssistantStore.setState({ muted: false, talkback: true, listenNext: false });
   openAssistant();
 });
 afterEach(() => {
@@ -174,5 +176,73 @@ describe('panel lifecycle', () => {
     await p;
     expect(state().open).toBe(false);
     expect(state().phase).toBe('idle');
+  });
+});
+
+describe('talkback', () => {
+  const ok = () => ask.mockResolvedValue({ reply: 'Hi.', actions: [], skipped: [], model: 'x' });
+
+  it('asks the host to listen again once the reply has been spoken', async () => {
+    ok();
+    await submit('hello');
+    await flush();
+    expect(state().listenNext).toBe(true);
+  });
+
+  it('listens again straight away when muted (nothing to wait for)', async () => {
+    useAssistantStore.setState({ muted: true });
+    ok();
+    await submit('hello');
+    await flush();
+    expect(state().listenNext).toBe(true);
+  });
+
+  it('does not re-arm while the reply is still being spoken', async () => {
+    let finish: () => void = () => {};
+    spokenMock.mockImplementationOnce(() => new Promise<void>((r) => (finish = r)));
+    ok();
+    await submit('hello');
+    await flush();
+    expect(state().phase).toBe('speaking');
+    expect(state().listenNext).toBe(false);
+    finish();
+    await flush();
+    expect(state().listenNext).toBe(true);
+  });
+
+  it('does not re-arm when talkback is off', async () => {
+    useAssistantStore.setState({ talkback: false });
+    ok();
+    await submit('hello');
+    await flush();
+    expect(state().listenNext).toBe(false);
+  });
+
+  it('does not re-arm after an error', async () => {
+    ask.mockRejectedValue(Object.assign(new Error('x HTTP 500'), { status: 500 }));
+    await submit('hello');
+    await flush();
+    expect(state().listenNext).toBe(false);
+  });
+
+  it('does not re-arm when the user interrupts the reply or closes the sheet', async () => {
+    let finish: () => void = () => {};
+    spokenMock.mockImplementationOnce(() => new Promise<void>((r) => (finish = r)));
+    ok();
+    await submit('hello');
+    await flush();
+    closeAssistant();
+    finish();
+    await flush();
+    expect(state().listenNext).toBe(false);
+  });
+
+  it('toggleTalkback flips the setting and drops a pending re-arm', () => {
+    useAssistantStore.setState({ listenNext: true });
+    toggleTalkback();
+    expect(state().talkback).toBe(false);
+    expect(state().listenNext).toBe(false);
+    toggleTalkback();
+    expect(state().talkback).toBe(true);
   });
 });

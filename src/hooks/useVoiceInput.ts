@@ -10,7 +10,8 @@ import { UserError } from '@/domain/errors';
 import { autoStopDecision, cleanTranscript, isPromptEcho, MAX_RECORD_SECONDS, type MeterSample } from '@/domain/voice';
 import { transcribeAudio } from '@/services/transcribe';
 
-export type VoiceState = 'idle' | 'recording' | 'transcribing';
+/** `starting` = permission / recorder set-up in progress (the mic is about to open). */
+export type VoiceState = 'idle' | 'starting' | 'recording' | 'transcribing';
 
 // Speech only: mono 16 kHz keeps the upload to a few KB.
 const SPEECH_PRESET = { ...RecordingPresets.HIGH_QUALITY, sampleRate: 16000, numberOfChannels: 1, bitRate: 32000 };
@@ -41,6 +42,7 @@ export function useVoiceInput(
   const [state, setState] = useState<VoiceState>('idle');
   const stateRef = useRef<VoiceState>('idle');
   const abortRef = useRef<AbortController | null>(null);
+  const startId = useRef(0); // bumped by cancel(); a start() that is still setting up notices and backs out
   const autoStop = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handlers = useRef({ onText, onError, hint });
   useEffect(() => {
@@ -79,11 +81,18 @@ export function useVoiceInput(
   }, [recorder]);
 
   const start = useCallback(async () => {
+    const id = ++startId.current;
+    set('starting');
     try {
       const perm = await requestRecordingPermissionsAsync();
       if (!perm.granted) throw new UserError('Microphone access is off. Allow it in Settings → Compound.');
+      if (id !== startId.current) return;
       await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
       await recorder.prepareToRecordAsync();
+      if (id !== startId.current) {
+        setAudioModeAsync({ allowsRecording: false }).catch(() => {});
+        return;
+      }
       recorder.record();
       set('recording');
       tick();
@@ -102,6 +111,7 @@ export function useVoiceInput(
         }, METER_INTERVAL_MS);
       }
     } catch (e) {
+      if (id !== startId.current) return;
       set('idle');
       handlers.current.onError(e);
     }
@@ -117,6 +127,7 @@ export function useVoiceInput(
 
   /** Drops the current take (recording or upload) without delivering any text. */
   const cancel = useCallback(() => {
+    startId.current++;
     if (autoStop.current) clearTimeout(autoStop.current);
     autoStop.current = null;
     if (meter.current) clearInterval(meter.current);

@@ -12,6 +12,10 @@ type State = {
   open: boolean;
   phase: Phase;
   muted: boolean;
+  /** Talkback: after Atomic answers, it listens again by itself. */
+  talkback: boolean;
+  /** Set by the runner when a turn has finished (reply spoken); the host consumes it to reopen the mic. */
+  listenNext: boolean;
   exchange: Exchange | null;
   pending: Pending | null;
   /** Reverts the last batch of changes; cleared when the next request starts. */
@@ -23,6 +27,8 @@ export const useAssistantStore = create<State>((set) => ({
   open: false,
   phase: 'idle',
   muted: false,
+  talkback: true,
+  listenNext: false,
   exchange: null,
   pending: null,
   undo: null,

@@ -3,7 +3,7 @@ import { router, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { cancelPending, cancelRequest, closeAssistant, confirmPending, toggleMute, undoLast } from '@/services/assistantRunner';
+import { cancelPending, cancelRequest, closeAssistant, confirmPending, toggleMute, toggleTalkback, undoLast } from '@/services/assistantRunner';
 import { useAssistantStore } from '@/store/useAssistantStore';
 import { useMemoryStore } from '@/store/useMemoryStore';
 import { radius, space, useTheme } from '@/theme';
@@ -26,6 +26,7 @@ export function AtomicPanel({ state, onMicPress }: Props) {
   const pending = useAssistantStore((s) => s.pending);
   const undo = useAssistantStore((s) => s.undo);
   const muted = useAssistantStore((s) => s.muted);
+  const talkback = useAssistantStore((s) => s.talkback);
   const hasMemory = useMemoryStore((s) => s.memory.facts.length > 0);
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -84,6 +85,16 @@ export function AtomicPanel({ state, onMicPress }: Props) {
               style={{ marginRight: space.lg }}
             >
               <Ionicons name="person-circle-outline" size={23} color={t.textDim} />
+            </Pressable>
+            <Pressable
+              onPress={toggleTalkback}
+              hitSlop={10}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: talkback }}
+              accessibilityLabel="Talkback: keep listening after each reply"
+              style={{ marginRight: space.lg }}
+            >
+              <Ionicons name={talkback ? 'mic-circle' : 'mic-circle-outline'} size={25} color={talkback ? t.accent : t.textDim} />
             </Pressable>
             <Pressable onPress={toggleMute} hitSlop={10} accessibilityLabel={muted ? 'Turn voice replies on' : 'Turn voice replies off'}>
               <Ionicons name={muted ? 'volume-mute-outline' : 'volume-high-outline'} size={22} color={t.textDim} />

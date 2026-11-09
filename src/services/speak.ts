@@ -35,6 +35,11 @@ export const getMuted = async () => (await SecureStore.getItemAsync(MUTE_KEY).ca
 export const setMuted = (m: boolean) =>
   (m ? SecureStore.setItemAsync(MUTE_KEY, '1') : SecureStore.deleteItemAsync(MUTE_KEY)).catch(() => {});
 
+const TALKBACK_KEY = 'assistant.talkback'; // stored only when turned off, so the default is on
+export const getTalkback = async () => (await SecureStore.getItemAsync(TALKBACK_KEY).catch(() => null)) !== '0';
+export const setTalkback = (on: boolean) =>
+  (on ? SecureStore.deleteItemAsync(TALKBACK_KEY) : SecureStore.setItemAsync(TALKBACK_KEY, '0')).catch(() => {});
+
 class TtsError extends Error {
   constructor(
     message: string,

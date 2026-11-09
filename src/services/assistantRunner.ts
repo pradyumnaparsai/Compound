@@ -5,7 +5,7 @@ import { newId } from '@/domain/id';
 import { applyAction } from '@/services/assistantActions';
 import { askAssistant } from '@/services/assistant';
 import { AnalysisCancelled } from '@/services/mealAnalyzer';
-import { getMuted, setMuted, speak, stopSpeaking } from '@/services/speak';
+import { getMuted, getTalkback, setMuted, setTalkback, speak, stopSpeaking } from '@/services/speak';
 import { useAssistantStore, type Chip } from '@/store/useAssistantStore';
 import { useMealStore } from '@/store/useMealStore';
 import { useMemoryStore } from '@/store/useMemoryStore';
@@ -28,7 +28,14 @@ let speakToken = 0;
 let noteShown = false;
 
 export async function initAssistant(): Promise<void> {
-  store().set({ muted: await getMuted() });
+  const [muted, talkback] = await Promise.all([getMuted(), getTalkback()]);
+  store().set({ muted, talkback });
+}
+
+export function toggleTalkback(): void {
+  const talkback = !store().talkback;
+  store().set({ talkback, listenNext: false });
+  setTalkback(talkback);
 }
 
 export function toggleMute(): void {
@@ -44,9 +51,12 @@ function interruptSpeech() {
   if (store().phase === 'speaking') store().set({ phase: 'idle' });
 }
 
-/** Reads `text` aloud unless muted; the button shows "speaking" meanwhile. */
-async function say(text: string): Promise<void> {
-  if (store().muted || !text.trim()) return;
+/**
+ * Reads `text` aloud unless muted; the button shows "speaking" meanwhile.
+ * Resolves true when it ran to the end, false when the user interrupted it.
+ */
+async function say(text: string): Promise<boolean> {
+  if (store().muted || !text.trim()) return true;
   const token = ++speakToken;
   store().set({ phase: 'speaking' });
   try {
@@ -59,8 +69,24 @@ async function say(text: string): Promise<void> {
   } catch (e) {
     console.warn('Speaking failed', e);
   }
-  if (token === speakToken && store().phase === 'speaking') store().set({ phase: 'idle' });
+  const finished = token === speakToken;
+  if (finished && store().phase === 'speaking') store().set({ phase: 'idle' });
+  return finished;
 }
+
+/** Talkback: once the reply has been spoken (not interrupted) ask the host to reopen the mic. */
+function sayThenListen(text: string): void {
+  say(text)
+    .then((finished) => {
+      if (finished && store().open && store().talkback) store().set({ listenNext: true });
+    })
+    .catch(() => {});
+}
+
+/** Drops a pending auto-listen (the user took over, cancelled, or closed). */
+export const clearListenNext = () => {
+  if (store().listenNext) store().set({ listenNext: false });
+};
 
 /** Shows what Atomic heard while it works. */
 function listening(heard: string) {
@@ -146,6 +172,7 @@ async function guarded(work: (signal: AbortSignal) => Promise<void>): Promise<vo
 export async function submit(raw: string): Promise<void> {
   const text = raw.trim();
   if (!text || store().phase === 'thinking') return;
+  clearListenNext();
   interruptSpeech();
 
   const pending = store().pending;
@@ -193,7 +220,7 @@ export async function submit(raw: string): Promise<void> {
     const spoken = [reply, ...batch.spoken, ...batch.failed.slice(0, 1), risky.length ? 'Please confirm.' : '']
       .filter(Boolean)
       .join(' ');
-    say(spoken);
+    sayThenListen(spoken);
   });
 }
 
@@ -207,7 +234,7 @@ export async function confirmPending(): Promise<void> {
     respond(reply, batch.chips);
     offerUndo(batch.undos);
     remember(null, `${reply} [${batch.chips.map((c) => c.text).join('; ')}]`);
-    say([reply, ...batch.failed.slice(0, 1)].join(' '));
+    sayThenListen([reply, ...batch.failed.slice(0, 1)].join(' '));
   });
 }
 
@@ -216,7 +243,7 @@ export function cancelPending(): void {
   store().set({ pending: null });
   respond('Okay, I left it as it was.');
   remember(null, 'Okay, I left it as it was.');
-  say('Okay, I left it as it was.');
+  sayThenListen('Okay, I left it as it was.');
 }
 
 export async function undoLast(): Promise<void> {
@@ -227,7 +254,7 @@ export async function undoLast(): Promise<void> {
     await u.run();
     respond('Undone.');
     remember(null, 'Undone the last changes.');
-    say('Undone.');
+    sayThenListen('Undone.');
   } catch (e) {
     console.warn('Undo failed', e);
     respond('Could not undo that.', [], true);
@@ -236,13 +263,14 @@ export async function undoLast(): Promise<void> {
 
 /** Stops a request that is in flight (finished changes stay). */
 export function cancelRequest(): void {
+  clearListenNext();
   abort?.abort();
 }
 
 /** Opens Atomic with a clean slate (earlier turns are still remembered for follow-ups within the session). */
 export function openAssistant(): void {
   noteShown = false;
-  store().set({ open: true, exchange: null, pending: null, undo: null, phase: 'idle' });
+  store().set({ open: true, exchange: null, pending: null, undo: null, phase: 'idle', listenNext: false });
 }
 
 /** Closing stops speech and any request in flight; changes already made stay. */
@@ -250,7 +278,7 @@ export function closeAssistant(): void {
   abort?.abort();
   abort = null;
   interruptSpeech();
-  store().set({ open: false, phase: 'idle', pending: null });
+  store().set({ open: false, phase: 'idle', pending: null, listenNext: false });
 }
 
 export const stopAssistantSpeech = interruptSpeech;
