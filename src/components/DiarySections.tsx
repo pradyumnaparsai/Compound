@@ -186,7 +186,7 @@ export function DiarySections({ meals }: { meals: Meal[] }) {
                   >
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: t.text, fontSize: 16 }} numberOfLines={1}>
-                        {g.title} <Text style={{ color: t.accent, fontWeight: '700' }}>x{g.count}</Text>
+                        {g.title} x{g.count}
                       </Text>
                       <Text style={{ color: t.textDim, fontSize: 12 }}>{g.proteinG} g protein</Text>
                     </View>
