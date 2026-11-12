@@ -1,4 +1,4 @@
-import { caloriesOverGoal, defaultMealRoutine, goalLabel, mealFraction, goalProgress, mealGoalMet, mealGoalReached, MEAL_CALORIE_SLACK, MEAL_PROTEIN_SLACK, stepFraction } from '@/domain/goal';
+import { caloriesOverGoal, defaultMealRoutine, goalLabel, mealFraction, goalProgress, mealGoalDoneToday, mealGoalMet, mealGoalReached, MEAL_CALORIE_SLACK, MEAL_JUDGE_HOUR, MEAL_PROTEIN_SLACK, stepFraction } from '@/domain/goal';
 import { dayProgress, overdueTasks, taskCounts, tasksOn } from '@/domain/task';
 import type { Task } from '@/domain/types';
 import { weekStart, weeklyAverages } from '@/domain/weight';
@@ -84,6 +84,27 @@ describe('meal goal', () => {
     it('does not tick once calories are past the slack', () => {
       expect(reached(2150, 150)).toBe(true);
       expect(reached(2151, 150)).toBe(false);
+    });
+  });
+
+  describe('done today (9 PM judgement)', () => {
+    const done = (calories: number, proteinG: number, hour: number) => mealGoalDoneToday(g, { calories, proteinG }, hour);
+
+    it('judges with the slack from 9 PM, not before', () => {
+      expect(MEAL_JUDGE_HOUR).toBe(21);
+      expect(done(1900, 140, 20)).toBe(false);
+      expect(done(1900, 140, 21)).toBe(true);
+      expect(done(2150, 135, 23)).toBe(true);
+    });
+
+    it('still checks immediately once both targets are reached, at any hour', () => {
+      expect(done(2000, 150, 12)).toBe(true);
+    });
+
+    it('still fails major misses at 9 PM', () => {
+      expect(done(2151, 150, 21)).toBe(false);
+      expect(done(2000, 134, 21)).toBe(false);
+      expect(done(0, 0, 21)).toBe(false);
     });
   });
 

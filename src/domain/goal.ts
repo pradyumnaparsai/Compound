@@ -48,6 +48,21 @@ export function mealGoalReached(
   );
 }
 
+/** From this local hour on, today's meal goal is judged with the slack (instead of waiting for the day to end). */
+export const MEAL_JUDGE_HOUR = 21;
+
+/**
+ * Whether today's meal goal should be checked off now: either both targets are reached, or it is past
+ * MEAL_JUDGE_HOUR and the totals are within the slack.
+ */
+export function mealGoalDoneToday(
+  g: Extract<Goal, { type: 'meal' }>,
+  totals: { calories: number; proteinG: number },
+  hour: number,
+): boolean {
+  return mealGoalReached(g, totals) || (hour >= MEAL_JUDGE_HOUR && mealGoalMet(g, totals));
+}
+
 export function goalLabel(g: Goal): string {
   if (g.type === 'steps') return `${g.target.toLocaleString('en-US')} steps`;
   if (g.type === 'protein') return `${g.target} g protein`;

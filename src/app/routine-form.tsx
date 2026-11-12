@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { notifyError } from '@/components/notify';
 import { Screen } from '@/components/Screen';
-import { DEFAULT_STEP_TARGET, MEAL_CALORIE_SLACK, MEAL_PROTEIN_SLACK } from '@/domain/goal';
+import { DEFAULT_STEP_TARGET, MEAL_CALORIE_SLACK, MEAL_JUDGE_HOUR, MEAL_PROTEIN_SLACK } from '@/domain/goal';
 import type { Goal, Recurrence } from '@/domain/types';
 import { useMealStore } from '@/store/useMealStore';
 import { useRoutineStore } from '@/store/useRoutineStore';
@@ -181,7 +181,7 @@ export default function RoutineForm() {
               : goalKind === 'protein'
                 ? 'Checks itself off when the protein you log in the Meals tab reaches this amount for the day.'
                 : goalKind === 'meal'
-                  ? `Checks itself off as soon as the calories and protein you log in the Meals tab both reach these targets. A day that ended at most ${MEAL_CALORIE_SLACK} kcal over and ${MEAL_PROTEIN_SLACK} g protein under still gets checked the day after.`
+                  ? `Checks itself off as soon as the calories and protein you log in the Meals tab both reach these targets, or from ${MEAL_JUDGE_HOUR - 12} PM if the day is at most ${MEAL_CALORIE_SLACK} kcal over and ${MEAL_PROTEIN_SLACK} g protein under them.`
                   : 'Checks itself off once a Traditional Strength Training workout is logged in Apple Health that day.'}{' '}
             You can’t tick it by hand.
           </Text>

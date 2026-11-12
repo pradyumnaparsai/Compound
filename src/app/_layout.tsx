@@ -80,7 +80,7 @@ export default function RootLayout() {
   useEffect(() => {
     if (ready) ensureDefaultMealGoal().then(refreshMealGoals);
   }, [ready, meals, goalSignature]);
-  // Past days are judged once they have ended, so re-check when the app returns to the foreground.
+  // Past days and the 9 PM judgement depend on the clock, so re-check when the app returns to the foreground.
   useEffect(() => {
     if (!ready) return;
     const sub = AppState.addEventListener('change', (s) => s === 'active' && refreshMealGoals());
@@ -96,7 +96,11 @@ export default function RootLayout() {
   }, [schedules, savedMeals]);
   useEffect(() => {
     const sub = AppState.addEventListener('change', (s) => s === 'active' && runMealSchedules());
-    const timer = setInterval(() => AppState.currentState === 'active' && runMealSchedules(), 60_000);
+    const timer = setInterval(() => {
+      if (AppState.currentState !== 'active') return;
+      runMealSchedules();
+      refreshMealGoals(); // picks up the 9 PM meal-goal judgement while the app stays open
+    }, 60_000);
     return () => {
       sub.remove();
       clearInterval(timer);

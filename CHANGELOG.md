@@ -3,6 +3,10 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.29.1 — 2026-11-12
+### Changed
+- **"Hit meal goal" now uses its allowance from 9 PM** instead of waiting for the day to end: from 9 PM it checks itself off if calories are at most 150 over and protein at most 15 g under the targets. Reaching both targets earlier still checks it immediately. Checked every minute while the app is open, and on next open otherwise.
+
 ## v1.29.0 — 2026-11-12
 ### Changed
 - **"Hit meal goal" now checks itself off today, as soon as your logged calories and protein both reach the targets** (calories can be at most 150 over). Past days are still judged the day after, with the same slack (150 kcal over, 15 g protein under).
