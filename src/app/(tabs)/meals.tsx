@@ -8,6 +8,7 @@ import { DiarySections } from '@/components/DiarySections';
 import { Screen } from '@/components/Screen';
 import { addDays, dayTitle, todayKey } from '@/domain/date';
 import { useToday } from '@/hooks/useToday';
+import { caloriesOverGoal } from '@/domain/goal';
 import { dayTotals, macroGoals } from '@/domain/meal';
 import { useDiaryDate } from '@/store/useDiaryDate';
 import { useMealStore } from '@/store/useMealStore';
@@ -32,6 +33,7 @@ export default function MealsScreen() {
   const dayMeals = useMemo(() => meals.filter((m) => m.date === date), [meals, date]);
   const totals = dayTotals(dayMeals);
   const targets = goals ? macroGoals(goals) : null;
+  const overGoal = !!targets && caloriesOverGoal(totals.calories, targets.calories); // red only past the slack
   const weekAvg = useMemo(() => {
     const from = addDays(today, -7);
     const past = meals.filter((m) => m.date >= from && m.date < today);
@@ -82,7 +84,7 @@ export default function MealsScreen() {
               {targets ? <Text style={[styles.unitSm, { color: t.textDim }]}>{` / ${targets.calories.toLocaleString()} cal`}</Text> : <Text style={styles.unitSm}> cal</Text>}
             </Text>
             {targets && (
-              <Text style={{ color: totals.calories > targets.calories ? t.danger : t.textDim, fontSize: 13, fontWeight: '600' }}>
+              <Text style={{ color: overGoal ? t.danger : t.textDim, fontSize: 13, fontWeight: '600' }}>
                 {Math.abs(targets.calories - totals.calories).toLocaleString()} {totals.calories > targets.calories ? 'over' : 'left'}
               </Text>
             )}
@@ -90,7 +92,7 @@ export default function MealsScreen() {
           <ProgressBar
             value={targets ? totals.calories / targets.calories : 0}
             height={8}
-            color={targets && totals.calories > targets.calories ? t.danger : t.success}
+            color={overGoal ? t.danger : t.success}
           />
           {weekAvg !== null && (
             <Text style={{ color: t.textDim, fontSize: 12, marginTop: 10 }}>7-day avg {weekAvg.toLocaleString()} cal</Text>

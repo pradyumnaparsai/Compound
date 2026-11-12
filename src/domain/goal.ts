@@ -16,6 +16,9 @@ export function defaultMealRoutine(goals: Goals): RoutineInput {
   };
 }
 
+/** True only when calories exceed the target by more than the slack: a few calories over is not a miss. */
+export const caloriesOverGoal = (calories: number, target: number): boolean => calories > target + MEAL_CALORIE_SLACK;
+
 /** 0..1 protein progress toward a meal goal (drives the progress ring). */
 export function mealFraction(g: Goal, proteinG: number): number {
   if (g.type !== 'meal' || !(g.proteinG > 0)) return 0;

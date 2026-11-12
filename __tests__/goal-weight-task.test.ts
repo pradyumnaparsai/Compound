@@ -1,4 +1,4 @@
-import { defaultMealRoutine, goalLabel, mealFraction, goalProgress, mealGoalMet, MEAL_CALORIE_SLACK, MEAL_PROTEIN_SLACK, stepFraction } from '@/domain/goal';
+import { caloriesOverGoal, defaultMealRoutine, goalLabel, mealFraction, goalProgress, mealGoalMet, MEAL_CALORIE_SLACK, MEAL_PROTEIN_SLACK, stepFraction } from '@/domain/goal';
 import { dayProgress, overdueTasks, taskCounts, tasksOn } from '@/domain/task';
 import type { Task } from '@/domain/types';
 import { weekStart, weeklyAverages } from '@/domain/weight';
@@ -26,6 +26,17 @@ describe('goals', () => {
   it('shows no progress text for strength routines on the daily views', () => {
     expect(goalProgress({ type: 'workout' }, 0, true)).toBe('');
     expect(goalProgress({ type: 'workout' }, 0, false)).toBe('');
+  });
+});
+
+describe('caloriesOverGoal', () => {
+  it('is not over within the slack, in either direction', () => {
+    expect(caloriesOverGoal(1850, 2000)).toBe(false);
+    expect(caloriesOverGoal(2000, 2000)).toBe(false);
+    expect(caloriesOverGoal(2150, 2000)).toBe(false);
+  });
+  it('is over only beyond the slack', () => {
+    expect(caloriesOverGoal(2151, 2000)).toBe(true);
   });
 });
 

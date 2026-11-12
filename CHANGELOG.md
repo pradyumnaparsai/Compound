@@ -3,6 +3,10 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.26.1 — 2026-11-12
+### Fixed
+- **Calories no longer turn red for being a little over.** On the Meals tab the calorie count and bar stay normal until you are more than 150 cal over the goal, matching the 150 cal slack the daily meal-goal routine already allows.
+
 ## v1.26.0 — 2026-11-12
 ### Changed
 - **Fireworks on workout completion.** Finishing a workout now launches a fireworks show instead of confetti (reduce-motion still skips it).
