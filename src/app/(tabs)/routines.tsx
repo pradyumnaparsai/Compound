@@ -6,7 +6,6 @@ import { ReorderableList } from '@/components/ReorderableList';
 import { Screen } from '@/components/Screen';
 import { VersionInfo } from '@/components/VersionInfo';
 import { goalLabel } from '@/domain/goal';
-import { useOneTimeHint } from '@/hooks/useOneTimeHint';
 import { recurrenceLabel } from '@/domain/recurrence';
 import { useRoutineStore } from '@/store/useRoutineStore';
 import { radius, useTheme } from '@/theme';
@@ -15,7 +14,6 @@ export default function RoutinesScreen() {
   const t = useTheme();
   const { routines, archiveRoutine, reorder } = useRoutineStore();
   const active = routines.filter((r) => !r.archivedAt);
-  const showHint = useOneTimeHint('reorder-routines', active.length > 1);
 
   const confirmArchive = (id: string, title: string) =>
     Alert.alert('Archive routine?', `"${title}" will stop appearing from today. Past history is kept.`, [
@@ -48,17 +46,6 @@ export default function RoutinesScreen() {
         contentContainerStyle={{ paddingBottom: 96 }} // clear of the floating button
         onReorder={(ids) => reorder(ids).catch(onFail())}
         empty={<Text style={{ color: t.textDim }}>No routines yet. Tap + to create your first one.</Text>}
-        footer={
-          <Pressable
-            onPress={() => router.push('/routine-form')}
-            style={[styles.newBtn, { borderColor: t.border }]}
-            accessibilityRole="button"
-            accessibilityLabel="New routine"
-          >
-            <Ionicons name="add" size={20} color={t.accent} />
-            <Text style={{ color: t.accent, fontSize: 16, fontWeight: '700' }}>New routine</Text>
-          </Pressable>
-        }
         renderItem={(item, drag) => (
           <Pressable
             onPress={() => router.push({ pathname: '/routine-form', params: { id: item.id } })}
@@ -80,11 +67,6 @@ export default function RoutinesScreen() {
           </Pressable>
         )}
       />
-      {showHint && (
-        <Text style={{ color: t.textDim, fontSize: 12, textAlign: 'center', paddingBottom: 12 }}>
-          Long-press and drag to reorder · ⋯ to archive
-        </Text>
-      )}
       <VersionInfo />
     </Screen>
   );
@@ -95,15 +77,4 @@ const styles = StyleSheet.create({
   title: { fontSize: 34, fontWeight: '800' },
   row: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: radius.md, borderWidth: 1, marginBottom: 10 },
   rowTitle: { fontSize: 17, fontWeight: '600' },
-  newBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 14,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    marginTop: 4,
-  },
 });
