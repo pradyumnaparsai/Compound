@@ -3,6 +3,12 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.28.0 — 2026-11-12
+### Added
+- **Starting a template workout now starts a live Traditional Strength Training session on the iPhone (iOS 26+),** so you no longer have to start one by hand. Finishing the workout ends the session and saves it to Apple Health with the real start and end; cancelling it discards the session. On older iOS, or if no session is running, the workout is saved to Health at the end as before.
+### Changed
+- Native change: needs a rebuild (`scripts/install-ios.sh release`); `runtimeVersion` is now 5.
+
 ## v1.27.0 — 2026-11-12
 ### Added
 - **Repeated meals are grouped.** On the Meals tab, the same meal logged more than once in a section shows as one row with combined calories and protein and an `x2` badge; tap it to see and edit each entry.
