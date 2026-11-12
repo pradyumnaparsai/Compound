@@ -3,6 +3,10 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.24.2 — 2026-11-12
+### Changed
+- **Routines tab.** Removed the "New routine" button under the list and the reorder/archive hint text; the floating "+" creates routines.
+
 ## v1.24.1 — 2026-11-12
 ### Changed
 - **Meals diary.** Removed the "+" next to Breakfast, Lunch, Snacks and Dinner; the floating "+" is the single way to log food.
