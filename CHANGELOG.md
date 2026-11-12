@@ -3,6 +3,10 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.24.1 — 2026-11-12
+### Changed
+- **Meals diary.** Removed the "+" next to Breakfast, Lunch, Snacks and Dinner; the floating "+" is the single way to log food.
+
 ## v1.24.0 — 2026-11-12
 ### Added
 - **Confetti.** A small burst on every routine/task you tick off, and a big celebration the first time each day you reach 80% of your routines and tasks.
