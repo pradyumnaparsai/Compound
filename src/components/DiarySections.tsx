@@ -4,7 +4,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { onFail } from '@/components/notify';
-import { dayTotals, MEAL_SLOTS, type Meal, type MealSlot, renameMeal, withoutIngredient } from '@/domain/meal';
+import { dayTotals, MEAL_SLOTS, type Meal, renameMeal, withoutIngredient } from '@/domain/meal';
 import { useMealStore } from '@/store/useMealStore';
 import { radius, useTheme } from '@/theme';
 
@@ -12,7 +12,7 @@ const tap = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch((
 const timeOf = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
 /** The day's Breakfast / Lunch / Snacks / Dinner cards: expand an entry, edit its name, remove items, move or delete it. */
-export function DiarySections({ meals, onAdd }: { meals: Meal[]; onAdd: (slot: MealSlot) => void }) {
+export function DiarySections({ meals }: { meals: Meal[] }) {
   const t = useTheme();
   const { update, remove } = useMealStore();
   const [open, setOpen] = useState<string | null>(null);
@@ -83,14 +83,6 @@ export function DiarySections({ meals, onAdd }: { meals: Meal[]; onAdd: (slot: M
             <View style={styles.secHead}>
               <Text style={{ color: t.text, fontSize: 17, fontWeight: '800', flex: 1 }}>{sec.label}</Text>
               <Text style={{ color: t.textDim, fontSize: 14, fontWeight: '600' }}>{kcal.toLocaleString()} cal</Text>
-              <Pressable
-                onPress={() => onAdd(sec.key)}
-                hitSlop={8}
-                style={[styles.addBtn, { backgroundColor: t.accentSoft }]}
-                accessibilityLabel={`Add to ${sec.label}`}
-              >
-                <Ionicons name="add" size={18} color={t.accent} />
-              </Pressable>
             </View>
             {sec.items.map((m) => {
               const isEditing = editing === m.id;
@@ -185,7 +177,6 @@ export function DiarySections({ meals, onAdd }: { meals: Meal[]; onAdd: (slot: M
 const styles = StyleSheet.create({
   card: { borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.lg, paddingHorizontal: 18, paddingVertical: 6, marginTop: 12 },
   secHead: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10 },
-  addBtn: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   divider: { borderTopWidth: StyleSheet.hairlineWidth },
   logRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
   titleInput: { fontSize: 16, borderRadius: radius.sm, paddingHorizontal: 10, paddingVertical: 6, marginBottom: 4 },

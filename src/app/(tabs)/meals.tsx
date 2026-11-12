@@ -8,7 +8,7 @@ import { DiarySections } from '@/components/DiarySections';
 import { Screen } from '@/components/Screen';
 import { addDays, dayTitle, todayKey } from '@/domain/date';
 import { useToday } from '@/hooks/useToday';
-import { dayTotals, macroGoals, type MealSlot } from '@/domain/meal';
+import { dayTotals, macroGoals } from '@/domain/meal';
 import { useDiaryDate } from '@/store/useDiaryDate';
 import { useMealStore } from '@/store/useMealStore';
 import { radius, useTheme, type Theme } from '@/theme';
@@ -31,10 +31,6 @@ export default function MealsScreen() {
   };
   const dayMeals = useMemo(() => meals.filter((m) => m.date === date), [meals, date]);
   const totals = dayTotals(dayMeals);
-  const addTo = (slot: MealSlot) => {
-    tap();
-    router.push(`/scan?slot=${slot}&mode=search&date=${date}` as Href);
-  };
   const targets = goals ? macroGoals(goals) : null;
   const weekAvg = useMemo(() => {
     const from = addDays(today, -7);
@@ -109,7 +105,7 @@ export default function MealsScreen() {
           </View>
         </View>
 
-        <DiarySections meals={dayMeals} onAdd={addTo} />
+        <DiarySections meals={dayMeals} />
       </ScrollView>
     </Screen>
   );
