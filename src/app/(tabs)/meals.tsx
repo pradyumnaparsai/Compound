@@ -1,7 +1,7 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { router, type Href } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ProgressBar } from '@/components/ProgressBar';
 import { DiarySections } from '@/components/DiarySections';
@@ -9,6 +9,7 @@ import { Screen } from '@/components/Screen';
 import { addDays, dayTitle, todayKey } from '@/domain/date';
 import { useToday } from '@/hooks/useToday';
 import { dayTotals, macroGoals, type MealSlot } from '@/domain/meal';
+import { useDiaryDate } from '@/store/useDiaryDate';
 import { useMealStore } from '@/store/useMealStore';
 import { radius, useTheme, type Theme } from '@/theme';
 
@@ -20,13 +21,14 @@ export default function MealsScreen() {
   const { meals, goals } = useMealStore();
   const today = useToday();
   // The tab stays mounted: keep following "today" unless the user stepped to another day.
-  const [picked, setPicked] = useState<string | null>(null);
+  const picked = useDiaryDate((s) => s.picked);
+  const setPicked = useDiaryDate((s) => s.setPicked);
   const date = picked ?? today;
   const isToday = date === today;
-  const step = (n: number) => setPicked((p) => {
-    const next = addDays(p ?? todayKey(), n);
-    return next === todayKey() ? null : next;
-  });
+  const step = (n: number) => {
+    const next = addDays(useDiaryDate.getState().picked ?? todayKey(), n);
+    setPicked(next === todayKey() ? null : next);
+  };
   const dayMeals = useMemo(() => meals.filter((m) => m.date === date), [meals, date]);
   const totals = dayTotals(dayMeals);
   const addTo = (slot: MealSlot) => {
@@ -48,7 +50,7 @@ export default function MealsScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         automaticallyAdjustKeyboardInsets
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingBottom: 96 }} // clear of the floating "Log food" button
       >
         <View style={styles.header}>
           <Text style={[styles.title, { color: t.text }]}>Meals</Text>
@@ -107,18 +109,6 @@ export default function MealsScreen() {
           </View>
         </View>
 
-        <Pressable
-          onPress={() => {
-            tap();
-            router.push(`/log-meal?date=${date}` as Href);
-          }}
-          style={[styles.logBtn, { backgroundColor: t.accent }]}
-          accessibilityLabel="Log food"
-        >
-          <Ionicons name="add-circle" size={20} color="#fff" />
-          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>Log food</Text>
-        </Pressable>
-
         <DiarySections meals={dayMeals} onAdd={addTo} />
       </ScrollView>
     </Screen>
@@ -151,5 +141,4 @@ const styles = StyleSheet.create({
   unitXs: { fontSize: 12, fontWeight: '600' },
   macroRow: { flexDirection: 'row', gap: 14 },
   dateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, paddingHorizontal: 4 },
-  logBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: radius.md, paddingVertical: 16, marginTop: 14 },
 });

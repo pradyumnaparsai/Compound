@@ -72,6 +72,17 @@ describe('workout log repository (real SQLite)', () => {
     expect(await repo().datesWithWorkouts()).toEqual(['2026-11-01']);
   });
 
+  it('countFinishedUpTo gives the "Nth workout" and ignores unfinished ones', async () => {
+    const ws = ['2026-10-01', '2026-10-02', '2026-10-03'].map((d) => workout(d, [ex('a', [set(1, 1)])]));
+    for (const w of ws) await repo().save(w);
+    await repo().save({ ...workout('2026-10-04', [ex('a', [set(1, 1, { isCompleted: false })])]), endedAt: null });
+    expect(await repo().countFinishedUpTo(ws[0].startedAt)).toBe(1);
+    expect(await repo().countFinishedUpTo(ws[2].startedAt)).toBe(3);
+    // Editing an older workout later must not change its own number or the newest one's.
+    expect(await repo().countFinishedUpTo(ws[1].startedAt)).toBe(2);
+    expect(await repo().countFinishedUpTo('2025-01-01T00:00:00.000Z')).toBe(0);
+  });
+
   it('remove deletes exercises and sets too', async () => {
     const w = full();
     await repo().save(w);

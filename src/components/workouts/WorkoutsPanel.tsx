@@ -10,6 +10,7 @@ import { HistoryPanel } from '@/components/workouts/HistoryPanel';
 import { startWorkout } from '@/hooks/useStartWorkout';
 import { exerciseMap } from '@/domain/exerciseCatalog';
 import type { WorkoutTemplate } from '@/domain/workout';
+import { useWorkoutFocus } from '@/store/useWorkoutFocus';
 import { useWorkoutLibraryStore } from '@/store/useWorkoutLibraryStore';
 import { radius, useTheme } from '@/theme';
 
@@ -20,7 +21,11 @@ type Sub = 'templates' | 'history';
 /** Workouts: the in-progress banner, then Templates (start a session) or History (what was logged). */
 export function WorkoutsPanel() {
   const t = useTheme();
-  const [sub, setSub] = useState<Sub>('templates');
+  const highlightId = useWorkoutFocus((s) => s.highlightId);
+  // After finishing a workout show what was logged, not the templates, until the user picks a tab.
+  const [manual, setManual] = useState<{ value: Sub; at: string | null }>({ value: 'templates', at: null });
+  const sub = highlightId && manual.at !== highlightId ? 'history' : manual.value;
+  const setSub = (value: Sub) => setManual({ value, at: highlightId });
   return (
     <View style={{ flex: 1 }}>
       <ActiveWorkoutBanner />

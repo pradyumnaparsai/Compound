@@ -5,7 +5,7 @@ import { useTheme } from '@/theme';
 
 export type AtomicState = 'idle' | 'listening' | 'thinking' | 'speaking';
 
-type Props = { state: AtomicState; size: number; /** idle shows the atom mark; the panel's main button shows a mic. */ mark?: 'atom' | 'mic' };
+type Props = { state: AtomicState; size: number; /** idle shows the atom mark; the panel's main button shows a mic. */ mark?: 'atom' | 'mic' | 'plus' };
 
 /**
  * Atomic's round button in the app's accent colour. One soft ring pulses outward while it listens or speaks;
@@ -55,6 +55,8 @@ export function AtomicButton({ state, size, mark = 'mic' }: Props) {
           <Ionicons name="stop" size={icon * 0.8} color="#fff" />
         ) : state === 'speaking' ? (
           <Ionicons name="volume-high" size={icon} color="#fff" />
+        ) : mark === 'plus' ? (
+          <Ionicons name="add" size={icon * 1.5} color="#fff" />
         ) : mark === 'atom' ? (
           <MaterialCommunityIcons name="atom" size={icon * 1.15} color="#fff" />
         ) : (

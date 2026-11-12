@@ -4,6 +4,7 @@ import { useEffect, useMemo } from 'react';
 import { AppState, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AtomicHost } from '@/components/atomic/AtomicHost';
+import { ConfettiHost } from '@/components/ConfettiHost';
 import { StartupSplash } from '@/components/StartupSplash';
 import { startAutoBackup } from '@/services/backup';
 import { refreshHealth } from '@/services/healthSync';
@@ -141,6 +142,7 @@ export default function RootLayout() {
             <Stack.Screen name="workout-settings" options={{ presentation: 'modal' }} />
             <Stack.Screen name="memory" options={{ presentation: 'modal' }} />
           </Stack>
+          <ConfettiHost />
           <AtomicHost />
           <StartupSplash />
         </View>

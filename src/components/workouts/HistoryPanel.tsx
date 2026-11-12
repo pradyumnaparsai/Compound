@@ -1,5 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ExerciseThumb } from '@/components/workouts/ExerciseThumb';
 import { exerciseMap } from '@/domain/exerciseCatalog';
@@ -8,6 +9,7 @@ import { workoutDurationSeconds, formatDuration, workoutVolume, completedSetCoun
 import { formatDateLabel, formatVolume } from '@/domain/workoutFormat';
 import { useUnitStore } from '@/store/useUnitStore';
 import { useWeightStore } from '@/store/useWeightStore';
+import { useWorkoutFocus } from '@/store/useWorkoutFocus';
 import { useWorkoutHistory } from '@/store/useWorkoutHistory';
 import { useWorkoutLibraryStore } from '@/store/useWorkoutLibraryStore';
 import { radius, useTheme } from '@/theme';
@@ -21,6 +23,12 @@ export function HistoryPanel() {
   const { unit, warmupVolume } = useUnitStore();
   const defs = useMemo(() => exerciseMap(customs), [customs]);
   const year = new Date().getFullYear();
+  const highlightId = useWorkoutFocus((s) => s.highlightId);
+  const listRef = useRef<FlatList<Workout>>(null);
+  // Just finished a workout: it is the newest, so make sure the list starts at the top.
+  useEffect(() => {
+    if (highlightId) listRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }, [highlightId, recent.length]);
 
   const stats = (w: Workout) => ({
     volume: workoutVolume(w, (id) => defs.get(id)?.type, { includeWarmup: warmupVolume, bodyweightKg: weightOn(weights, w.date) }),
@@ -30,6 +38,7 @@ export function HistoryPanel() {
 
   return (
     <FlatList
+      ref={listRef}
       data={recent}
       keyExtractor={(w) => w.id}
       showsVerticalScrollIndicator={false}
@@ -43,11 +52,22 @@ export function HistoryPanel() {
       renderItem={({ item: w }) => {
         const st = stats(w);
         const top = w.exercises.slice(0, 3);
+        const fresh = w.id === highlightId;
         return (
           <Pressable
             onPress={() => router.push(`/workout-detail?id=${w.id}` as Href)}
-            style={[styles.card, { backgroundColor: t.surface, borderColor: t.border }]}
+            style={[
+              styles.card,
+              { backgroundColor: fresh ? t.accentSoft : t.surface, borderColor: fresh ? t.accent : t.border },
+              fresh && { borderWidth: 2 },
+            ]}
           >
+            {fresh && (
+              <View style={styles.badge}>
+                <Ionicons name="checkmark-circle" size={16} color={t.accent} />
+                <Text style={{ color: t.accent, fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 }}>Just logged</Text>
+              </View>
+            )}
             <View style={styles.head}>
               <Text style={{ color: t.text, fontSize: 17, fontWeight: '700', flex: 1 }} numberOfLines={1}>
                 {w.title}
@@ -81,5 +101,6 @@ export function HistoryPanel() {
 const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: radius.lg, padding: 14, marginBottom: 10, gap: 4 },
   head: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+  badge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   exRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
 });

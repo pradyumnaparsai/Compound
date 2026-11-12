@@ -117,6 +117,8 @@ export interface WorkoutRepository {
   listByDate(date: string): Promise<Workout[]>;
   /** Local dates (YYYY-MM-DD) that have a finished workout. */
   datesWithWorkouts(): Promise<string[]>;
+  /** How many finished workouts started at or before `startedAt` (so the newest one's count is its "Nth workout"). */
+  countFinishedUpTo(startedAt: string): Promise<number>;
   /** Also deletes its exercises and sets. */
   remove(id: string): Promise<void>;
 }

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { onFail } from '@/components/notify';
 import { dayTotals, MEAL_SLOTS, type Meal, type MealSlot, renameMeal, withoutIngredient } from '@/domain/meal';
@@ -17,6 +18,17 @@ export function DiarySections({ meals, onAdd }: { meals: Meal[]; onAdd: (slot: M
   const [open, setOpen] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState('');
+
+  // Leaving the tab (blur) collapses every expanded meal and ends any rename, so it opens fresh next time.
+  useFocusEffect(
+    useCallback(
+      () => () => {
+        setOpen(null);
+        setEditing(null);
+      },
+      [],
+    ),
+  );
 
   const sections = MEAL_SLOTS.map((s) => ({ ...s, items: meals.filter((m) => m.slot === s.key) }));
 

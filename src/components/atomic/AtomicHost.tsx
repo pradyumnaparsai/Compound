@@ -1,17 +1,21 @@
 import * as Haptics from 'expo-haptics';
-import { useSegments } from 'expo-router';
+import { router, useSegments, type Href } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Animated, PanResponder, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ASSISTANT_VOICE_HINT } from '@/domain/assistant';
+import { fabAction } from '@/domain/fabAction';
 import { shouldAutoListen, TALKBACK_REARM_MS } from '@/domain/talkback';
+import { useToday } from '@/hooks/useToday';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { clearListenNext, initAssistant, openAssistant, reportError, stopAssistantSpeech, submit } from '@/services/assistantRunner';
 import { useAssistantStore } from '@/store/useAssistantStore';
+import { useDiaryDate } from '@/store/useDiaryDate';
 import { AtomicButton, type AtomicState } from './AtomicButton';
 import { AtomicPanel } from './AtomicPanel';
 
 const FAB = 52;
+const LONG_PRESS_MS = 450;
 const MARGIN = 14;
 const TAB_BAR = 49;
 // Screens presented as native modals or camera views cover the app, so the button can't (and shouldn't) show there.
@@ -19,11 +23,17 @@ const HIDDEN_ON = new Set(['routine-form', 'scan', 'meal-builder', 'meal-target'
 
 type Voice = ReturnType<typeof useVoiceInput>;
 // Single floating button for the whole app, so its gesture bookkeeping lives at module level.
-const fab = { x: 0, y: 0, sx: 0, sy: 0, placed: false, width: 0, height: 0, top: 0, bottom: 0, voice: null as Voice | null };
+const fab = { x: 0, y: 0, sx: 0, sy: 0, placed: false, width: 0, height: 0, top: 0, bottom: 0, voice: null as Voice | null, tap: null as (() => void) | null, timer: null as ReturnType<typeof setTimeout> | null, longFired: false };
+
+function stopTimer() {
+  if (fab.timer) clearTimeout(fab.timer);
+  fab.timer = null;
+}
 
 /**
  * Atomic: a floating button on every screen plus its slide-up panel. Drag the button to move it; it snaps to the
- * nearest edge. Tapping it opens the panel and starts listening.
+ * nearest edge. Tapping it opens the panel and starts listening, except on Meals / Routines where it is the
+ * "Log food" / "New routine" button and a long-press opens the panel instead.
  */
 export function AtomicHost() {
   const { width, height } = useWindowDimensions();
@@ -33,6 +43,9 @@ export function AtomicHost() {
   const phase = useAssistantStore((s) => s.phase);
   const talkback = useAssistantStore((s) => s.talkback);
   const listenNext = useAssistantStore((s) => s.listenNext);
+  const today = useToday();
+  const pickedDay = useDiaryDate((s) => s.picked);
+  const action = fabAction(segments, pickedDay ?? today);
 
   const voice = useVoiceInput(
     (t) => submit(t),
@@ -53,6 +66,13 @@ export function AtomicHost() {
     fab.top = insets.top;
     fab.bottom = insets.bottom;
     fab.voice = voice;
+    fab.tap =
+      action.kind === 'ai'
+        ? null
+        : () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+            router.push(action.href as Href);
+          };
   });
   const [pan] = useState(() => new Animated.ValueXY({ x: startX, y: startY }));
 
@@ -90,14 +110,32 @@ export function AtomicHost() {
       onPanResponderGrant: () => {
         fab.sx = fab.x;
         fab.sy = fab.y;
+        fab.longFired = false;
+        stopTimer();
+        // As a context button (Log food / New routine), holding it still opens Atomic instead.
+        if (fab.tap) {
+          fab.timer = setTimeout(() => {
+            fab.timer = null;
+            fab.longFired = true;
+            openPanel();
+          }, LONG_PRESS_MS);
+        }
       },
       onPanResponderMove: (_, g) => {
+        if (Math.hypot(g.dx, g.dy) >= 6) stopTimer();
         pan.setValue({ x: fab.sx + g.dx, y: fab.sy + g.dy });
       },
       onPanResponderRelease: (_, g) => {
+        stopTimer();
+        if (fab.longFired) {
+          fab.longFired = false;
+          pan.setValue({ x: fab.x, y: fab.y });
+          return;
+        }
         if (Math.hypot(g.dx, g.dy) < 6) {
           pan.setValue({ x: fab.x, y: fab.y });
-          openPanel();
+          if (fab.tap) fab.tap();
+          else openPanel();
           return;
         }
         const rawX = fab.sx + g.dx;
@@ -106,7 +144,10 @@ export function AtomicHost() {
         fab.y = Math.min(Math.max(rawY, fab.top + MARGIN), fab.height - fab.bottom - FAB - MARGIN);
         Animated.spring(pan, { toValue: { x: fab.x, y: fab.y }, useNativeDriver: false, friction: 7 }).start();
       },
-      onPanResponderTerminate: () => pan.setValue({ x: fab.x, y: fab.y }),
+      onPanResponderTerminate: () => {
+        stopTimer();
+        pan.setValue({ x: fab.x, y: fab.y });
+      },
     }),
   );
 
@@ -139,11 +180,14 @@ export function AtomicHost() {
           {...responder.panHandlers}
           accessible
           accessibilityRole="button"
-          accessibilityLabel="Open Atomic"
-          onAccessibilityTap={openPanel}
+          accessibilityLabel={action.kind === 'ai' ? 'Open Atomic' : action.label}
+          accessibilityHint={action.kind === 'ai' ? undefined : 'Long-press to open Atomic'}
+          accessibilityActions={action.kind === 'ai' ? undefined : [{ name: 'openAtomic', label: 'Open Atomic' }]}
+          onAccessibilityAction={(e) => e.nativeEvent.actionName === 'openAtomic' && openPanel()}
+          onAccessibilityTap={() => (fab.tap ? fab.tap() : openPanel())}
           style={[styles.fab, { transform: pan.getTranslateTransform() }]}
         >
-          <AtomicButton state="idle" size={FAB} mark="atom" />
+          <AtomicButton state="idle" size={FAB} mark={action.kind === 'ai' ? 'atom' : 'plus'} />
         </Animated.View>
       )}
       <AtomicPanel state={mode} onMicPress={onMicPress} />

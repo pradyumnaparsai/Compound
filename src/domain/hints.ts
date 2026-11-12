@@ -1,5 +1,5 @@
 /** One-time gesture hints: shown until first seen, then never again. */
-export type HintKey = 'reorder' | 'archive-routine' | 'delete-entry';
+export type HintKey = 'reorder' | 'archive-routine' | 'reorder-routines' | 'delete-entry';
 
 export const hintFlag = (key: HintKey) => `hint_${key}`;
 

@@ -1,10 +1,15 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { notifyError } from '@/components/notify';
 import { Screen } from '@/components/Screen';
 import { WorkoutOverview } from '@/components/workouts/WorkoutOverview';
+import { sqliteWorkoutRepo } from '@/data/sqliteWorkoutLogRepository';
+import { workoutCongrats, type WorkoutCongrats } from '@/domain/celebrate';
 import { useWorkoutSummary } from '@/hooks/useWorkoutSummary';
+import { celebrate } from '@/store/useCelebration';
+import { useWorkoutFocus } from '@/store/useWorkoutFocus';
 import { exerciseMap } from '@/domain/exerciseCatalog';
 import { diffTemplate, shouldOfferTemplateUpdate, templateFromWorkout } from '@/domain/template';
 import { newId } from '@/domain/id';
@@ -36,7 +41,31 @@ export default function WorkoutSummaryScreen() {
     }
   };
 
-  const done = () => router.replace('/(tabs)/body' as Href);
+  // "Nth workout" message + confetti (bigger on a milestone), once per opened summary.
+  const [congrats, setCongrats] = useState<WorkoutCongrats | null>(null);
+  const startedAt = workout?.startedAt;
+  useEffect(() => {
+    if (!startedAt) return;
+    let alive = true;
+    sqliteWorkoutRepo
+      .countFinishedUpTo(startedAt)
+      .then((n) => {
+        const c = workoutCongrats(n);
+        if (!alive || !c) return;
+        setCongrats(c);
+        celebrate(c.milestone ? 'big' : 'small');
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [startedAt]);
+
+  // Land on Body → History with this workout on top, not on the templates.
+  const done = () => {
+    if (id) useWorkoutFocus.getState().highlight(id);
+    router.replace('/(tabs)/body' as Href);
+  };
 
   return (
     <Screen padBottom>
@@ -48,6 +77,16 @@ export default function WorkoutSummaryScreen() {
           <Text style={{ color: t.textDim }}>This workout could not be found.</Text>
         ) : (
           <>
+            {congrats && (
+              <View
+                style={[styles.congrats, { backgroundColor: congrats.milestone ? t.accentSoft : t.surface, borderColor: congrats.milestone ? t.accent : t.border }]}
+                accessibilityRole="header"
+              >
+                <Ionicons name={congrats.milestone ? 'trophy' : 'ribbon'} size={22} color={congrats.milestone ? '#F5B800' : t.accent} />
+                <Text style={{ color: t.text, fontSize: 16, fontWeight: '800', flex: 1 }}>{congrats.text}</Text>
+              </View>
+            )}
+
             <WorkoutOverview workout={workout} summary={summary} unit={unit} />
 
             {template && diff && answered === null && (shouldOfferTemplateUpdate(diff) || diff.minor) && (
@@ -89,6 +128,7 @@ export default function WorkoutSummaryScreen() {
 const styles = StyleSheet.create({
   kicker: { fontSize: 14, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8 },
   card: { borderWidth: 1.5, borderRadius: radius.lg, padding: 14, gap: 10 },
+  congrats: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1.5, borderRadius: radius.lg, padding: 14 },
   row: { flexDirection: 'row', gap: 10 },
   btn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: radius.pill },
   cta: { alignItems: 'center', paddingVertical: 16, borderRadius: radius.lg, marginTop: 8 },

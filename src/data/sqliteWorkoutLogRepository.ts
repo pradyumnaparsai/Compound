@@ -198,6 +198,12 @@ export const sqliteWorkoutRepo: WorkoutRepository = {
     return (await db.getAllAsync<{ date: string }>('SELECT DISTINCT date FROM workouts WHERE ended_at IS NOT NULL ORDER BY date')).map((r) => r.date);
   },
 
+  async countFinishedUpTo(startedAt) {
+    const db = await getDb();
+    const row = await db.getFirstAsync<{ c: number }>('SELECT COUNT(*) AS c FROM workouts WHERE ended_at IS NOT NULL AND started_at <= ?', startedAt);
+    return row?.c ?? 0;
+  },
+
   async remove(id) {
     const db = await getDb();
     await db.withExclusiveTransactionAsync(async (tx) => {
