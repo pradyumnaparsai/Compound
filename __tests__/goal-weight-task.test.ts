@@ -1,4 +1,4 @@
-import { caloriesOverGoal, defaultMealRoutine, goalLabel, mealFraction, goalProgress, mealGoalMet, MEAL_CALORIE_SLACK, MEAL_PROTEIN_SLACK, stepFraction } from '@/domain/goal';
+import { caloriesOverGoal, defaultMealRoutine, goalLabel, mealFraction, goalProgress, mealGoalMet, mealGoalReached, MEAL_CALORIE_SLACK, MEAL_PROTEIN_SLACK, stepFraction } from '@/domain/goal';
 import { dayProgress, overdueTasks, taskCounts, tasksOn } from '@/domain/task';
 import type { Task } from '@/domain/types';
 import { weekStart, weeklyAverages } from '@/domain/weight';
@@ -64,6 +64,27 @@ describe('meal goal', () => {
     expect(met(2151, 150)).toBe(false);
     expect(met(2000, 134)).toBe(false);
     expect(met(0, 0)).toBe(false); // nothing logged
+  });
+
+  describe('reached today (live check)', () => {
+    const reached = (calories: number, proteinG: number) => mealGoalReached(g, { calories, proteinG });
+
+    it('ticks once calories and protein both hit the targets', () => {
+      expect(reached(2000, 150)).toBe(true);
+      expect(reached(2100, 160)).toBe(true);
+    });
+
+    it('does not tick while either is below target (no slack on the way up)', () => {
+      expect(reached(1999, 150)).toBe(false);
+      expect(reached(2000, 149)).toBe(false);
+      expect(reached(1850, 150)).toBe(false);
+      expect(reached(0, 0)).toBe(false);
+    });
+
+    it('does not tick once calories are past the slack', () => {
+      expect(reached(2150, 150)).toBe(true);
+      expect(reached(2151, 150)).toBe(false);
+    });
   });
 
   it('builds the default everyday routine from the Meals goals', () => {

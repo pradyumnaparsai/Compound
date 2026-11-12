@@ -1,6 +1,6 @@
 import { sqliteSettingsRepo } from '@/data/sqliteRepository';
 import { addDays, todayKey } from '@/domain/date';
-import { defaultMealRoutine, mealGoalMet } from '@/domain/goal';
+import { defaultMealRoutine, mealGoalMet, mealGoalReached } from '@/domain/goal';
 import { isScheduled } from '@/domain/recurrence';
 import { useMealStore } from '@/store/useMealStore';
 import { useRoutineStore } from '@/store/useRoutineStore';
@@ -10,7 +10,8 @@ const BACKFILL_DAYS = 7;
 /**
  * Auto-checks meal-based routines. Adds completions only.
  * - 'protein': checked as soon as the day's logged protein reaches the target.
- * - 'meal': judged only once the day has ended (completions can't be undone, so today is never judged live).
+ * - 'meal': today is checked as soon as calories and protein both reach the targets (overeating is logged to the
+ *   next day); past days are judged with the slack, so near-misses still get checked the day after.
  */
 export async function refreshMealGoals(): Promise<void> {
   try {
@@ -38,7 +39,8 @@ export async function refreshMealGoals(): Promise<void> {
         if (r.goal.type === 'protein') {
           if (day.proteinG >= r.goal.target) items.push({ routineId: r.id, date: d });
         } else if (r.goal.type === 'meal') {
-          if (d < today && mealGoalMet(r.goal, day)) items.push({ routineId: r.id, date: d });
+          const ok = d < today ? mealGoalMet(r.goal, day) : mealGoalReached(r.goal, day);
+          if (ok) items.push({ routineId: r.id, date: d });
         }
       }
     }

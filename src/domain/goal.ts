@@ -33,6 +33,21 @@ export function mealGoalMet(
   return totals.calories <= g.calories + MEAL_CALORIE_SLACK && totals.proteinG >= g.proteinG - MEAL_PROTEIN_SLACK;
 }
 
+/**
+ * Live check for the current day: calories AND protein have both reached their targets (no slack on the way up).
+ * Calories past the slack still fail, since a check-off can't be undone and that day is already a miss.
+ */
+export function mealGoalReached(
+  g: Extract<Goal, { type: 'meal' }>,
+  totals: { calories: number; proteinG: number },
+): boolean {
+  return (
+    totals.calories >= g.calories &&
+    totals.proteinG >= g.proteinG &&
+    totals.calories <= g.calories + MEAL_CALORIE_SLACK
+  );
+}
+
 export function goalLabel(g: Goal): string {
   if (g.type === 'steps') return `${g.target.toLocaleString('en-US')} steps`;
   if (g.type === 'protein') return `${g.target} g protein`;

@@ -181,7 +181,7 @@ export default function RoutineForm() {
               : goalKind === 'protein'
                 ? 'Checks itself off when the protein you log in the Meals tab reaches this amount for the day.'
                 : goalKind === 'meal'
-                  ? `Checks itself off the day after, if that day’s logged calories were at most ${MEAL_CALORIE_SLACK} over and protein at most ${MEAL_PROTEIN_SLACK} g under these targets.`
+                  ? `Checks itself off as soon as the calories and protein you log in the Meals tab both reach these targets. A day that ended at most ${MEAL_CALORIE_SLACK} kcal over and ${MEAL_PROTEIN_SLACK} g protein under still gets checked the day after.`
                   : 'Checks itself off once a Traditional Strength Training workout is logged in Apple Health that day.'}{' '}
             You can’t tick it by hand.
           </Text>

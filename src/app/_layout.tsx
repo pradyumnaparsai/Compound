@@ -75,12 +75,12 @@ export default function RootLayout() {
   // Cloud backup when the app goes to background (no-op until signed in and the cloud check passed).
   useEffect(() => startAutoBackup(), []);
 
-  // Protein-goal routines: re-check whenever meals or routines change.
+  // Protein/meal-goal routines: re-check whenever meals or routines change.
   const meals = useMealStore((s) => s.meals);
   useEffect(() => {
     if (ready) ensureDefaultMealGoal().then(refreshMealGoals);
   }, [ready, meals, goalSignature]);
-  // Meal goals are judged once the day has ended, so re-check when the app returns to the foreground.
+  // Past days are judged once they have ended, so re-check when the app returns to the foreground.
   useEffect(() => {
     if (!ready) return;
     const sub = AppState.addEventListener('change', (s) => s === 'active' && refreshMealGoals());
