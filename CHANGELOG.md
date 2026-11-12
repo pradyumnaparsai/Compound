@@ -3,6 +3,19 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.24.0 — 2026-11-12
+### Added
+- **Confetti.** A small burst on every routine/task you tick off, and a big celebration the first time each day you reach 80% of your routines and tasks.
+- **Workout milestones.** The workout summary says "Congratulations on logging your Nth workout!", with a bigger celebration at the 1st, 10th, 25th, 50th and every 50th after.
+- **Reorder routines.** Long-press and drag routines on the Routines tab; archive moved to a ⋯ menu on each row.
+- **New routine button** under the last routine on the Routines tab.
+
+### Changed
+- **Floating button is contextual.** On Meals it logs food (for the day you are viewing) and on Routines it creates a routine; long-press it there to open Atomic. Other tabs are unchanged.
+- **After a workout** "Done" lands on Body → History with the workout you just logged highlighted, not on the templates.
+- **Routines header** loses the "+" (settings and backup stay); Meals loses its inline "Log food" button (the floating button does it).
+- **Meals diary** collapses expanded meals when you leave the tab.
+
 ## v1.23.0 — 2026-11-09
 ### Changed
 - **Meal target.** The Meals tab button is now a bullseye and opens "Meal target", which holds only your daily calorie/protein/carb/fat goals.
