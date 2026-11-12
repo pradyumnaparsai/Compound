@@ -222,6 +222,33 @@ export const dayTotals = (meals: Meal[]) => ({
   fatG: r1(meals.reduce((a, m) => a + m.fatG, 0)),
 });
 
+export type MealGroup = {
+  /** Stable across deletes of individual entries (normalized title). */
+  key: string;
+  title: string;
+  count: number;
+  meals: Meal[];
+  calories: number;
+  proteinG: number;
+};
+
+const normTitle = (s: string) => s.replace(/\s+/g, ' ').trim().toLowerCase();
+
+/** Groups entries with the same title (case/whitespace-insensitive), in first-logged order, with combined totals. */
+export function groupMeals(items: Meal[]): MealGroup[] {
+  const map = new Map<string, Meal[]>();
+  for (const m of items) {
+    const k = normTitle(m.title);
+    const list = map.get(k);
+    if (list) list.push(m);
+    else map.set(k, [m]);
+  }
+  return [...map.entries()].map(([key, meals]) => {
+    const t = dayTotals(meals);
+    return { key, title: meals[0].title, count: meals.length, meals, calories: t.calories, proteinG: t.proteinG };
+  });
+}
+
 /** Meal without the ingredient at `index`, totals recomputed. null when nothing would be left. Never mutates. */
 export function withoutIngredient(meal: Meal, index: number): Meal | null {
   if (!Number.isInteger(index) || index < 0 || index >= meal.ingredients.length) return meal;

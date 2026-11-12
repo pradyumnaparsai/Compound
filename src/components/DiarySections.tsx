@@ -4,7 +4,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { onFail } from '@/components/notify';
-import { dayTotals, MEAL_SLOTS, type Meal, renameMeal, withoutIngredient } from '@/domain/meal';
+import { dayTotals, groupMeals, MEAL_SLOTS, type Meal, renameMeal, withoutIngredient } from '@/domain/meal';
 import { useMealStore } from '@/store/useMealStore';
 import { radius, useTheme } from '@/theme';
 
@@ -16,6 +16,7 @@ export function DiarySections({ meals }: { meals: Meal[] }) {
   const t = useTheme();
   const { update, remove } = useMealStore();
   const [open, setOpen] = useState<string | null>(null);
+  const [openGroups, setOpenGroups] = useState<string[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState('');
 
@@ -24,6 +25,7 @@ export function DiarySections({ meals }: { meals: Meal[] }) {
     useCallback(
       () => () => {
         setOpen(null);
+        setOpenGroups([]);
         setEditing(null);
       },
       [],
@@ -74,6 +76,90 @@ export function DiarySections({ meals }: { meals: Meal[] }) {
     else confirmDelete(m); // last item: removing it deletes the whole meal
   };
 
+  const renderMeal = (m: Meal, nested = false) => {
+    const isEditing = editing === m.id;
+    return (
+      <View key={m.id} style={[styles.divider, { borderColor: t.border }, nested && styles.nested]}>
+        <Pressable
+          onPress={() => {
+            if (isEditing) return;
+            setOpen((o) => (o === m.id ? null : m.id));
+          }}
+          onLongPress={() => {
+            tap();
+            Alert.alert(m.title, undefined, [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Edit', onPress: () => startEdit(m) },
+              { text: 'Move to…', onPress: () => setTimeout(() => moveTo(m), 300) }, // let the first alert dismiss
+              { text: 'Delete', style: 'destructive', onPress: () => remove(m.id).catch(onFail()) },
+            ]);
+          }}
+          style={styles.logRow}
+        >
+          <View style={{ flex: 1 }}>
+            {isEditing ? (
+              <TextInput
+                value={draftTitle}
+                onChangeText={setDraftTitle}
+                onSubmitEditing={() => finishEdit(m)}
+                autoFocus
+                selectTextOnFocus
+                returnKeyType="done"
+                maxLength={80}
+                placeholder="Meal name"
+                placeholderTextColor={t.textDim}
+                accessibilityLabel="Meal name"
+                style={[styles.titleInput, { color: t.text, backgroundColor: t.surfaceAlt }]}
+              />
+            ) : (
+              <Text style={{ color: t.text, fontSize: 16 }} numberOfLines={1}>
+                {m.title}
+              </Text>
+            )}
+            <Text style={{ color: t.textDim, fontSize: 12 }}>
+              {timeOf(m.loggedAt)} · {m.proteinG} g protein
+            </Text>
+          </View>
+          <Text style={{ color: t.text, fontSize: 16, fontWeight: '700' }}>{m.calories}</Text>
+        </Pressable>
+        {open === m.id && (
+          <View style={styles.detail}>
+            {m.ingredients.map((i, k) => (
+              <View key={k} style={styles.ingRow}>
+                <Text style={{ color: t.textDim, fontSize: 12, flex: 1 }}>
+                  {i.name}
+                  {i.estimated_quantity ? ` · ${i.estimated_quantity}` : ''} · {i.calories} kcal
+                </Text>
+                {isEditing && (
+                  <Pressable onPress={() => removeItem(m, k)} hitSlop={10} accessibilityLabel={`Remove ${i.name}`}>
+                    <Ionicons name="remove-circle" size={22} color={t.danger} />
+                  </Pressable>
+                )}
+              </View>
+            ))}
+            <View style={styles.detailActions}>
+              {isEditing ? (
+                <Pressable onPress={() => finishEdit(m)} hitSlop={8} accessibilityLabel="Done editing">
+                  <Text style={{ color: t.success, fontSize: 13, fontWeight: '700' }}>Done</Text>
+                </Pressable>
+              ) : (
+                <Pressable onPress={() => startEdit(m)} hitSlop={8} accessibilityLabel={`Edit ${m.title}`}>
+                  <Text style={{ color: t.accent, fontSize: 13, fontWeight: '600' }}>Edit</Text>
+                </Pressable>
+              )}
+              <Pressable onPress={() => moveTo(m)} hitSlop={8}>
+                <Text style={{ color: t.accent, fontSize: 13, fontWeight: '600' }}>Move</Text>
+              </Pressable>
+              <Pressable onPress={() => confirmDelete(m)} hitSlop={8}>
+                <Text style={{ color: t.danger, fontSize: 13, fontWeight: '600' }}>Delete</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+      </View>
+    );
+  };
+
   return (
     <>
       {sections.map((sec) => {
@@ -84,86 +170,30 @@ export function DiarySections({ meals }: { meals: Meal[] }) {
               <Text style={{ color: t.text, fontSize: 17, fontWeight: '800', flex: 1 }}>{sec.label}</Text>
               <Text style={{ color: t.textDim, fontSize: 14, fontWeight: '600' }}>{kcal.toLocaleString()} cal</Text>
             </View>
-            {sec.items.map((m) => {
-              const isEditing = editing === m.id;
+            {groupMeals(sec.items).map((g) => {
+              if (g.count === 1) return renderMeal(g.meals[0]);
+              const gk = `${sec.key}:${g.key}`;
+              const isOpen = openGroups.includes(gk);
               return (
-                <View key={m.id} style={[styles.divider, { borderColor: t.border }]}>
+                <View key={gk} style={[styles.divider, { borderColor: t.border }]}>
                   <Pressable
                     onPress={() => {
-                      if (isEditing) return;
-                      setOpen((o) => (o === m.id ? null : m.id));
-                    }}
-                    onLongPress={() => {
                       tap();
-                      Alert.alert(m.title, undefined, [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: 'Edit', onPress: () => startEdit(m) },
-                        { text: 'Move to…', onPress: () => setTimeout(() => moveTo(m), 300) }, // let the first alert dismiss
-                        { text: 'Delete', style: 'destructive', onPress: () => remove(m.id).catch(onFail()) },
-                      ]);
+                      setOpenGroups((o) => (o.includes(gk) ? o.filter((x) => x !== gk) : [...o, gk]));
                     }}
                     style={styles.logRow}
+                    accessibilityLabel={`${g.title} x${g.count}`}
                   >
                     <View style={{ flex: 1 }}>
-                      {isEditing ? (
-                        <TextInput
-                          value={draftTitle}
-                          onChangeText={setDraftTitle}
-                          onSubmitEditing={() => finishEdit(m)}
-                          autoFocus
-                          selectTextOnFocus
-                          returnKeyType="done"
-                          maxLength={80}
-                          placeholder="Meal name"
-                          placeholderTextColor={t.textDim}
-                          accessibilityLabel="Meal name"
-                          style={[styles.titleInput, { color: t.text, backgroundColor: t.surfaceAlt }]}
-                        />
-                      ) : (
-                        <Text style={{ color: t.text, fontSize: 16 }} numberOfLines={1}>
-                          {m.title}
-                        </Text>
-                      )}
-                      <Text style={{ color: t.textDim, fontSize: 12 }}>
-                        {timeOf(m.loggedAt)} · {m.proteinG} g protein
+                      <Text style={{ color: t.text, fontSize: 16 }} numberOfLines={1}>
+                        {g.title} <Text style={{ color: t.accent, fontWeight: '700' }}>x{g.count}</Text>
                       </Text>
+                      <Text style={{ color: t.textDim, fontSize: 12 }}>{g.proteinG} g protein</Text>
                     </View>
-                    <Text style={{ color: t.text, fontSize: 16, fontWeight: '700' }}>{m.calories}</Text>
+                    <Text style={{ color: t.text, fontSize: 16, fontWeight: '700' }}>{g.calories}</Text>
+                    <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={16} color={t.textDim} />
                   </Pressable>
-                  {open === m.id && (
-                    <View style={styles.detail}>
-                      {m.ingredients.map((i, k) => (
-                        <View key={k} style={styles.ingRow}>
-                          <Text style={{ color: t.textDim, fontSize: 12, flex: 1 }}>
-                            {i.name}
-                            {i.estimated_quantity ? ` · ${i.estimated_quantity}` : ''} · {i.calories} kcal
-                          </Text>
-                          {isEditing && (
-                            <Pressable onPress={() => removeItem(m, k)} hitSlop={10} accessibilityLabel={`Remove ${i.name}`}>
-                              <Ionicons name="remove-circle" size={22} color={t.danger} />
-                            </Pressable>
-                          )}
-                        </View>
-                      ))}
-                      <View style={styles.detailActions}>
-                        {isEditing ? (
-                          <Pressable onPress={() => finishEdit(m)} hitSlop={8} accessibilityLabel="Done editing">
-                            <Text style={{ color: t.success, fontSize: 13, fontWeight: '700' }}>Done</Text>
-                          </Pressable>
-                        ) : (
-                          <Pressable onPress={() => startEdit(m)} hitSlop={8} accessibilityLabel={`Edit ${m.title}`}>
-                            <Text style={{ color: t.accent, fontSize: 13, fontWeight: '600' }}>Edit</Text>
-                          </Pressable>
-                        )}
-                        <Pressable onPress={() => moveTo(m)} hitSlop={8}>
-                          <Text style={{ color: t.accent, fontSize: 13, fontWeight: '600' }}>Move</Text>
-                        </Pressable>
-                        <Pressable onPress={() => confirmDelete(m)} hitSlop={8}>
-                          <Text style={{ color: t.danger, fontSize: 13, fontWeight: '600' }}>Delete</Text>
-                        </Pressable>
-                      </View>
-                    </View>
-                  )}
+                  {isOpen && g.meals.map((m) => renderMeal(m, true))}
                 </View>
               );
             })}
@@ -177,6 +207,7 @@ export function DiarySections({ meals }: { meals: Meal[] }) {
 const styles = StyleSheet.create({
   card: { borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.lg, paddingHorizontal: 18, paddingVertical: 6, marginTop: 12 },
   secHead: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10 },
+  nested: { paddingLeft: 14 },
   divider: { borderTopWidth: StyleSheet.hairlineWidth },
   logRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
   titleInput: { fontSize: 16, borderRadius: radius.sm, paddingHorizontal: 10, paddingVertical: 6, marginBottom: 4 },

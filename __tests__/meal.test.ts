@@ -2,6 +2,7 @@ import {
   buildRefineText,
   cleanTitle,
   dayTotals,
+  groupMeals,
   mealTitle,
   macroGoals,
   mealFromSaved,
@@ -287,5 +288,25 @@ describe('parseGoalsInput', () => {
     expect(parseGoalsInput('20000', '150', '', '')).toBe('invalid');
     expect(parseGoalsInput('2200', '150', 'abc', '')).toBe('invalid');
     expect(parseGoalsInput('2200', '150', '', '-5')).toBe('invalid');
+  });
+});
+
+describe('groupMeals', () => {
+  const mk = (id: string, title: string, calories: number, proteinG: number) =>
+    ({ id, title, calories, proteinG, carbsG: 0, fatG: 0 }) as Meal;
+
+  it('merges same title (case/whitespace-insensitive) with combined totals', () => {
+    const [g] = groupMeals([mk('a', 'Banana', 105, 1.3), mk('b', ' banana  ', 105, 1.3)]);
+    expect(g).toMatchObject({ key: 'banana', title: 'Banana', count: 2, calories: 210, proteinG: 2.6 });
+    expect(g.meals.map((m) => m.id)).toEqual(['a', 'b']);
+  });
+
+  it('keeps first-logged order and leaves singles alone', () => {
+    const gs = groupMeals([mk('a', 'Egg', 70, 6), mk('b', 'Toast', 80, 3), mk('c', 'Egg', 70, 6)]);
+    expect(gs.map((g) => [g.title, g.count])).toEqual([['Egg', 2], ['Toast', 1]]);
+  });
+
+  it('empty input', () => {
+    expect(groupMeals([])).toEqual([]);
   });
 });
