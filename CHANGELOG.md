@@ -3,6 +3,14 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.26.0 — 2026-11-12
+### Changed
+- **Fireworks on workout completion.** Finishing a workout now launches a fireworks show instead of confetti (reduce-motion still skips it).
+- **Rest between sets is opt-in.** Exercises no longer get a default 90s rest: the timer only starts when the template sets a rest time for that exercise. New template exercises start with rest off; ad-hoc exercises have none. Existing templates keep whatever rest they already saved (tap the rest chip to turn it off).
+
+### Fixed
+- **Smoother Workout history scrolling.** History rows are memoised, thumbnails no longer loop-animate in the list, list rendering is windowed, and loading more workouts no longer jumps the list back to the top after a fresh workout.
+
 ## v1.25.0 — 2026-11-12
 ### Added
 - **Greeting with your name.** "Good afternoon, <name>" uses the name Atomic has saved in its memory (nothing extra shows if none is saved).

@@ -1,4 +1,4 @@
-import { diffTemplate, duplicateTemplate, reorderSubset, shouldOfferTemplateUpdate, templateFromWorkout } from '@/domain/template';
+import { diffTemplate, duplicateTemplate, newTemplateExercise, reorderSubset, shouldOfferTemplateUpdate, templateFromWorkout } from '@/domain/template';
 import type { TemplateExercise, WorkoutTemplate } from '@/domain/workout';
 import { ex, set, workout } from '../testutils/workoutFixtures';
 
@@ -26,6 +26,12 @@ const tex = (exerciseId: string, sets: { w?: number | null; r?: number | null; t
   ...extra,
 });
 const tpl = (exercises: TemplateExercise[]): WorkoutTemplate => ({ id: 'T', title: 'Push', notes: '', folderId: null, position: 0, exercises });
+
+describe('newTemplateExercise', () => {
+  it('starts without a rest timer (opt-in)', () => {
+    expect(newTemplateExercise('e1', 's1', 'bench', 0).restSeconds).toBeNull();
+  });
+});
 
 describe('diffTemplate', () => {
   const template = tpl([tex('bench', [{ w: 80, r: 8 }, { w: 80, r: 8 }]), tex('ohp', [{ w: 40, r: 10 }])]);

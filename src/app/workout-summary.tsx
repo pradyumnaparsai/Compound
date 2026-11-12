@@ -41,7 +41,7 @@ export default function WorkoutSummaryScreen() {
     }
   };
 
-  // "Nth workout" message + confetti (bigger on a milestone), once per opened summary.
+  // "Nth workout" message + fireworks, once per opened summary.
   const [congrats, setCongrats] = useState<WorkoutCongrats | null>(null);
   const startedAt = workout?.startedAt;
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function WorkoutSummaryScreen() {
         const c = workoutCongrats(n);
         if (!alive || !c) return;
         setCongrats(c);
-        celebrate(c.milestone ? 'big' : 'small');
+        celebrate('fireworks');
       })
       .catch(() => {});
     return () => {

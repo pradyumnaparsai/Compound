@@ -1,4 +1,4 @@
-import { crossedThreshold, isWorkoutMilestone, makeParticles, ordinal, workoutCongrats } from '@/domain/celebrate';
+import { FIREWORK_BURST, FIREWORK_MAX_START, FIREWORK_RISE, crossedThreshold, makeFireworks, isWorkoutMilestone, makeParticles, ordinal, workoutCongrats } from '@/domain/celebrate';
 import { fabAction } from '@/domain/fabAction';
 
 describe('crossedThreshold', () => {
@@ -70,5 +70,33 @@ describe('fabAction', () => {
     for (const seg of [['(tabs)'], ['(tabs)', 'calendar'], ['(tabs)', 'body'], ['(tabs)', 'index'], ['workout'], ['meals'], []]) {
       expect(fabAction(seg, '2026-11-12')).toEqual({ kind: 'ai' });
     }
+  });
+});
+
+describe('makeFireworks', () => {
+  it('makes the requested shells and sparks', () => {
+    const shells = makeFireworks(5, 12);
+    expect(shells).toHaveLength(5);
+    for (const s of shells) expect(s.sparks).toHaveLength(12);
+    expect(makeFireworks(0)).toEqual([]);
+  });
+  it.each([0, 0.5, 0.999])('keeps every shell on screen and finishing inside the show (rand=%d)', (r) => {
+    for (const s of makeFireworks(6, 18, () => r)) {
+      expect(s.x).toBeGreaterThanOrEqual(0.15);
+      expect(s.x).toBeLessThanOrEqual(0.85);
+      expect(s.y).toBeGreaterThan(0);
+      expect(s.y).toBeLessThan(0.5);
+      expect(s.start).toBeGreaterThanOrEqual(0);
+      expect(s.start).toBeLessThanOrEqual(FIREWORK_MAX_START);
+      expect(s.start + FIREWORK_RISE + FIREWORK_BURST).toBeLessThanOrEqual(1);
+    }
+  });
+  it('launches shells in order', () => {
+    const starts = makeFireworks(6, 4, () => 0.5).map((s) => s.start);
+    expect([...starts].sort((a, b) => a - b)).toEqual(starts);
+  });
+  it('handles a single shell', () => {
+    const [s] = makeFireworks(1);
+    expect(s).toMatchObject({ x: expect.any(Number), start: 0 });
   });
 });

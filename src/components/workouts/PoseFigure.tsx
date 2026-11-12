@@ -3,12 +3,12 @@ import { Animated, StyleSheet, View } from 'react-native';
 import { layoutPattern, type PatternName } from '@/domain/poses';
 import { usePoseClock } from './poseClock';
 
-type Props = { pattern: PatternName; size: number; body: string; dim: string; accessibilityLabel?: string };
+type Props = { pattern: PatternName; size: number; body: string; dim: string; accessibilityLabel?: string; animated?: boolean };
 
 /** Looping stick-figure showing the movement. Pure Views + native-driven transforms (no images, no SVG). */
-export const PoseFigure = memo(function PoseFigure({ pattern, size, body, dim, accessibilityLabel }: Props) {
+export const PoseFigure = memo(function PoseFigure({ pattern, size, body, dim, accessibilityLabel, animated = true }: Props) {
   const lay = useMemo(() => layoutPattern(pattern, size), [pattern, size]);
-  const clock = usePoseClock(lay.animated);
+  const clock = usePoseClock(lay.animated && animated);
   const input = useMemo(() => Array.from({ length: lay.frames }, (_, i) => i / (lay.frames - 1)), [lay.frames]);
   const track = (values: number[]) => clock.interpolate({ inputRange: input, outputRange: values });
   const trackDeg = (values: number[]) => clock.interpolate({ inputRange: input, outputRange: values.map((v) => `${v}deg`) });

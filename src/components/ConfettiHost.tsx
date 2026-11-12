@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { makeParticles, makePop, type Particle } from '@/domain/celebrate';
+import { FIREWORK_BURST, FIREWORK_RISE, makeFireworks, makeParticles, makePop, type Particle, type Shell } from '@/domain/celebrate';
 import { useDayGoalCelebration } from '@/hooks/useDayGoalCelebration';
 import { useCelebration, type BurstKind, type Origin } from '@/store/useCelebration';
 import { useTheme } from '@/theme';
 
 const COLORS = ['#FF5A5F', '#FFB400', '#2EC4B6', '#4C8DFF', '#B16CFF', '#7ED957'];
 const SAMPLES = [0, 0.2, 0.4, 0.6, 0.8, 1];
-const CONFIG: Record<BurstKind, { count: number; ms: number; spread: number }> = {
+const CONFIG: Record<Exclude<BurstKind, 'fireworks'>, { count: number; ms: number; spread: number }> = {
   small: { count: 16, ms: 1100, spread: 0.7 },
   big: { count: 56, ms: 2200, spread: 1 },
 };
 
-/** App-wide confetti overlay (touch-transparent) plus the "80% of the day done" watcher. Pure RN Animated. */
+/** App-wide celebration overlay (confetti, workout-complete fireworks) (touch-transparent) plus the "80% of the day done" watcher. Pure RN Animated. */
 export function ConfettiHost() {
   useDayGoalCelebration();
   const burst = useCelebration((s) => s.burst);
@@ -23,6 +23,7 @@ export function ConfettiHost() {
     return () => sub.remove();
   }, []);
   if (!burst || reduceMotion) return null;
+  if (burst.kind === 'fireworks') return <Fireworks key={burst.id} id={burst.id} />;
   if (burst.kind === 'small' && burst.origin) return <Pop key={burst.id} id={burst.id} origin={burst.origin} />;
   return <Burst key={burst.id} id={burst.id} kind={burst.kind} />;
 }
@@ -92,7 +93,7 @@ function Pop({ id, origin }: { id: number; origin: Origin }) {
   );
 }
 
-function Burst({ id, kind }: { id: number; kind: BurstKind }) {
+function Burst({ id, kind }: { id: number; kind: Exclude<BurstKind, 'fireworks'> }) {
   const { width, height } = useWindowDimensions();
   const clear = useCelebration((s) => s.clear);
   const cfg = CONFIG[kind];
@@ -137,5 +138,86 @@ function Piece({ p, progress, width, height, spread }: { p: Particle; progress: 
         ],
       }}
     />
+  );
+}
+
+const SHOW_MS = 3600;
+const SHELLS = 6;
+
+/** Workout-complete fireworks: rockets climb from the bottom and burst into rings of sparks that fall and fade. */
+function Fireworks({ id }: { id: number }) {
+  const { width, height } = useWindowDimensions();
+  const clear = useCelebration((s) => s.clear);
+  const [shells] = useState(() => makeFireworks(SHELLS));
+  const [progress] = useState(() => new Animated.Value(0));
+
+  useEffect(() => {
+    const a = Animated.timing(progress, { toValue: 1, duration: SHOW_MS, easing: Easing.linear, useNativeDriver: true });
+    a.start(({ finished }) => finished && clear(id));
+    return () => a.stop();
+  }, [progress, clear, id]);
+
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none" accessible={false} importantForAccessibility="no-hide-descendants">
+      {shells.map((sh, i) => (
+        <ShellView key={i} shell={sh} progress={progress} width={width} height={height} />
+      ))}
+    </View>
+  );
+}
+
+function ShellView({ shell, progress, width, height }: { shell: Shell; progress: Animated.Value; width: number; height: number }) {
+  const cx = shell.x * width;
+  const cy = shell.y * height;
+  const launch = shell.start;
+  const burst = launch + FIREWORK_RISE;
+  const end = burst + FIREWORK_BURST;
+  const color = COLORS[shell.color % COLORS.length];
+  return (
+    <>
+      {/* rocket: a short streak that rises to the burst point and vanishes */}
+      <Animated.View
+        style={{
+          position: 'absolute',
+          left: cx - 1.5,
+          top: cy,
+          width: 3,
+          height: 14,
+          borderRadius: 1.5,
+          backgroundColor: color,
+          opacity: progress.interpolate({ inputRange: [0, launch, launch + 0.01, burst - 0.01, burst, 1], outputRange: [0, 0, 1, 1, 0, 0], extrapolate: 'clamp' }),
+          transform: [{ translateY: progress.interpolate({ inputRange: [0, launch, burst, 1], outputRange: [height - cy, height - cy, 0, 0], extrapolate: 'clamp' }) }],
+        }}
+      />
+      {shell.sparks.map((sp, j) => {
+        const dx = Math.cos(sp.angle) * sp.dist;
+        const dy = Math.sin(sp.angle) * sp.dist;
+        const span = FIREWORK_BURST;
+        // fast out, slow settle, plus gravity pulling the sparks down
+        const at = [0, 0.3, 0.65, 1].map((q) => burst + span * q);
+        const reach = [0, 0.72, 0.93, 1];
+        const gravity = [0, 8, 26, 52];
+        return (
+          <Animated.View
+            key={j}
+            style={{
+              position: 'absolute',
+              left: cx - sp.size / 2,
+              top: cy - sp.size / 2,
+              width: sp.size,
+              height: sp.size,
+              borderRadius: sp.size / 2,
+              backgroundColor: sp.color < 0 ? color : COLORS[sp.color % COLORS.length],
+              opacity: progress.interpolate({ inputRange: [0, burst, burst + span * 0.45, end, 1], outputRange: [0, 1, 1, 0, 0], extrapolate: 'clamp' }),
+              transform: [
+                { translateX: progress.interpolate({ inputRange: [0, ...at, 1], outputRange: [0, ...reach.map((r) => dx * r), dx], extrapolate: 'clamp' }) },
+                { translateY: progress.interpolate({ inputRange: [0, ...at, 1], outputRange: [0, ...reach.map((r, k) => dy * r + gravity[k]), dy + 52], extrapolate: 'clamp' }) },
+                { scale: progress.interpolate({ inputRange: [0, burst, end, 1], outputRange: [0, 1, 0.5, 0.5], extrapolate: 'clamp' }) },
+              ],
+            }}
+          />
+        );
+      })}
+    </>
   );
 }

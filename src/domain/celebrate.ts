@@ -97,3 +97,47 @@ export function makeParticles(count: number, rand: () => number = Math.random, c
     };
   });
 }
+
+export type Spark = {
+  /** Direction in radians and distance in px (before any screen scaling) the spark flies from the burst centre. */
+  angle: number;
+  dist: number;
+  size: number;
+  color: number;
+};
+
+export type Shell = {
+  /** Burst centre as a fraction of screen width / height. */
+  x: number;
+  y: number;
+  /** When the rocket launches, 0..FIREWORK_MAX_START of the show. */
+  start: number;
+  color: number;
+  sparks: Spark[];
+};
+
+/** A shell is launched at `start`, rises for FIREWORK_RISE, then bursts over FIREWORK_BURST (fractions of the show). */
+export const FIREWORK_RISE = 0.13;
+export const FIREWORK_BURST = 0.36;
+export const FIREWORK_MAX_START = 0.5;
+
+/**
+ * Fireworks show: `shells` rockets with staggered launch times, each bursting into a ring of sparks.
+ * Shells launch in the order generated, spread across the width so bursts do not pile up. Every shell finishes
+ * before the show ends (start + rise + burst <= 1). `rand` returns [0, 1); injectable for tests.
+ */
+export function makeFireworks(shells: number, sparksPerShell = 18, rand: () => number = Math.random, colors = 6): Shell[] {
+  const n = Math.max(0, Math.floor(shells));
+  return Array.from({ length: n }, (_, i) => ({
+    x: 0.15 + 0.7 * ((i + rand() * 0.8) / n), // 0.15..0.85, one slot per shell
+    y: 0.18 + rand() * 0.3,
+    start: n === 1 ? 0 : (i / (n - 1)) * FIREWORK_MAX_START * (0.85 + rand() * 0.15),
+    color: Math.floor(rand() * colors),
+    sparks: Array.from({ length: Math.max(0, sparksPerShell) }, (_, j) => ({
+      angle: ((j + (rand() - 0.5) * 0.5) / sparksPerShell) * Math.PI * 2,
+      dist: 60 + rand() * 60,
+      size: 3 + Math.floor(rand() * 3),
+      color: rand() < 0.7 ? -1 : Math.floor(rand() * colors), // -1 = the shell's own colour
+    })),
+  }));
+}

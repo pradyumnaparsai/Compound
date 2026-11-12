@@ -10,17 +10,20 @@ export function ExerciseThumb({
   def,
   size = 44,
   onPress,
+  animated = true,
 }: {
   def: Pick<ExerciseDef, 'id' | 'title' | 'primaryMuscle'> | undefined;
   size?: number;
   onPress?: () => void;
+  /** False freezes the figure on its first frame: long scrolling lists should not animate dozens of thumbs. */
+  animated?: boolean;
 }) {
   const t = useTheme();
   const pattern = def ? patternFor(def.id, def.primaryMuscle) : null;
   const body = (
     <View style={[styles.circle, { width: size, height: size, borderRadius: size / 2, backgroundColor: t.accentSoft }]}>
       {pattern ? (
-        <PoseFigure pattern={pattern} size={size} body={t.accent} dim={t.textDim} />
+        <PoseFigure pattern={pattern} size={size} body={t.accent} dim={t.textDim} animated={animated} />
       ) : (
         <Ionicons name="barbell-outline" size={size * 0.5} color={t.textDim} />
       )}

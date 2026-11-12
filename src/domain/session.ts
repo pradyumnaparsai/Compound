@@ -2,7 +2,6 @@
 // exercises, add sets, tick sets off, finish. The store wraps these; nothing here touches storage or time.
 import { toKey } from './date';
 import {
-  DEFAULT_REST_SECONDS,
   linkWithNext,
   normalizeSupersets,
   renumber,
@@ -83,7 +82,8 @@ function buildExercise(
     exerciseId,
     position,
     supersetId: tpl?.supersetId ?? null,
-    restSeconds: tpl?.restSeconds ?? prev?.restSeconds ?? DEFAULT_REST_SECONDS,
+    // Rest is opt-in: only a template that sets it starts a timer; ad-hoc exercises have none.
+    restSeconds: tpl?.restSeconds ?? null,
     notes: pinnedNotes ? pinnedNotes.notes : tpl?.notes ?? '',
     notesPinned: !!pinnedNotes,
     sets,

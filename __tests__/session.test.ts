@@ -90,8 +90,17 @@ describe('startWorkout', () => {
     const bench = w.exercises[0];
     expect(bench.sets.every((s) => !s.isCompleted)).toBe(true);
     expect(bench.sets.map((s) => [s.weightKg, s.reps])).toEqual([[60, 10], [82.5, 6], [82.5, 6]]); // target, last time 2nd set, last time's last set
-    expect(bench.restSeconds).toBe(120);
+    expect(bench.restSeconds).toBe(120); // rest comes from the template only
     expect(w.exercises[1].sets[0]).toMatchObject({ weightKg: null, reps: 12 });
+  });
+
+  it('has no rest timer unless the template opts in', () => {
+    const t = tpl('T1', [tex('bench', [{}], { restSeconds: null }), tex('row', [{}], { restSeconds: 60 })]);
+    const w = startWorkout({ id: 'w1', now: NOW, template: t, history, makeId: mk });
+    expect(w.exercises.map((e) => e.restSeconds)).toEqual([null, 60]);
+    // exercises added on the fly never get a timer either, even if they were logged with one before
+    const added = addExercises(w, ['bench'], history, mk);
+    expect(added.exercises[2].restSeconds).toBeNull();
   });
 
   it('carries pinned notes forward from last time', () => {

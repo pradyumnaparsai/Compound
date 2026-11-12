@@ -1,5 +1,5 @@
 // Template helpers: creating, duplicating, comparing a performed workout with its template, and updating it.
-import { normalizeSupersets, renumber, DEFAULT_REST_SECONDS, type TemplateExercise, type TemplateSet, type Workout, type WorkoutTemplate } from './workout';
+import { normalizeSupersets, renumber, type TemplateExercise, type TemplateSet, type Workout, type WorkoutTemplate } from './workout';
 
 export const emptyTemplateSet = (id: string, index: number): TemplateSet => ({
   id,
@@ -18,7 +18,7 @@ export const newTemplateExercise = (id: string, setId: string, exerciseId: strin
   exerciseId,
   position,
   supersetId: null,
-  restSeconds: DEFAULT_REST_SECONDS,
+  restSeconds: null, // rest between sets is opt-in
   notes: '',
   notesPinned: false,
   sets: [emptyTemplateSet(setId, 0)],
