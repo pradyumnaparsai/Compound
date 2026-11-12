@@ -3,7 +3,7 @@
     "name": "Compound",
     "slug": "compound",
     "scheme": "compound",
-    "version": "1.29.0",
+    "version": "1.29.1",
     "runtimeVersion": "5",
     "updates": {
       "requestHeaders": {
