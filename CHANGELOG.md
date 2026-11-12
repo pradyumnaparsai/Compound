@@ -3,6 +3,14 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.25.0 — 2026-11-12
+### Added
+- **Greeting with your name.** "Good afternoon, <name>" uses the name Atomic has saved in its memory (nothing extra shows if none is saved).
+- **Atomic Habits quote** on the Routines tab: a short line about small habits compounding, a different one on each app launch.
+
+### Changed
+- **Completion confetti.** Ticking a routine or task now pops a ring and a tight burst of confetti from the checkbox itself instead of a scatter across the screen. The big 80%-of-the-day celebration is unchanged.
+
 ## v1.24.2 — 2026-11-12
 ### Changed
 - **Routines tab.** Removed the "New routine" button under the list and the reorder/archive hint text; the floating "+" creates routines.
