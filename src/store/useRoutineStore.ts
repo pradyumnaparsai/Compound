@@ -3,7 +3,6 @@ import { sqliteCompletionRepo, sqliteRoutineRepo } from '@/data/sqliteRepository
 import type { CompletionRepository, RoutineRepository } from '@/data/repository';
 import { completionKey, toDoneSet } from '@/domain/recurrence';
 import type { Routine, RoutineInput } from '@/domain/types';
-import { celebrate } from '@/store/useCelebration';
 
 // Swap these two to change the storage backend (e.g. cloud sync later).
 const routineRepo: RoutineRepository = sqliteRoutineRepo;
@@ -97,7 +96,6 @@ export const useRoutineStore = create<State>((set, get) => ({
     if (nowDone) next.add(key);
     else next.delete(key);
     set({ done: next }); // optimistic
-    if (nowDone) celebrate('small');
     try {
       await completionRepo.set(routineId, date, nowDone);
     } catch (e) {

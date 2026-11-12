@@ -6,7 +6,9 @@ import { ReorderableList } from '@/components/ReorderableList';
 import { Screen } from '@/components/Screen';
 import { VersionInfo } from '@/components/VersionInfo';
 import { goalLabel } from '@/domain/goal';
+import { QUOTE_SOURCE } from '@/domain/quotes';
 import { recurrenceLabel } from '@/domain/recurrence';
+import { useQuote } from '@/hooks/useQuote';
 import { useRoutineStore } from '@/store/useRoutineStore';
 import { radius, useTheme } from '@/theme';
 
@@ -14,6 +16,7 @@ export default function RoutinesScreen() {
   const t = useTheme();
   const { routines, archiveRoutine, reorder } = useRoutineStore();
   const active = routines.filter((r) => !r.archivedAt);
+  const quote = useQuote();
 
   const confirmArchive = (id: string, title: string) =>
     Alert.alert('Archive routine?', `"${title}" will stop appearing from today. Past history is kept.`, [
@@ -41,6 +44,12 @@ export default function RoutinesScreen() {
           </Pressable>
         </View>
       </View>
+      {quote && (
+        <View style={[styles.quote, { backgroundColor: t.accentSoft }]} accessibilityLabel={`${quote.text} ${QUOTE_SOURCE}`}>
+          <Text style={{ color: t.text, fontSize: 14, fontStyle: 'italic', lineHeight: 20 }}>“{quote.text}”</Text>
+          <Text style={{ color: t.textDim, fontSize: 12, marginTop: 6 }}>— {QUOTE_SOURCE}</Text>
+        </View>
+      )}
       <ReorderableList
         data={active}
         contentContainerStyle={{ paddingBottom: 96 }} // clear of the floating button
@@ -77,4 +86,5 @@ const styles = StyleSheet.create({
   title: { fontSize: 34, fontWeight: '800' },
   row: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: radius.md, borderWidth: 1, marginBottom: 10 },
   rowTitle: { fontSize: 17, fontWeight: '600' },
+  quote: { borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 16 },
 });

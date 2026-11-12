@@ -45,6 +45,32 @@ export function workoutCongrats(n: number): WorkoutCongrats | null {
   };
 }
 
+export type PopParticle = {
+  /** Direction in radians (0 = right, clockwise) and distance in px from the origin. */
+  angle: number;
+  dist: number;
+  rotate: number;
+  size: number;
+  color: number;
+  round: boolean;
+  /** 0..0.12 of the burst: staggers the start. */
+  delay: number;
+};
+
+/** A tight radial pop (used around a ticked checkbox): evenly spread directions with a little jitter. */
+export function makePop(count: number, rand: () => number = Math.random, colors = 6): PopParticle[] {
+  const n = Math.max(0, count);
+  return Array.from({ length: n }, (_, i) => ({
+    angle: ((i + (rand() - 0.5) * 0.7) / n) * Math.PI * 2,
+    dist: 38 + rand() * 54,
+    rotate: (rand() - 0.5) * 540,
+    size: 5 + Math.floor(rand() * 4),
+    color: Math.floor(rand() * colors),
+    round: rand() < 0.5,
+    delay: rand() * 0.12,
+  }));
+}
+
 export type Particle = {
   /** Horizontal / vertical launch speed, as a fraction of the screen width per burst. */
   vx: number;

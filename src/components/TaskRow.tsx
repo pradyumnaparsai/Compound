@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useRef, type ComponentRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { popFrom } from '@/components/popFrom';
 import type { Task } from '@/domain/types';
 import { radius, useTheme } from '@/theme';
 
@@ -16,11 +18,13 @@ type Props = {
 
 export function TaskRow({ task, onToggle, onDelete, onMoveToToday, sub }: Props) {
   const t = useTheme();
+  const checkRef = useRef<ComponentRef<typeof View>>(null);
   const done = !!task.completedAt;
   return (
     <Pressable
       onPress={() => {
         Haptics.impactAsync(done ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+        if (!done) popFrom(checkRef.current); // confetti pops from the checkbox
         onToggle();
       }}
       style={({ pressed }) => [
@@ -33,6 +37,7 @@ export function TaskRow({ task, onToggle, onDelete, onMoveToToday, sub }: Props)
       ]}
     >
       <View
+        ref={checkRef}
         style={[
           styles.check,
           { borderColor: done ? t.success : t.textDim, backgroundColor: done ? t.success : 'transparent' },

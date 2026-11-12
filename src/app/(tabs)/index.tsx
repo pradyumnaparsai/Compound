@@ -15,6 +15,8 @@ import { MONTH_NAMES, fromKey } from '@/domain/date';
 import { useToday } from '@/hooks/useToday';
 import { completionKey, currentStreak, scheduledOn } from '@/domain/recurrence';
 import { dayProgress, overdueTasks, tasksOn } from '@/domain/task';
+import { displayName } from '@/domain/memory';
+import { useMemoryStore } from '@/store/useMemoryStore';
 import { useRoutineStore } from '@/store/useRoutineStore';
 import { useTaskStore } from '@/store/useTaskStore';
 import { radius, useTheme } from '@/theme';
@@ -29,6 +31,8 @@ export default function TodayScreen() {
   const { routines, done, toggle, reorder, ready } = useRoutineStore();
   const { tasks, toggle: toggleTask, remove: removeTask, reschedule } = useTaskStore();
   const today = useToday();
+  const memory = useMemoryStore((s) => s.memory);
+  const name = useMemo(() => displayName(memory), [memory]);
 
   // Open tasks first; done ones sink to the bottom (stable otherwise).
   const todayTasks = useMemo(
@@ -47,7 +51,10 @@ export default function TodayScreen() {
 
   return (
     <Screen>
-      <Text style={[styles.greet, { color: t.textDim }]}>{greeting()}</Text>
+      <Text style={[styles.greet, { color: t.textDim }]}>
+        {greeting()}
+        {name ? `, ${name}` : ''}
+      </Text>
       <Text style={[styles.date, { color: t.text }]}>
         {MONTH_NAMES[d.getMonth()]} {d.getDate()}
       </Text>

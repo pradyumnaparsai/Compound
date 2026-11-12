@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useRef, type ComponentRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { popFrom } from '@/components/popFrom';
 import { ProgressRing } from '@/components/ProgressRing';
 import { goalProgress, mealFraction, stepFraction } from '@/domain/goal';
 import { recurrenceLabel } from '@/domain/recurrence';
@@ -21,6 +23,7 @@ type Props = {
 
 export function RoutineRow({ routine, date, done, disabled, onToggle, dragProps }: Props) {
   const t = useTheme();
+  const checkRef = useRef<ComponentRef<typeof View>>(null);
   const goal = routine.goal;
   const { steps, checked } = useHealthStore();
   const protein = useMealStore((s) => s.meals.reduce((a, m) => (m.date === date ? a + m.proteinG : a), 0));
@@ -36,6 +39,7 @@ export function RoutineRow({ routine, date, done, disabled, onToggle, dragProps 
         Haptics.impactAsync(
           done ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium,
         ).catch(() => {});
+        if (!done) popFrom(checkRef.current); // confetti pops from the checkbox
         onToggle();
       }}
       style={({ pressed }) => [
@@ -65,6 +69,7 @@ export function RoutineRow({ routine, date, done, disabled, onToggle, dragProps 
         </ProgressRing>
       ) : (
         <View
+          ref={checkRef}
           style={[
             styles.check,
             { borderColor: done ? t.success : t.textDim, backgroundColor: done ? t.success : 'transparent' },

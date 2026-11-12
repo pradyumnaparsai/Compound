@@ -94,6 +94,22 @@ export function missingTopics(m: Memory): MemoryCategory[] {
   return ONBOARDING_TOPICS.filter((c) => !m.skipped.includes(c) && !m.facts.some((f) => f.category === c));
 }
 
+/**
+ * What to call the user in the greeting: the first word of the saved "name" fact, e.g. "Pradyumna" from
+ * "Pradyumna Parsai" or "call me Pradyumna". Null when nothing usable is saved.
+ */
+export function displayName(m: Memory): string | null {
+  const fact = [...m.facts].reverse().find((f) => f.category === 'name');
+  if (!fact) return null;
+  const text = fact.text
+    .replace(/^(?:hi|hey|hello)[\s,!.]*/i, '')
+    .replace(/^(?:my name(?:['’]s| is)?|name\s*(?:is|:)|call me|you can call me|i am|i['’]m|im|it['’]s|its|this is)\s+/i, '')
+    .trim();
+  const word = text.split(/\s+/)[0]?.replace(/^[^\p{L}]+|[^\p{L}'’-]+$/gu, '') ?? '';
+  if (word.length < 2 || word.length > 20 || !/^\p{L}/u.test(word)) return null;
+  return word.charAt(0).toUpperCase() + word.slice(1);
+}
+
 export type MemoryRef = { ref: string; fact: MemoryFact };
 
 /**

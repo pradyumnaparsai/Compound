@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { sqliteTaskRepo } from '@/data/sqliteRepository';
 import type { TaskRepository } from '@/data/repository';
 import type { Task } from '@/domain/types';
-import { celebrate } from '@/store/useCelebration';
 
 const taskRepo: TaskRepository = sqliteTaskRepo;
 
@@ -37,7 +36,6 @@ export const useTaskStore = create<State>((set, get) => ({
     const nowDone = !cur.completedAt;
     const stamp = nowDone ? new Date().toISOString() : null;
     set({ tasks: get().tasks.map((t) => (t.id === id ? { ...t, completedAt: stamp } : t)) }); // optimistic
-    if (nowDone) celebrate('small');
     try {
       await taskRepo.setDone(id, nowDone);
     } catch (e) {
