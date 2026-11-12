@@ -18,7 +18,7 @@ export function startWorkout(template: WorkoutTemplate | null) {
   }
   s.startFromTemplate(template)
     .then(() => {
-      if (template) onTemplateWorkoutStarted();
+      if (template) onTemplateWorkoutStarted(new Date(useWorkoutSession.getState().workout?.startedAt ?? Date.now()));
       open();
     })
     .catch((e) => notifyError(e, 'Could not start workout', 'Could not start the workout. Please try again.'));

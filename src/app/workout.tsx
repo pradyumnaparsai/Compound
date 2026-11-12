@@ -14,7 +14,7 @@ import { completedSets, incompleteSetCount } from '@/domain/session';
 import { formatVolume } from '@/domain/workoutFormat';
 import { formatDuration, supersetBadges, workoutDurationSeconds, workoutVolume, type Workout } from '@/domain/workout';
 import { weightOn } from '@/domain/weight';
-import { onLiveWorkoutFinished } from '@/services/workoutHealth';
+import { onLiveWorkoutDiscarded, onLiveWorkoutFinished } from '@/services/workoutHealth';
 import { useUnitStore } from '@/store/useUnitStore';
 import { useWeightStore } from '@/store/useWeightStore';
 import { useWorkoutHistory } from '@/store/useWorkoutHistory';
@@ -143,6 +143,7 @@ export default function WorkoutScreen() {
       setBusy(true);
       try {
         await session().discard();
+        if (live) void onLiveWorkoutDiscarded();
         router.back();
       } catch (e) {
         notifyError(e, 'Could not discard');
