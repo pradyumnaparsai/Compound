@@ -3,8 +3,8 @@
     "name": "Compound",
     "slug": "compound",
     "scheme": "compound",
-    "version": "1.29.1",
-    "runtimeVersion": "5",
+    "version": "1.29.2",
+    "runtimeVersion": "7",
     "updates": {
       "requestHeaders": {
         "expo-channel-name": "main"

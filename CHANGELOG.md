@@ -3,6 +3,12 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.29.2 — 2026-11-13
+### Removed
+- **Workout start integration with Apple Watch / Fitness.** Starting a template workout no longer tries to start a workout on the iPhone (v1.28.0) or ask the Watch to start one. It did not work reliably and was too much machinery. Finishing a template workout still saves a Traditional Strength Training workout to Apple Health.
+### Changed
+- Native change: needs a rebuild (`scripts/install-ios.sh release`); `runtimeVersion` is now 7.
+
 ## v1.29.1 — 2026-11-12
 ### Changed
 - **"Hit meal goal" now uses its allowance from 9 PM** instead of waiting for the day to end: from 9 PM it checks itself off if calories are at most 150 over and protein at most 15 g under the targets. Reaching both targets earlier still checks it immediately. Checked every minute while the app is open, and on next open otherwise.
