@@ -7,10 +7,12 @@ import {
   itemDone,
   itemKeys,
   itemProgress,
+  prepEnabled,
   prepStreak,
   studyDayPosition,
   toggleTarget,
 } from '@/domain/prep';
+import { addFact, EMPTY_MEMORY } from '@/domain/memory';
 import { PREP_END, PREP_PLAN, PREP_START, WEDDING_BREAK, type PrepDay } from '@/domain/prepPlan';
 
 const day = (date: string) => PREP_PLAN.find((d) => d.date === date)!;
@@ -217,5 +219,25 @@ describe('studyDayPosition', () => {
     expect(studyDayPosition('2026-11-22')).toEqual({ n: 8, total });
     expect(studyDayPosition('2026-11-27')).toEqual({ n: 9, total });
     expect(studyDayPosition(PREP_END).n).toBe(total);
+  });
+});
+
+describe('prepEnabled', () => {
+  const named = (text: string) => addFact(EMPTY_MEMORY, 'name', text, 'n1').memory;
+
+  it('is off with no saved name', () => {
+    expect(prepEnabled(EMPTY_MEMORY)).toBe(false);
+  });
+
+  it('is on for Pradyumna however the name was saved', () => {
+    expect(prepEnabled(named('Pradyumna'))).toBe(true);
+    expect(prepEnabled(named('Pradyumna Parsai'))).toBe(true);
+    expect(prepEnabled(named('call me pradyumna'))).toBe(true);
+    expect(prepEnabled(named('PRADYUMNA'))).toBe(true);
+  });
+
+  it('is off for anyone else', () => {
+    expect(prepEnabled(named('Alex'))).toBe(false);
+    expect(prepEnabled(named('Not Pradyumna'))).toBe(false);
   });
 });

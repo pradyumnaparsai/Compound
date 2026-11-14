@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { onFail } from '@/components/notify';
@@ -9,6 +9,7 @@ import { Screen } from '@/components/Screen';
 import { MONTH_NAMES, addDays, dayTitle, fromKey } from '@/domain/date';
 import { agendaFor, agendaProgress, clampToPlan, dayStatus, prepStreak, studyDayPosition } from '@/domain/prep';
 import { PREP_END, PREP_START } from '@/domain/prepPlan';
+import { usePrepEnabled } from '@/hooks/usePrepEnabled';
 import { useToday } from '@/hooks/useToday';
 import { celebrate } from '@/store/useCelebration';
 import { usePrepStore } from '@/store/usePrepStore';
@@ -18,6 +19,7 @@ const short = (key: string) => `${MONTH_NAMES[fromKey(key).getMonth()].slice(0, 
 
 export default function PrepScreen() {
   const t = useTheme();
+  const enabled = usePrepEnabled();
   const today = useToday();
   const { checked, toggleItem, toggleStep } = usePrepStore();
   const [picked, setPicked] = useState<string | null>(null);
@@ -36,6 +38,8 @@ export default function PrepScreen() {
     if (prev.current?.date === date && !prev.current.complete && progress.complete) celebrate('big');
     prev.current = { date, complete: progress.complete };
   }, [date, progress.complete]);
+
+  if (!enabled) return <Redirect href="/" />; // personal feature; also guards a stray deep link
 
   const go = (n: number) => setPicked(clampToPlan(addDays(date, n)));
   const canPrev = date > PREP_START;

@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ProgressBar } from '@/components/ProgressBar';
 import { agendaFor, agendaProgress, itemDone, prepStreak } from '@/domain/prep';
+import { usePrepEnabled } from '@/hooks/usePrepEnabled';
 import { useToday } from '@/hooks/useToday';
 import { usePrepStore } from '@/store/usePrepStore';
 import { radius, useTheme } from '@/theme';
@@ -11,12 +12,13 @@ import { radius, useTheme } from '@/theme';
 /** Compact entry on the Today screen; hidden outside the prep window. Opens the full checklist. */
 export function PrepCard() {
   const t = useTheme();
+  const enabled = usePrepEnabled();
   const today = useToday();
   const checked = usePrepStore((s) => s.checked);
   const agenda = useMemo(() => agendaFor(today, today, checked), [today, checked]);
   const progress = useMemo(() => agendaProgress(agenda, checked), [agenda, checked]);
   const streak = useMemo(() => prepStreak(today, checked), [today, checked]);
-  if (!agenda.day) return null;
+  if (!enabled || !agenda.day) return null;
 
   const rest = agenda.day.rest;
   const open = [...agenda.carried.map((c) => c.item), ...agenda.own].filter((it) => !itemDone(it, checked));

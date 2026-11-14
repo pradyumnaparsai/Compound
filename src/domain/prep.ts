@@ -1,4 +1,5 @@
 import { addDays } from './date';
+import { displayName, type Memory } from './memory';
 import { PREP_END, PREP_PLAN, PREP_START, type PrepDay, type PrepItem } from './prepPlan';
 
 /** Keys of everything checked off: step ids, or the item id for items without steps. */
@@ -102,3 +103,10 @@ export function studyDayPosition(date: string, plan: PrepDay[] = PREP_PLAN): { n
 export const clampToPlan = (date: string): string => (date < PREP_START ? PREP_START : date > PREP_END ? PREP_END : date);
 
 export const isInPlan = (date: string): boolean => date >= PREP_START && date <= PREP_END;
+
+/** Switch prep is a personal feature: shown only when the saved greeting name is this one. */
+export const PREP_OWNER = 'pradyumna';
+
+export function prepEnabled(memory: Memory): boolean {
+  return displayName(memory)?.toLowerCase() === PREP_OWNER;
+}
