@@ -21,6 +21,9 @@ const day = (date: string) => PREP_PLAN.find((d) => d.date === date)!;
 const allKeys = (d: PrepDay) => new Set(d.items.flatMap(itemKeys));
 
 describe('plan calendar', () => {
+  const items = PREP_PLAN.flatMap((d) => d.items.map((i) => ({ ...i, date: d.date })));
+  const isMain = (kind: string) => (i: { kind: string; badge?: string }) => i.kind === kind && !!i.badge?.startsWith('Day ');
+
   it('spans Nov 15 - Jan 4 with no gaps or duplicates', () => {
     expect(PREP_START).toBe('2026-11-15');
     expect(PREP_END).toBe('2027-01-04');
@@ -28,8 +31,13 @@ describe('plan calendar', () => {
     expect(PREP_PLAN).toHaveLength(51);
   });
 
-  it('has 42 study days in the six weeks', () => {
-    expect(PREP_PLAN.filter((d) => d.week !== null)).toHaveLength(42);
+  it('has 28 study days up to Dec 16, then 18 mock-phase days', () => {
+    const study = PREP_PLAN.filter((d) => d.week !== null);
+    expect(study).toHaveLength(28);
+    expect(study.every((d) => d.date <= '2026-12-16')).toBe(true);
+    const phase2 = PREP_PLAN.filter((d) => d.week === null && !d.rest);
+    expect(phase2).toHaveLength(18);
+    expect(phase2[0].date).toBe('2026-12-17');
   });
 
   it('keeps the wedding break free', () => {
@@ -44,31 +52,63 @@ describe('plan calendar', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('schedules 48 core DSA problems and 12 extension slots', () => {
-    const dsa = PREP_PLAN.flatMap((d) => d.items).filter((i) => i.kind === 'dsa' && i.badge !== 'Revision');
+  it('schedules 48 core DSA problems and 12 extension slots, each problem once', () => {
+    const dsa = items.filter((i) => i.kind === 'dsa' && i.badge !== 'Revision');
     expect(dsa.filter((i) => i.badge?.startsWith('Core'))).toHaveLength(48);
     expect(dsa.filter((i) => i.badge === 'Extension / revision')).toHaveLength(12);
     expect(new Set(dsa.map((i) => i.title)).size).toBe(60);
   });
 
-  it('gives six LLD and six HLD exercises two days each', () => {
-    const items = PREP_PLAN.flatMap((d) => d.items).filter((i) => !i.id.endsWith('.drill'));
-    expect(items.filter((i) => i.kind === 'lld')).toHaveLength(12);
-    expect(items.filter((i) => i.kind === 'hld')).toHaveLength(12);
-    expect(day('2026-11-27').items.find((i) => i.kind === 'lld')?.title).toBe('LLD: Thread-safe LRU Cache');
-    expect(day('2026-11-28').items.find((i) => i.kind === 'lld')?.badge).toMatch(/Day 2\/2/);
+  it('keeps Nov 15-19 as originally published', () => {
+    expect(day('2026-11-15').items.map((i) => i.id)).toEqual(['2026-11-15.dsa1', '2026-11-15.dsa2', '2026-11-15.lld']);
+    expect(day('2026-11-15').items[0].title).toBe('Subarray Sum Equals K');
+    expect(day('2026-11-19').items.map((i) => i.title)).toEqual([
+      '3Sum',
+      'Trapping Rain Water',
+      'Fundamentals: Java',
+      'LLD drill: Parking Lot',
+    ]);
   });
 
-  it('has the twelve scheduled mocks on the right dates', () => {
-    const mocks = PREP_PLAN.filter((d) => d.week !== null && d.items.some((i) => i.kind === 'mock')).map((d) => d.date);
-    expect(mocks).toEqual([
-      '2026-11-20', '2026-11-21', '2026-12-01', '2026-12-02', '2026-12-08', '2026-12-09',
-      '2026-12-15', '2026-12-16', '2026-12-22', '2026-12-23', '2026-12-29', '2026-12-30',
+  it('gives six LLD and six HLD exercises two days each', () => {
+    expect(items.filter(isMain('lld'))).toHaveLength(12);
+    expect(items.filter(isMain('hld'))).toHaveLength(12);
+    expect(day('2026-11-20').items.find((i) => i.kind === 'lld')?.title).toBe('LLD: Thread-safe LRU Cache');
+  });
+
+  it('puts Day 2 of every LLD/HLD exercise the day after Day 1, so none straddles the wedding break', () => {
+    for (const kind of ['lld', 'hld']) {
+      const mains = items.filter(isMain(kind));
+      for (let i = 0; i < mains.length; i += 2) {
+        expect(mains[i].badge).toMatch(/Day 1\/2/);
+        expect(mains[i + 1].badge).toMatch(/Day 2\/2/);
+        expect(mains[i + 1].date).toBe(addDays(mains[i].date, 1));
+        expect(mains[i + 1].title).toBe(mains[i].title);
+      }
+    }
+  });
+
+  it('puts all 12 mocks at the end, from Dec 17', () => {
+    const mocks = items.filter((i) => i.kind === 'mock');
+    expect(mocks).toHaveLength(12);
+    expect(mocks.every((m) => m.date >= '2026-12-17')).toBe(true);
+    expect(PREP_PLAN.filter((d) => d.week !== null).some((d) => d.items.some((i) => i.kind === 'mock'))).toBe(false);
+  });
+
+  it('keeps one fundamentals session per subject, in the weekly order, six in total', () => {
+    const fund = items.filter((i) => i.kind === 'fundamentals');
+    expect(fund.map((f) => f.title)).toEqual([
+      'Fundamentals: Java',
+      'Fundamentals: Databases',
+      'Fundamentals: Spring Boot',
+      'Fundamentals: Distributed Systems',
+      'Fundamentals: Kafka',
+      'Fundamentals: Production Engineering',
     ]);
   });
 
   it('covers all 8 STAR stories', () => {
-    const stories = PREP_PLAN.flatMap((d) => d.items).filter((i) => i.kind === 'behavioral' && i.steps.length);
+    const stories = items.filter((i) => i.kind === 'behavioral' && i.steps.length);
     expect(stories.flatMap((i) => i.steps)).toHaveLength(8);
   });
 });
@@ -81,19 +121,14 @@ describe('plan content', () => {
     expect(items.filter((i) => /recruit|project|application|referral/i.test(`${i.title} ${i.detail ?? ''}`))).toEqual([]);
   });
 
-  it('keeps all behavioral work on or after Dec 21', () => {
+  it('keeps all behavioral work on or after Dec 21, with every story drafted before Dec 30', () => {
     const behavioral = items.filter((i) => i.kind === 'behavioral' || /behavioral/i.test(i.title));
     expect(behavioral.length).toBeGreaterThan(0);
     expect(behavioral.every((i) => i.date >= '2026-12-21')).toBe(true);
-  });
-
-  it('drafts all 8 STAR stories in order, each before the mock that tests it', () => {
     const drafts = items.filter((i) => i.id.endsWith('.star')).sort((a, b) => (a.date < b.date ? -1 : 1));
-    expect(drafts.map((d) => d.date)).toEqual(['2026-12-21', '2026-12-23', '2026-12-28', '2026-12-31']);
-    expect(drafts.flatMap((d) => d.steps).map((s) => s.title)).toHaveLength(8);
-    // Dec 30's behavioral round covers stories 1-6, all drafted by Dec 28; the Jan 4 mock covers all 8.
-    expect(drafts.filter((d) => d.date <= '2026-12-28').flatMap((d) => d.steps)).toHaveLength(6);
-    expect(drafts[drafts.length - 1].date < '2027-01-04').toBe(true);
+    expect(drafts.map((d) => d.date)).toEqual(['2026-12-21', '2026-12-22', '2026-12-25', '2026-12-27']);
+    expect(drafts.flatMap((d) => d.steps)).toHaveLength(8);
+    expect(drafts[drafts.length - 1].date < '2026-12-30').toBe(true);
     expect(items.find((i) => i.id === '2027-01-04.bmock')).toBeDefined();
   });
 
@@ -101,22 +136,34 @@ describe('plan content', () => {
     expect(items.every((i) => Number.isInteger(i.minutes) && i.minutes > 0)).toBe(true);
   });
 
-  it('keeps every day realistic: 2-2.5 h of practice, 1.5-2.5 h with a mock or buffer day', () => {
+  it('keeps every day realistic: 2-2.5 h of practice, 1.5-2.5 h on mock days and the last days', () => {
     for (const d of PREP_PLAN.filter((x) => !x.rest)) {
       const min = dayMinutes(d);
-      const isMockOrBuffer = d.week === null || d.items.some((i) => i.kind === 'mock');
-      expect([d.date, min >= (isMockOrBuffer ? 90 : 120) && min <= 150]).toEqual([d.date, true]);
+      const lenient = d.items.some((i) => i.kind === 'mock') || d.date >= '2027-01-04';
+      expect([d.date, min >= (lenient ? 90 : 120) && min <= 150]).toEqual([d.date, true]);
     }
   });
 
-  it('adds design drills and DSA revision where the removed work used to be', () => {
-    expect(items.filter((i) => i.id.endsWith('.drill')).map((i) => i.title)).toEqual([
+  it('schedules all 8 design drills, each with individual checkboxes', () => {
+    const drills = items.filter((i) => /^(dl|dh)$/.test(i.id.split('.')[1]));
+    expect(drills.map((i) => i.title)).toEqual([
       'LLD drill: Parking Lot',
       'HLD drill: URL Shortener',
-      'HLD drill: Distributed Cache',
       'LLD drill: Splitwise',
+      'HLD drill: Distributed Cache',
+      'HLD drill: News Feed',
+      'LLD drill: Elevator',
+      'HLD drill: Log Aggregation / Metrics Pipeline',
+      'LLD drill: Cab Booking',
     ]);
-    expect(items.filter((i) => i.id.endsWith('.rev')).map((i) => i.date)).toEqual(['2026-12-31', '2027-01-04']);
+    // Regression: drills used to be a single checkbox.
+    for (const d of drills) expect(d.steps.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('has Yellow/Red DSA revision in the mock phase', () => {
+    const rev = items.filter((i) => i.id.endsWith('.rev'));
+    expect(rev.length).toBeGreaterThan(0);
+    expect(rev.every((i) => i.date >= '2026-12-17')).toBe(true);
   });
 
   it('formats minutes', () => {
@@ -185,9 +232,10 @@ describe('agendaFor / rollover', () => {
   });
 
   it('never carries mocks', () => {
-    // Nov 20 DSA mock is unfinished; looking from Nov 22 (Nov 21 is a mock too).
-    const a = agendaFor('2026-11-22', '2026-11-22', new Set());
+    // Dec 18 (DSA mock) and Dec 17 are unfinished; looking from Dec 19.
+    const a = agendaFor('2026-12-19', '2026-12-19', new Set());
     expect(a.carried.some((c) => c.item.kind === 'mock')).toBe(false);
+    expect(a.carried.some((c) => c.from === '2026-12-17')).toBe(true);
   });
 
   it('never carries across the wedding break', () => {

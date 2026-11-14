@@ -165,6 +165,20 @@ export const HLD_DAY2: string[] = [
   'Consistency, failure modes and trade-offs',
 ];
 
+export const LLD_DRILL_STEPS: string[] = [
+  'Clarify requirements and entities',
+  'Sketch interfaces and class relationships',
+  'Write the core code',
+  'Answer one concurrency or extension follow-up',
+];
+
+export const HLD_DRILL_STEPS: string[] = [
+  'Requirements and capacity estimate',
+  'API and schema',
+  'High-level architecture',
+  'Bottlenecks and trade-offs',
+];
+
 /** Backend fundamentals revision, one subject per week (30-45 min on the project/fundamentals day). */
 export const FUNDAMENTALS: { subject: string; areas: string }[] = [
   { subject: 'Java', areas: 'Collections, JVM, garbage collection, synchronization, thread pools' },

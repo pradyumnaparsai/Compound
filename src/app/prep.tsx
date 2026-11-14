@@ -90,7 +90,7 @@ export default function PrepScreen() {
                 <Text style={[styles.focus, { color: t.text }]}>{day.focus}</Text>
                 <Text style={{ color: t.textDim, fontSize: 13, marginTop: 2 }}>
                   {day.week ? `Week ${day.week} · ` : ''}
-                  {rest ? 'No catch-up' : `Study day ${pos.n} of ${pos.total} · ~${formatMinutes(dayMinutes(day))}`}
+                  {rest ? 'No catch-up' : `Day ${pos.n} of ${pos.total} · ~${formatMinutes(dayMinutes(day))}`}
                 </Text>
               </View>
               {streak > 0 && (
