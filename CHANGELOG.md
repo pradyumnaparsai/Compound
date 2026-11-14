@@ -3,6 +3,13 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.30.0 — 2026-11-14
+### Added
+- **Switch prep.** A compact card on the Today screen (no new tab) shows today's interview-prep goal with progress, your next open item and a prep streak. Tap it for the full checklist: DSA problems, LLD/HLD exercises, fundamentals, Walmart project walkthroughs, STAR stories, mocks and recruiting steps for Nov 15 – Jan 4, with date arrows to look ahead or back.
+- **Multi-day items.** Each LLD and HLD exercise spans two days ("Day 1/2 · Design", "Day 2/2 · Implementation") with a checkbox per step; checking the item ticks every step, and it counts as done once all are.
+- **Roll-over.** Unfinished items from the previous 3 days show up under "Carried over" on today's list (mocks excluded). Nothing rolls across the wedding break (Nov 23–26), so there is no catch-up debt.
+- Checking off everything for the day completes the goal. Progress is saved locally and included in the cloud backup.
+
 ## v1.29.2 — 2026-11-13
 ### Removed
 - **Workout start integration with Apple Watch / Fitness.** Starting a template workout no longer tries to start a workout on the iPhone (v1.28.0) or ask the Watch to start one. It did not work reliably and was too much machinery. Finishing a template workout still saves a Traditional Strength Training workout to Apple Health.
