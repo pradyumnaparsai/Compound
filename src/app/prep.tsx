@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Redirect, router } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { onFail } from '@/components/notify';
 import { PrepItemCard } from '@/components/PrepItemCard';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Screen } from '@/components/Screen';
-import { MONTH_NAMES, addDays, dayTitle, fromKey } from '@/domain/date';
+import { MONTH_NAMES, addDays, dayTitle, fromKey, isDateKey } from '@/domain/date';
 import { agendaFor, agendaProgress, clampToPlan, dayStatus, prepStreak, studyDayPosition } from '@/domain/prep';
 import { PREP_END, PREP_START } from '@/domain/prepPlan';
 import { usePrepEnabled } from '@/hooks/usePrepEnabled';
@@ -22,7 +22,9 @@ export default function PrepScreen() {
   const enabled = usePrepEnabled();
   const today = useToday();
   const { checked, toggleItem, toggleStep } = usePrepStore();
-  const [picked, setPicked] = useState<string | null>(null);
+  // Opened from the calendar with ?date=YYYY-MM-DD; otherwise it starts on today.
+  const { date: dateParam } = useLocalSearchParams<{ date?: string }>();
+  const [picked, setPicked] = useState<string | null>(() => (isDateKey(dateParam) ? clampToPlan(dateParam) : null));
   const date = picked ?? clampToPlan(today);
 
   const agenda = useMemo(() => agendaFor(date, today, checked), [date, today, checked]);

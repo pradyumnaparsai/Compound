@@ -3,6 +3,7 @@ import { router, type Href } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { onFail } from '@/components/notify';
+import { PrepDayRow } from '@/components/PrepDayRow';
 import { RoutineRow } from '@/components/RoutineRow';
 import { Screen } from '@/components/Screen';
 import { TaskAdder } from '@/components/TaskAdder';
@@ -209,6 +210,7 @@ export default function CalendarScreen() {
             <View style={{ height: 12 }} />
           </>
         )}
+        <PrepDayRow date={selected} />
         <Text style={[styles.section, { color: t.textDim }]}>Tasks</Text>
         <TaskAdder date={selected} placeholder={`Add a task for ${MONTH_NAMES[sel.getMonth()].slice(0, 3)} ${sel.getDate()}…`} />
         {selectedTasks.map((task) => (
