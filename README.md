@@ -84,3 +84,4 @@ New features follow the checklist in [`docs/FEATURE_WORKFLOW.md`](docs/FEATURE_W
 See [`docs/DESIGN.md`](docs/DESIGN.md) for design notes.
 
 Deploying to a phone (OTA updates + weekly re-install): [`docs/DEPLOY.md`](docs/DEPLOY.md).
+Installing on devices without a paid Apple Developer account (SideStore): [`docs/SIDELOAD.md`](docs/SIDELOAD.md).
