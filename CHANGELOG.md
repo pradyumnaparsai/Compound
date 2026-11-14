@@ -3,6 +3,12 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.30.2 — 2026-11-14
+### Changed
+- **Switch prep plan rebalanced.** Recruiting and Walmart project items are removed. Behavioral (STAR stories) now starts Dec 21: stories 1–2 on Dec 21, 3–4 on Dec 23, 5–6 on Dec 28, 7–8 on Dec 31, a behavioral round in the Dec 30 mock and a full behavioral mock on Jan 4.
+- **The freed time goes to design and DSA.** The fundamentals days get a design drill: LLD Parking Lot (Nov 19) and Splitwise (Dec 14), HLD URL Shortener (Nov 22) and Distributed Cache (Dec 7). Dec 31 and Jan 4 add Yellow/Red DSA revision. The LLD drills now come before the six main LLD exercises are finished.
+- Every item has a planned time, and the day screen shows the total (about 2–2.5 h on practice days, 1.5–2.5 h on mock and buffer days).
+
 ## v1.30.1 — 2026-11-14
 ### Added
 - **Switch prep on the Calendar.** Selecting a date inside the plan (Nov 15 – Jan 4) shows a "Switch prep" row with that day's focus and progress; tap it to open that day's checklist, so you can look ahead without waiting for the Today card.
