@@ -3,6 +3,10 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.30.1 — 2026-11-14
+### Added
+- **Switch prep on the Calendar.** Selecting a date inside the plan (Nov 15 – Jan 4) shows a "Switch prep" row with that day's focus and progress; tap it to open that day's checklist, so you can look ahead without waiting for the Today card.
+
 ## v1.30.0 — 2026-11-14
 ### Added
 - **Switch prep.** A compact card on the Today screen (no new tab) shows today's interview-prep goal with progress, your next open item and a prep streak. Tap it for the full checklist: DSA problems, LLD/HLD exercises, fundamentals, Walmart project walkthroughs, STAR stories, mocks and recruiting steps for Nov 15 – Jan 4, with date arrows to look ahead or back.
