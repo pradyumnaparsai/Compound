@@ -3,6 +3,16 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.30.3 — 2026-11-14
+### Changed
+- **All mocks moved to the end.** Study runs Nov 15 – Dec 16 with no mock days; the 12 mocks now fall between Dec 18 and Jan 4, alternating with lighter revision days.
+- **Study days are denser.** Each DSA week is a 4–5 day bundle: LLD on two consecutive days, HLD on two consecutive days (none straddles the wedding break), 2 DSA problems a day, and on 5-day bundles an extra day with the extension pair, fundamentals and a design drill. Every LLD and HLD exercise still finishes before Dec 17.
+- **Fundamentals:** Java, Databases, Spring Boot and Distributed Systems keep their study-phase slot. Kafka (Dec 17) and Production Engineering (Dec 23) moved to the mock phase because the two 4-day bundles have no room for them.
+- **All 8 design drills are scheduled:** LLD Parking Lot, Splitwise, Elevator, Cab Booking and HLD URL Shortener, Distributed Cache, News Feed, Log Aggregation / Metrics Pipeline. They run alongside the main LLD exercises instead of after them.
+- Behavioral: stories are drafted on Dec 21, 22, 25 and 27, retold on Dec 28, tested in the Dec 30 round and the Jan 4 behavioral mock.
+### Fixed
+- **Design drills now have individual checkboxes** (four steps each) instead of a single tick.
+
 ## v1.30.2 — 2026-11-14
 ### Changed
 - **Switch prep plan rebalanced.** Recruiting and Walmart project items are removed. Behavioral (STAR stories) now starts Dec 21: stories 1–2 on Dec 21, 3–4 on Dec 23, 5–6 on Dec 28, 7–8 on Dec 31, a behavioral round in the Dec 30 mock and a full behavioral mock on Jan 4.
