@@ -14,6 +14,7 @@ import { applyUpdateNow } from '@/services/otaUpdate';
 import { syncWidget } from '@/services/widgetSync';
 import { useMealStore } from '@/store/useMealStore';
 import { useRoutineStore } from '@/store/useRoutineStore';
+import { usePrepStore } from '@/store/usePrepStore';
 import { useTaskStore } from '@/store/useTaskStore';
 import { useMemoryStore } from '@/store/useMemoryStore';
 import { useUnitStore } from '@/store/useUnitStore';
@@ -38,6 +39,7 @@ export default function RootLayout() {
     useWeightStore.getState().load().catch((e) => console.error('Failed to load weights', e));
     useMealStore.getState().load().catch((e) => console.error('Failed to load meals', e));
     useTaskStore.getState().load().catch((e) => console.error('Failed to load tasks', e));
+    usePrepStore.getState().load().catch((e) => console.error('Failed to load switch prep', e));
     useUnitStore.getState().load().catch((e) => console.error('Failed to load units', e));
     useMemoryStore.getState().load().catch((e) => console.error('Failed to load Atomic memory', e));
     useWorkoutLibraryStore.getState().load().catch((e) => console.error('Failed to load workouts', e));
@@ -144,6 +146,7 @@ export default function RootLayout() {
             <Stack.Screen name="workout-detail" />
             <Stack.Screen name="workout-manage" />
             <Stack.Screen name="workout-settings" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="prep" />
             <Stack.Screen name="memory" options={{ presentation: 'modal' }} />
           </Stack>
           <ConfettiHost />

@@ -27,6 +27,13 @@ export interface TaskRepository {
   remove(id: string): Promise<void>;
 }
 
+export interface PrepRepository {
+  /** Keys of every checked item/step. */
+  list(): Promise<string[]>;
+  /** Checks or unchecks all `keys` in one statement (an item with steps flips together). */
+  setMany(keys: string[], done: boolean): Promise<void>;
+}
+
 export interface MealRepository {
   list(): Promise<Meal[]>;
   add(meal: Meal): Promise<void>;

@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { onFail } from '@/components/notify';
+import { PrepCard } from '@/components/PrepCard';
 import { ProgressBar } from '@/components/ProgressBar';
 import { ReorderableList } from '@/components/ReorderableList';
 import { RoutineRow } from '@/components/RoutineRow';
@@ -83,6 +84,7 @@ export default function TodayScreen() {
         contentContainerStyle={{ paddingBottom: 24 }}
         header={
           <View style={{ marginBottom: 8 }}>
+            <PrepCard />
             <Text style={[styles.section, { color: t.textDim }]}>Tasks for today</Text>
             <TaskAdder date={today} />
             {overdue.map((task) => (

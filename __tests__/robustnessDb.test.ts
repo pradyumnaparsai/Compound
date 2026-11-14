@@ -91,7 +91,7 @@ describe('v11 indexes', () => {
     const names = (await g.__db.getAllAsync<{ name: string }>("SELECT name FROM sqlite_master WHERE type = 'index'")).map((r) => r.name);
     expect(names).toEqual(expect.arrayContaining(['idx_workouts_started', 'idx_template_exercises_exercise', 'idx_meals_date_logged']));
     expect(names).not.toContain('idx_meals_date');
-    expect(MIGRATIONS).toHaveLength(11);
+    expect(MIGRATIONS).toHaveLength(12);
   });
 
   it('upgrades a v10 database without touching its data', async () => {

@@ -194,6 +194,11 @@ export const MIGRATIONS: string[] = [
    CREATE INDEX idx_template_exercises_exercise ON template_exercises(exercise_id);
    CREATE INDEX idx_meals_date_logged ON meals(date, logged_at);
    DROP INDEX idx_meals_date;`,
+  // v12: switch-prep checklist. `key` is a stable id from the static plan (item id, or step id for multi-step items).
+  `CREATE TABLE prep_checks (
+     key TEXT PRIMARY KEY NOT NULL,
+     done_at TEXT NOT NULL
+   );`,
 ];
 
 export async function migrate(db: SQLite.SQLiteDatabase) {

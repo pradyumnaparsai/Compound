@@ -10,6 +10,7 @@ import type {
   FoodCacheRepository,
   MealRepository,
   MealScheduleRepository,
+  PrepRepository,
   RoutineRepository,
   SavedMealRepository,
   SettingsRepository,
@@ -262,6 +263,27 @@ export const sqliteTaskRepo: TaskRepository = {
   async remove(id) {
     const db = await getDb();
     await db.runAsync('DELETE FROM tasks WHERE id = ?', id);
+  },
+};
+
+export const sqlitePrepRepo: PrepRepository = {
+  async list() {
+    const db = await getDb();
+    return (await db.getAllAsync<{ key: string }>('SELECT key FROM prep_checks')).map((r) => r.key);
+  },
+  async setMany(keys, done) {
+    if (keys.length === 0) return;
+    const db = await getDb();
+    const marks = keys.map(() => '?').join(', ');
+    if (done) {
+      const now = new Date().toISOString();
+      await db.runAsync(
+        `INSERT OR REPLACE INTO prep_checks (key, done_at) VALUES ${keys.map(() => '(?, ?)').join(', ')}`,
+        keys.flatMap((k) => [k, now]),
+      );
+    } else {
+      await db.runAsync(`DELETE FROM prep_checks WHERE key IN (${marks})`, keys);
+    }
   },
 };
 

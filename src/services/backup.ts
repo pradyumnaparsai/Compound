@@ -4,6 +4,7 @@ import { supabase, supabaseConfigured } from '@/data/supabase';
 import { UserError } from '@/domain/errors';
 import { useMealStore } from '@/store/useMealStore';
 import { useMemoryStore } from '@/store/useMemoryStore';
+import { usePrepStore } from '@/store/usePrepStore';
 import { useRoutineStore } from '@/store/useRoutineStore';
 import { useTaskStore } from '@/store/useTaskStore';
 import { useUnitStore } from '@/store/useUnitStore';
@@ -22,6 +23,7 @@ const TABLES = [
   'meal_schedules',
   'settings',
   'tasks',
+  'prep_checks',
   // Workout tracking (v10). Built-in exercises live in code, so `exercises` holds only custom ones and a
   // fresh install still counts as empty.
   'exercises',
@@ -175,6 +177,7 @@ export async function restoreLatest(): Promise<void> {
     useWeightStore.getState().load(),
     useMealStore.getState().load(),
     useTaskStore.getState().load(),
+    usePrepStore.getState().load(),
     useUnitStore.getState().load(),
     useMemoryStore.getState().load(),
     useWorkoutLibraryStore.getState().load(),
