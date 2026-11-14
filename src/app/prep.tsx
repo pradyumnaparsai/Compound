@@ -7,7 +7,7 @@ import { PrepItemCard } from '@/components/PrepItemCard';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Screen } from '@/components/Screen';
 import { MONTH_NAMES, addDays, dayTitle, fromKey, isDateKey } from '@/domain/date';
-import { agendaFor, agendaProgress, clampToPlan, dayStatus, prepStreak, studyDayPosition } from '@/domain/prep';
+import { agendaFor, agendaProgress, clampToPlan, dayMinutes, dayStatus, formatMinutes, prepStreak, studyDayPosition } from '@/domain/prep';
 import { PREP_END, PREP_START } from '@/domain/prepPlan';
 import { usePrepEnabled } from '@/hooks/usePrepEnabled';
 import { useToday } from '@/hooks/useToday';
@@ -90,7 +90,7 @@ export default function PrepScreen() {
                 <Text style={[styles.focus, { color: t.text }]}>{day.focus}</Text>
                 <Text style={{ color: t.textDim, fontSize: 13, marginTop: 2 }}>
                   {day.week ? `Week ${day.week} · ` : ''}
-                  {rest ? 'No catch-up' : `Study day ${pos.n} of ${pos.total}`}
+                  {rest ? 'No catch-up' : `Study day ${pos.n} of ${pos.total} · ~${formatMinutes(dayMinutes(day))}`}
                 </Text>
               </View>
               {streak > 0 && (

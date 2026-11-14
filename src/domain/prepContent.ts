@@ -178,32 +178,7 @@ export const FUNDAMENTALS: { subject: string; areas: string }[] = [
   { subject: 'Production Engineering', areas: 'Observability, incident response, debugging, RCA, reliability' },
 ];
 
-export const PROJECT_TOPICS = {
-  inventory: {
-    name: 'Inventory / Pallet Management',
-    steps: [
-      'Architecture and service boundaries',
-      'Spring Boot APIs and database schema',
-      'Kafka event flows',
-      'Concurrency and consistency',
-      'Production monitoring and incident handling',
-      'Your personal decisions and business impact',
-    ],
-  },
-  migration: {
-    name: 'Azure SQL → BigQuery migration',
-    steps: [
-      'Original architecture and limitations',
-      'Incremental extraction and processing',
-      'Batching and upserts',
-      'Airflow orchestration',
-      'Failure recovery and data correctness',
-      'Performance and architectural trade-offs',
-    ],
-  },
-} as const;
-
-/** Eight STAR stories; prepared two per week during weeks 1-4. */
+/** Eight STAR stories; drafted two at a time from Dec 21 onwards. */
 export const STAR_STORIES: string[] = [
   'Technically challenging project you owned',
   'Production incident and root-cause analysis',

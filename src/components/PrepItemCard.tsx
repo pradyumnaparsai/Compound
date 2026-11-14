@@ -14,10 +14,8 @@ const KIND: Record<PrepKind, { label: string; icon: IconName }> = {
   lld: { label: 'LLD', icon: 'construct-outline' },
   hld: { label: 'HLD', icon: 'git-network-outline' },
   fundamentals: { label: 'Fundamentals', icon: 'book-outline' },
-  project: { label: 'Project', icon: 'briefcase-outline' },
   behavioral: { label: 'Behavioral', icon: 'chatbubbles-outline' },
   mock: { label: 'Mock', icon: 'timer-outline' },
-  recruiting: { label: 'Recruiting', icon: 'paper-plane-outline' },
   review: { label: 'Review', icon: 'refresh-outline' },
 };
 

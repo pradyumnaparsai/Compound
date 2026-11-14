@@ -100,6 +100,16 @@ export function studyDayPosition(date: string, plan: PrepDay[] = PREP_PLAN): { n
   return { n: study.filter((d) => d.date <= date).length, total: study.length };
 }
 
+/** Total planned minutes for a day. */
+export const dayMinutes = (day: PrepDay): number => day.items.reduce((sum, it) => sum + it.minutes, 0);
+
+/** 145 -> "2h 25m", 90 -> "1h 30m", 45 -> "45m". */
+export function formatMinutes(min: number): string {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return h === 0 ? `${m}m` : m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
 export const clampToPlan = (date: string): string => (date < PREP_START ? PREP_START : date > PREP_END ? PREP_END : date);
 
 export const isInPlan = (date: string): boolean => date >= PREP_START && date <= PREP_END;

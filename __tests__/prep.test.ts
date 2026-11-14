@@ -3,7 +3,9 @@ import {
   CARRY_DAYS,
   agendaFor,
   agendaProgress,
+  dayMinutes,
   dayStatus,
+  formatMinutes,
   itemDone,
   itemKeys,
   itemProgress,
@@ -43,14 +45,14 @@ describe('plan calendar', () => {
   });
 
   it('schedules 48 core DSA problems and 12 extension slots', () => {
-    const dsa = PREP_PLAN.flatMap((d) => d.items).filter((i) => i.kind === 'dsa');
+    const dsa = PREP_PLAN.flatMap((d) => d.items).filter((i) => i.kind === 'dsa' && i.badge !== 'Revision');
     expect(dsa.filter((i) => i.badge?.startsWith('Core'))).toHaveLength(48);
     expect(dsa.filter((i) => i.badge === 'Extension / revision')).toHaveLength(12);
     expect(new Set(dsa.map((i) => i.title)).size).toBe(60);
   });
 
   it('gives six LLD and six HLD exercises two days each', () => {
-    const items = PREP_PLAN.flatMap((d) => d.items);
+    const items = PREP_PLAN.flatMap((d) => d.items).filter((i) => !i.id.endsWith('.drill'));
     expect(items.filter((i) => i.kind === 'lld')).toHaveLength(12);
     expect(items.filter((i) => i.kind === 'hld')).toHaveLength(12);
     expect(day('2026-11-27').items.find((i) => i.kind === 'lld')?.title).toBe('LLD: Thread-safe LRU Cache');
@@ -68,6 +70,59 @@ describe('plan calendar', () => {
   it('covers all 8 STAR stories', () => {
     const stories = PREP_PLAN.flatMap((d) => d.items).filter((i) => i.kind === 'behavioral' && i.steps.length);
     expect(stories.flatMap((i) => i.steps)).toHaveLength(8);
+  });
+});
+
+describe('plan content', () => {
+  const items = PREP_PLAN.flatMap((d) => d.items.map((i) => ({ ...i, date: d.date })));
+
+  it('has no recruiting or project items', () => {
+    expect(items.filter((i) => !['dsa', 'lld', 'hld', 'fundamentals', 'behavioral', 'mock', 'review'].includes(i.kind))).toEqual([]);
+    expect(items.filter((i) => /recruit|project|application|referral/i.test(`${i.title} ${i.detail ?? ''}`))).toEqual([]);
+  });
+
+  it('keeps all behavioral work on or after Dec 21', () => {
+    const behavioral = items.filter((i) => i.kind === 'behavioral' || /behavioral/i.test(i.title));
+    expect(behavioral.length).toBeGreaterThan(0);
+    expect(behavioral.every((i) => i.date >= '2026-12-21')).toBe(true);
+  });
+
+  it('drafts all 8 STAR stories in order, each before the mock that tests it', () => {
+    const drafts = items.filter((i) => i.id.endsWith('.star')).sort((a, b) => (a.date < b.date ? -1 : 1));
+    expect(drafts.map((d) => d.date)).toEqual(['2026-12-21', '2026-12-23', '2026-12-28', '2026-12-31']);
+    expect(drafts.flatMap((d) => d.steps).map((s) => s.title)).toHaveLength(8);
+    // Dec 30's behavioral round covers stories 1-6, all drafted by Dec 28; the Jan 4 mock covers all 8.
+    expect(drafts.filter((d) => d.date <= '2026-12-28').flatMap((d) => d.steps)).toHaveLength(6);
+    expect(drafts[drafts.length - 1].date < '2027-01-04').toBe(true);
+    expect(items.find((i) => i.id === '2027-01-04.bmock')).toBeDefined();
+  });
+
+  it('gives every item a positive planned time', () => {
+    expect(items.every((i) => Number.isInteger(i.minutes) && i.minutes > 0)).toBe(true);
+  });
+
+  it('keeps every day realistic: 2-2.5 h of practice, 1.5-2.5 h with a mock or buffer day', () => {
+    for (const d of PREP_PLAN.filter((x) => !x.rest)) {
+      const min = dayMinutes(d);
+      const isMockOrBuffer = d.week === null || d.items.some((i) => i.kind === 'mock');
+      expect([d.date, min >= (isMockOrBuffer ? 90 : 120) && min <= 150]).toEqual([d.date, true]);
+    }
+  });
+
+  it('adds design drills and DSA revision where the removed work used to be', () => {
+    expect(items.filter((i) => i.id.endsWith('.drill')).map((i) => i.title)).toEqual([
+      'LLD drill: Parking Lot',
+      'HLD drill: URL Shortener',
+      'HLD drill: Distributed Cache',
+      'LLD drill: Splitwise',
+    ]);
+    expect(items.filter((i) => i.id.endsWith('.rev')).map((i) => i.date)).toEqual(['2026-12-31', '2027-01-04']);
+  });
+
+  it('formats minutes', () => {
+    expect(formatMinutes(145)).toBe('2h 25m');
+    expect(formatMinutes(120)).toBe('2h');
+    expect(formatMinutes(45)).toBe('45m');
   });
 });
 
