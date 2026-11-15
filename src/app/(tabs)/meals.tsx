@@ -107,7 +107,7 @@ export default function MealsScreen() {
           </View>
         </View>
 
-        <DiarySections meals={dayMeals} />
+        <DiarySections meals={dayMeals} today={today} date={date} />
       </ScrollView>
     </Screen>
   );

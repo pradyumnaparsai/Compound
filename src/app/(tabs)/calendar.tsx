@@ -107,7 +107,7 @@ export default function CalendarScreen() {
               }}
             />
             <View style={styles.legend}>
-              <Legend color={t.success} label="All done" t={t} />
+              <Legend color={t.doneFill} label="All done" t={t} />
               <Legend color={t.successSoft} label="Partial" t={t} />
               <Legend color={t.surfaceAlt} label="Missed" t={t} />
             </View>
@@ -140,8 +140,8 @@ export default function CalendarScreen() {
               const isToday = key === today;
               const isSel = key === selected;
               const bg =
-                status === 'all' ? t.success : status === 'partial' ? t.successSoft : 'transparent';
-              const fg = status === 'all' ? t.bg : t.text;
+                status === 'all' ? t.doneFill : status === 'partial' ? t.successSoft : 'transparent';
+              const fg = status === 'all' ? t.onDone : t.text;
               return (
                 <Pressable key={ci} style={styles.cell} onPress={() => setSelected(key)}>
                   <View
@@ -158,7 +158,7 @@ export default function CalendarScreen() {
                       {Number(key.slice(8))}
                     </Text>
                     {workoutDays.has(key) && (
-                      <Ionicons name="barbell" size={10} color={status === 'all' ? t.bg : '#F5B800'} style={styles.workoutBadge} />
+                      <Ionicons name="barbell" size={10} color={status === 'all' ? t.onDone : '#F5B800'} style={styles.workoutBadge} />
                     )}
                     {counts.get(key) && (
                       <View
@@ -176,7 +176,7 @@ export default function CalendarScreen() {
         ))}
 
         <View style={styles.legend}>
-          <Legend color={t.success} label="All done" t={t} />
+          <Legend color={t.doneFill} label="All done" t={t} />
           <Legend color={t.successSoft} label="Partial" t={t} />
           <Legend color={t.accent} label="Task due" t={t} />
           <View style={styles.legendItem}>

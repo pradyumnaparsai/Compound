@@ -24,20 +24,20 @@ describe('plan calendar', () => {
   const items = PREP_PLAN.flatMap((d) => d.items.map((i) => ({ ...i, date: d.date })));
   const isMain = (kind: string) => (i: { kind: string; badge?: string }) => i.kind === kind && !!i.badge?.startsWith('Day ');
 
-  it('spans Nov 15 - Jan 4 with no gaps or duplicates', () => {
-    expect(PREP_START).toBe('2026-11-15');
-    expect(PREP_END).toBe('2027-01-04');
+  it('spans Nov 16 - Jan 5 with no gaps or duplicates', () => {
+    expect(PREP_START).toBe('2026-11-16');
+    expect(PREP_END).toBe('2027-01-05');
     PREP_PLAN.forEach((d, i) => expect(d.date).toBe(addDays(PREP_START, i)));
     expect(PREP_PLAN).toHaveLength(51);
   });
 
-  it('has 28 study days up to Dec 16, then 18 mock-phase days', () => {
+  it('has 28 study days up to Dec 17, then 18 mock-phase days', () => {
     const study = PREP_PLAN.filter((d) => d.week !== null);
     expect(study).toHaveLength(28);
-    expect(study.every((d) => d.date <= '2026-12-16')).toBe(true);
+    expect(study.every((d) => d.date <= '2026-12-17')).toBe(true);
     const phase2 = PREP_PLAN.filter((d) => d.week === null && !d.rest);
     expect(phase2).toHaveLength(18);
-    expect(phase2[0].date).toBe('2026-12-17');
+    expect(phase2[0].date).toBe('2026-12-18');
   });
 
   it('keeps the wedding break free', () => {
@@ -59,10 +59,10 @@ describe('plan calendar', () => {
     expect(new Set(dsa.map((i) => i.title)).size).toBe(60);
   });
 
-  it('keeps Nov 15-19 as originally published', () => {
-    expect(day('2026-11-15').items.map((i) => i.id)).toEqual(['2026-11-15.dsa1', '2026-11-15.dsa2', '2026-11-15.lld']);
-    expect(day('2026-11-15').items[0].title).toBe('Subarray Sum Equals K');
-    expect(day('2026-11-19').items.map((i) => i.title)).toEqual([
+  it('keeps Nov 16-20 as originally published', () => {
+    expect(day('2026-11-16').items.map((i) => i.id)).toEqual(['2026-11-16.dsa1', '2026-11-16.dsa2', '2026-11-16.lld']);
+    expect(day('2026-11-16').items[0].title).toBe('Subarray Sum Equals K');
+    expect(day('2026-11-20').items.map((i) => i.title)).toEqual([
       '3Sum',
       'Trapping Rain Water',
       'Fundamentals: Java',
@@ -73,7 +73,7 @@ describe('plan calendar', () => {
   it('gives six LLD and six HLD exercises two days each', () => {
     expect(items.filter(isMain('lld'))).toHaveLength(12);
     expect(items.filter(isMain('hld'))).toHaveLength(12);
-    expect(day('2026-11-20').items.find((i) => i.kind === 'lld')?.title).toBe('LLD: Thread-safe LRU Cache');
+    expect(day('2026-11-21').items.find((i) => i.kind === 'lld')?.title).toBe('LLD: Thread-safe LRU Cache');
   });
 
   it('puts Day 2 of every LLD/HLD exercise the day after Day 1, so none straddles the wedding break', () => {
@@ -88,10 +88,10 @@ describe('plan calendar', () => {
     }
   });
 
-  it('puts all 12 mocks at the end, from Dec 17', () => {
+  it('puts all 12 mocks at the end, from Dec 18', () => {
     const mocks = items.filter((i) => i.kind === 'mock');
     expect(mocks).toHaveLength(12);
-    expect(mocks.every((m) => m.date >= '2026-12-17')).toBe(true);
+    expect(mocks.every((m) => m.date >= '2026-12-18')).toBe(true);
     expect(PREP_PLAN.filter((d) => d.week !== null).some((d) => d.items.some((i) => i.kind === 'mock'))).toBe(false);
   });
 
@@ -121,15 +121,15 @@ describe('plan content', () => {
     expect(items.filter((i) => /recruit|project|application|referral/i.test(`${i.title} ${i.detail ?? ''}`))).toEqual([]);
   });
 
-  it('keeps all behavioral work on or after Dec 21, with every story drafted before Dec 30', () => {
+  it('keeps all behavioral work on or after Dec 22, with every story drafted before Dec 31', () => {
     const behavioral = items.filter((i) => i.kind === 'behavioral' || /behavioral/i.test(i.title));
     expect(behavioral.length).toBeGreaterThan(0);
-    expect(behavioral.every((i) => i.date >= '2026-12-21')).toBe(true);
+    expect(behavioral.every((i) => i.date >= '2026-12-22')).toBe(true);
     const drafts = items.filter((i) => i.id.endsWith('.star')).sort((a, b) => (a.date < b.date ? -1 : 1));
-    expect(drafts.map((d) => d.date)).toEqual(['2026-12-21', '2026-12-22', '2026-12-25', '2026-12-27']);
+    expect(drafts.map((d) => d.date)).toEqual(['2026-12-22', '2026-12-23', '2026-12-26', '2026-12-28']);
     expect(drafts.flatMap((d) => d.steps)).toHaveLength(8);
-    expect(drafts[drafts.length - 1].date < '2026-12-30').toBe(true);
-    expect(items.find((i) => i.id === '2027-01-04.bmock')).toBeDefined();
+    expect(drafts[drafts.length - 1].date < '2026-12-31').toBe(true);
+    expect(items.find((i) => i.id === '2027-01-05.bmock')).toBeDefined();
   });
 
   it('gives every item a positive planned time', () => {
@@ -139,7 +139,7 @@ describe('plan content', () => {
   it('keeps every day realistic: 2-2.5 h of practice, 1.5-2.5 h on mock days and the last days', () => {
     for (const d of PREP_PLAN.filter((x) => !x.rest)) {
       const min = dayMinutes(d);
-      const lenient = d.items.some((i) => i.kind === 'mock') || d.date >= '2027-01-04';
+      const lenient = d.items.some((i) => i.kind === 'mock') || d.date >= '2027-01-05';
       expect([d.date, min >= (lenient ? 90 : 120) && min <= 150]).toEqual([d.date, true]);
     }
   });
@@ -163,7 +163,7 @@ describe('plan content', () => {
   it('has Yellow/Red DSA revision in the mock phase', () => {
     const rev = items.filter((i) => i.id.endsWith('.rev'));
     expect(rev.length).toBeGreaterThan(0);
-    expect(rev.every((i) => i.date >= '2026-12-17')).toBe(true);
+    expect(rev.every((i) => i.date >= '2026-12-18')).toBe(true);
   });
 
   it('formats minutes', () => {
@@ -174,8 +174,8 @@ describe('plan content', () => {
 });
 
 describe('item completion', () => {
-  const lld = day('2026-11-15').items.find((i) => i.kind === 'lld')!;
-  const dsa = day('2026-11-15').items.find((i) => i.kind === 'dsa')!;
+  const lld = day('2026-11-16').items.find((i) => i.kind === 'lld')!;
+  const dsa = day('2026-11-16').items.find((i) => i.kind === 'dsa')!;
 
   it('an item without steps is its own checkbox', () => {
     expect(itemKeys(dsa)).toEqual([dsa.id]);
@@ -198,10 +198,10 @@ describe('item completion', () => {
 });
 
 describe('agendaFor / rollover', () => {
-  const today = '2026-11-17';
+  const today = '2026-11-18';
 
   it('shows only own items when nothing is behind', () => {
-    const done = new Set([...allKeys(day('2026-11-15')), ...allKeys(day('2026-11-16'))]);
+    const done = new Set([...allKeys(day('2026-11-16')), ...allKeys(day('2026-11-17'))]);
     const a = agendaFor(today, today, done);
     expect(a.carried).toEqual([]);
     expect(a.own).toEqual(day(today).items);
@@ -211,16 +211,16 @@ describe('agendaFor / rollover', () => {
     const a = agendaFor(today, today, new Set());
     const froms = a.carried.map((c) => c.from);
     expect(froms).toEqual([...froms].sort());
-    expect(new Set(froms)).toEqual(new Set(['2026-11-15', '2026-11-16']));
-    expect(a.carried.length).toBe(day('2026-11-15').items.length + day('2026-11-16').items.length);
+    expect(new Set(froms)).toEqual(new Set(['2026-11-16', '2026-11-17']));
+    expect(a.carried.length).toBe(day('2026-11-16').items.length + day('2026-11-17').items.length);
   });
 
   it('drops carried items once they are checked, even partly-done ones stay until finished', () => {
-    const lld = day('2026-11-16').items.find((i) => i.kind === 'lld')!;
-    const partial = new Set([...allKeys(day('2026-11-15')), ...itemKeys(lld).slice(0, 2)]);
+    const lld = day('2026-11-17').items.find((i) => i.kind === 'lld')!;
+    const partial = new Set([...allKeys(day('2026-11-16')), ...itemKeys(lld).slice(0, 2)]);
     const a = agendaFor(today, today, partial);
     expect(a.carried.map((c) => c.item.id)).toContain(lld.id);
-    const finished = new Set([...allKeys(day('2026-11-15')), ...allKeys(day('2026-11-16'))]);
+    const finished = new Set([...allKeys(day('2026-11-16')), ...allKeys(day('2026-11-17'))]);
     expect(agendaFor(today, today, finished).carried).toEqual([]);
   });
 
@@ -232,10 +232,10 @@ describe('agendaFor / rollover', () => {
   });
 
   it('never carries mocks', () => {
-    // Dec 18 (DSA mock) and Dec 17 are unfinished; looking from Dec 19.
-    const a = agendaFor('2026-12-19', '2026-12-19', new Set());
+    // Dec 19 (DSA mock) and Dec 18 are unfinished; looking from Dec 20.
+    const a = agendaFor('2026-12-20', '2026-12-20', new Set());
     expect(a.carried.some((c) => c.item.kind === 'mock')).toBe(false);
-    expect(a.carried.some((c) => c.from === '2026-12-17')).toBe(true);
+    expect(a.carried.some((c) => c.from === '2026-12-18')).toBe(true);
   });
 
   it('never carries across the wedding break', () => {
@@ -245,12 +245,12 @@ describe('agendaFor / rollover', () => {
 
   it('does not carry into rest days, past days or future days', () => {
     expect(agendaFor('2026-11-24', '2026-11-24', new Set()).carried).toEqual([]);
-    expect(agendaFor('2026-11-16', today, new Set()).carried).toEqual([]);
-    expect(agendaFor('2026-11-18', today, new Set()).carried).toEqual([]);
+    expect(agendaFor('2026-11-17', today, new Set()).carried).toEqual([]);
+    expect(agendaFor('2026-11-19', today, new Set()).carried).toEqual([]);
   });
 
   it('is empty outside the plan', () => {
-    const a = agendaFor('2026-11-14', '2026-11-14', new Set());
+    const a = agendaFor('2026-11-15', '2026-11-15', new Set());
     expect(a.day).toBeUndefined();
     expect(a.own).toEqual([]);
     expect(agendaProgress(a, new Set())).toEqual({ done: 0, total: 0, fraction: 0, complete: false });
@@ -259,8 +259,8 @@ describe('agendaFor / rollover', () => {
 
 describe('agendaProgress', () => {
   it('completes only when every item (own and carried) is done', () => {
-    const today = '2026-11-16';
-    const d15 = day('2026-11-15');
+    const today = '2026-11-17';
+    const d15 = day('2026-11-16');
     const d16 = day(today);
     const checked = new Set(allKeys(d16));
     const a = agendaFor(today, today, checked);
@@ -281,7 +281,7 @@ describe('agendaProgress', () => {
 });
 
 describe('dayStatus', () => {
-  const d = day('2026-11-15');
+  const d = day('2026-11-16');
   it('reports rest / none / partial / done', () => {
     expect(dayStatus(day('2026-11-24'), new Set())).toBe('rest');
     expect(dayStatus(d, new Set())).toBe('none');
@@ -294,16 +294,16 @@ describe('prepStreak', () => {
   const done = (...dates: string[]) => new Set(dates.flatMap((x) => [...allKeys(day(x))]));
 
   it('is 0 before the plan starts', () => {
-    expect(prepStreak('2026-11-14', new Set())).toBe(0);
+    expect(prepStreak('2026-11-15', new Set())).toBe(0);
   });
 
   it('counts consecutive finished days; an unfinished today does not break it', () => {
-    expect(prepStreak('2026-11-17', done('2026-11-15', '2026-11-16'))).toBe(2);
-    expect(prepStreak('2026-11-17', done('2026-11-15', '2026-11-16', '2026-11-17'))).toBe(3);
+    expect(prepStreak('2026-11-18', done('2026-11-16', '2026-11-17'))).toBe(2);
+    expect(prepStreak('2026-11-18', done('2026-11-16', '2026-11-17', '2026-11-18'))).toBe(3);
   });
 
   it('breaks on a missed past day', () => {
-    expect(prepStreak('2026-11-18', done('2026-11-15', '2026-11-17'))).toBe(1);
+    expect(prepStreak('2026-11-19', done('2026-11-16', '2026-11-18'))).toBe(1);
   });
 
   it('skips the wedding break instead of breaking on it', () => {
@@ -311,16 +311,16 @@ describe('prepStreak', () => {
   });
 
   it('keeps counting the last day after the plan ends', () => {
-    expect(prepStreak('2027-02-01', done('2027-01-03', '2027-01-04'))).toBe(2);
+    expect(prepStreak('2027-02-01', done('2027-01-04', '2027-01-05'))).toBe(2);
   });
 });
 
 describe('studyDayPosition', () => {
   it('numbers study days and skips rest days', () => {
     const total = PREP_PLAN.filter((d) => !d.rest).length;
-    expect(studyDayPosition('2026-11-15')).toEqual({ n: 1, total });
-    expect(studyDayPosition('2026-11-22')).toEqual({ n: 8, total });
-    expect(studyDayPosition('2026-11-27')).toEqual({ n: 9, total });
+    expect(studyDayPosition('2026-11-16')).toEqual({ n: 1, total });
+    expect(studyDayPosition('2026-11-22')).toEqual({ n: 7, total });
+    expect(studyDayPosition('2026-11-27')).toEqual({ n: 8, total });
     expect(studyDayPosition(PREP_END).n).toBe(total);
   });
 });

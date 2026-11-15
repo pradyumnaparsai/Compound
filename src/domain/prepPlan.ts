@@ -1,3 +1,4 @@
+import { addDays } from './date';
 import {
   DSA_WEEKS,
   FUNDAMENTALS,
@@ -31,7 +32,7 @@ export type PrepItem = {
 
 export type PrepDay = {
   date: string;
-  /** DSA week 1-6 during the study phase (Nov 15 - Dec 16); null in the mock phase and on the wedding break. */
+  /** DSA week 1-6 during the study phase (Nov 16 - Dec 17); null in the mock phase and on the wedding break. */
   week: number | null;
   focus: string;
   rest: boolean;
@@ -42,40 +43,34 @@ type Drill = { kind: 'lld' | 'hld'; name: string };
 type Role = 'lld1' | 'lld2' | 'hld1' | 'hld2' | 'extra';
 
 /**
- * Phase 1 (Nov 15 - Dec 16): study only, no mocks. Each DSA week is a bundle of days; the role of a day decides
+ * Phase 1 (Nov 16 - Dec 17): study only, no mocks. Each DSA week is a bundle of days; the role of a day decides
  * what it holds: LLD design/implementation, HLD stages 1-4/5-8, or the "extra" day (extension DSA pair,
  * fundamentals and a design drill). Two-day exercises always sit on consecutive days, so none straddles the
  * wedding break. The two 4-day bundles have no extra day (core DSA + design already fill them), so their
  * extension pairs, fundamentals and drills move to phase 2.
  */
-type Bundle = { week: number; days: [string, Role][]; extra?: { fund: number; drill: Drill } };
+type Bundle = { week: number; days: Role[]; extra?: { fund: number; drill: Drill } };
 
 const BUNDLES: Bundle[] = [
-  {
-    week: 0,
-    days: [['2026-11-15', 'lld1'], ['2026-11-16', 'lld2'], ['2026-11-17', 'hld1'], ['2026-11-18', 'hld2'], ['2026-11-19', 'extra']],
-    extra: { fund: 0, drill: { kind: 'lld', name: 'Parking Lot' } },
-  },
-  {
-    week: 1,
-    days: [['2026-11-20', 'lld1'], ['2026-11-21', 'lld2'], ['2026-11-22', 'extra'], ['2026-11-27', 'hld1'], ['2026-11-28', 'hld2']],
-    extra: { fund: 1, drill: { kind: 'hld', name: 'URL Shortener' } },
-  },
-  { week: 2, days: [['2026-11-29', 'lld1'], ['2026-11-30', 'lld2'], ['2026-12-01', 'hld1'], ['2026-12-02', 'hld2']] },
-  {
-    week: 3,
-    days: [['2026-12-03', 'lld1'], ['2026-12-04', 'lld2'], ['2026-12-05', 'hld1'], ['2026-12-06', 'hld2'], ['2026-12-07', 'extra']],
-    extra: { fund: 3, drill: { kind: 'lld', name: 'Splitwise' } },
-  },
-  {
-    week: 4,
-    days: [['2026-12-08', 'lld1'], ['2026-12-09', 'lld2'], ['2026-12-10', 'hld1'], ['2026-12-11', 'hld2'], ['2026-12-12', 'extra']],
-    extra: { fund: 4, drill: { kind: 'hld', name: 'Distributed Cache' } },
-  },
-  { week: 5, days: [['2026-12-13', 'lld1'], ['2026-12-14', 'lld2'], ['2026-12-15', 'hld1'], ['2026-12-16', 'hld2']] },
+  { week: 0, days: ['lld1', 'lld2', 'hld1', 'hld2', 'extra'], extra: { fund: 0, drill: { kind: 'lld', name: 'Parking Lot' } } },
+  { week: 1, days: ['lld1', 'lld2', 'extra', 'hld1', 'hld2'], extra: { fund: 1, drill: { kind: 'hld', name: 'URL Shortener' } } },
+  { week: 2, days: ['lld1', 'lld2', 'hld1', 'hld2'] },
+  { week: 3, days: ['lld1', 'lld2', 'hld1', 'hld2', 'extra'], extra: { fund: 3, drill: { kind: 'lld', name: 'Splitwise' } } },
+  { week: 4, days: ['lld1', 'lld2', 'hld1', 'hld2', 'extra'], extra: { fund: 4, drill: { kind: 'hld', name: 'Distributed Cache' } } },
+  { week: 5, days: ['lld1', 'lld2', 'hld1', 'hld2'] },
 ];
 
+/** First day of the plan. */
+const START = '2026-11-16';
+
 export const WEDDING_BREAK = ['2026-11-23', '2026-11-24', '2026-11-25', '2026-11-26'];
+
+/** `count` consecutive dates from `first`, skipping the (fixed) wedding break. */
+function datesFrom(first: string, count: number): string[] {
+  const out: string[] = [];
+  for (let d = first; out.length < count; d = addDays(d, 1)) if (!WEDDING_BREAK.includes(d)) out.push(d);
+  return out;
+}
 
 const step = (itemId: string, i: number, title: string): PrepStep => ({ id: `${itemId}.${i + 1}`, title });
 const withSteps = (id: string, titles: string[]) => titles.map((t, i) => step(id, i, t));
@@ -206,52 +201,54 @@ const retellItem = (date: string): PrepItem =>
 const phase2 = (date: string, focus: string, items: PrepItem[]): PrepDay => ({ date, week: null, focus, rest: false, items });
 
 /**
- * Phase 2 (Dec 17 - Jan 4): mocks alternate with lighter revision days. All 12 mocks live here, together with
+ * Phase 2 (Dec 18 - Jan 5): mocks alternate with lighter revision days. All 12 mocks live here, together with
  * the extension pairs and fundamentals that did not fit the two 4-day study bundles, the last design drills,
- * the STAR stories (from Dec 21) and Yellow/Red revision.
+ * the STAR stories (from Dec 22) and Yellow/Red revision.
  */
-function buildPhase2(): PrepDay[] {
-  return [
-    phase2('2026-12-17', 'DSA · Fundamentals · HLD drill', [...extItems('2026-12-17', 2), fundItem('2026-12-17', 2), drillItem('2026-12-17', { kind: 'hld', name: 'News Feed' })]),
-    phase2('2026-12-18', 'DSA mock', [mockItem('2026-12-18', 'DSA mock', 100)]),
-    phase2('2026-12-19', 'DSA · LLD drill · Revision', [...extItems('2026-12-19', 5), drillItem('2026-12-19', { kind: 'lld', name: 'Elevator' }), redoItem('2026-12-19', 1)]),
-    phase2('2026-12-20', 'HLD mock', [mockItem('2026-12-20', 'HLD mock', 100)]),
-    phase2('2026-12-21', 'Behavioral · HLD drill · Revision', [starItem('2026-12-21', 0), drillItem('2026-12-21', { kind: 'hld', name: 'Log Aggregation / Metrics Pipeline' }), redoItem('2026-12-21', 2)]),
-    phase2('2026-12-22', 'LLD mock · Behavioral', [mockItem('2026-12-22', 'LLD / code review mock', 90), starItem('2026-12-22', 2)]),
-    phase2('2026-12-23', 'Fundamentals · LLD drill · Revision', [fundItem('2026-12-23', 5), drillItem('2026-12-23', { kind: 'lld', name: 'Cab Booking' }), redoItem('2026-12-23', 2)]),
-    phase2('2026-12-24', 'DSA mock', [mockItem('2026-12-24', 'DSA mock', 100)]),
-    phase2('2026-12-25', 'Behavioral · Design revisit · Revision', [starItem('2026-12-25', 4), revisitItem('2026-12-25', 'hld'), redoItem('2026-12-25', 2)]),
-    phase2('2026-12-26', 'HLD mock', [mockItem('2026-12-26', 'HLD mock', 100)]),
-    phase2('2026-12-27', 'Behavioral · Design revisit · Revision', [starItem('2026-12-27', 6), revisitItem('2026-12-27', 'lld'), redoItem('2026-12-27', 2)]),
-    phase2('2026-12-28', 'LLD mock · Behavioral', [mockItem('2026-12-28', 'LLD / code review mock', 90), retellItem('2026-12-28')]),
-    phase2('2026-12-29', 'Full DSA simulation', [mockItem('2026-12-29', 'Full DSA simulation', 150)]),
-    phase2('2026-12-30', 'HLD mock + behavioral round', [
-      mockItem('2026-12-30', 'HLD mock + behavioral round', 150, {
+function buildPhase2(firstDate: string): PrepDay[] {
+  const entries: ((date: string) => PrepDay)[] = [
+    (date) => phase2(date, 'DSA · Fundamentals · HLD drill', [...extItems(date, 2), fundItem(date, 2), drillItem(date, { kind: 'hld', name: 'News Feed' })]),
+    (date) => phase2(date, 'DSA mock', [mockItem(date, 'DSA mock', 100)]),
+    (date) => phase2(date, 'DSA · LLD drill · Revision', [...extItems(date, 5), drillItem(date, { kind: 'lld', name: 'Elevator' }), redoItem(date, 1)]),
+    (date) => phase2(date, 'HLD mock', [mockItem(date, 'HLD mock', 100)]),
+    (date) => phase2(date, 'Behavioral · HLD drill · Revision', [starItem(date, 0), drillItem(date, { kind: 'hld', name: 'Log Aggregation / Metrics Pipeline' }), redoItem(date, 2)]),
+    (date) => phase2(date, 'LLD mock · Behavioral', [mockItem(date, 'LLD / code review mock', 90), starItem(date, 2)]),
+    (date) => phase2(date, 'Fundamentals · LLD drill · Revision', [fundItem(date, 5), drillItem(date, { kind: 'lld', name: 'Cab Booking' }), redoItem(date, 2)]),
+    (date) => phase2(date, 'DSA mock', [mockItem(date, 'DSA mock', 100)]),
+    (date) => phase2(date, 'Behavioral · Design revisit · Revision', [starItem(date, 4), revisitItem(date, 'hld'), redoItem(date, 2)]),
+    (date) => phase2(date, 'HLD mock', [mockItem(date, 'HLD mock', 100)]),
+    (date) => phase2(date, 'Behavioral · Design revisit · Revision', [starItem(date, 6), revisitItem(date, 'lld'), redoItem(date, 2)]),
+    (date) => phase2(date, 'LLD mock · Behavioral', [mockItem(date, 'LLD / code review mock', 90), retellItem(date)]),
+    (date) => phase2(date, 'Full DSA simulation', [mockItem(date, 'Full DSA simulation', 150)]),
+    (date) => phase2(date, 'HLD mock + behavioral round', [
+      mockItem(date, 'HLD mock + behavioral round', 150, {
         slot: 'hbmock', // own id: this day's mock used to have different steps
         stepTitles: ['Do the HLD mock', 'Behavioral round: tell your stories and take follow-ups', ...MOCK_RETRO_STEPS.slice(1)],
       }),
     ]),
-    phase2('2026-12-31', 'DSA mock · Review', [mockItem('2026-12-31', 'DSA mock', 100), reviewItem('2026-12-31')]),
-    { date: '2027-01-01', week: null, focus: 'Rest / light revision', rest: true, items: [] },
-    phase2('2027-01-02', 'Full DSA mock', [mockItem('2027-01-02', 'Full DSA mock', 150)]),
-    phase2('2027-01-03', 'HLD + LLD mock', [mockItem('2027-01-03', 'HLD + LLD mock', 150)]),
-    phase2('2027-01-04', 'Behavioral mock · Review', [
-      mockItem('2027-01-04', 'Behavioral mock', 45, {
+    (date) => phase2(date, 'DSA mock · Review', [mockItem(date, 'DSA mock', 100), reviewItem(date)]),
+    (date) => ({ date, week: null, focus: 'Rest / light revision', rest: true, items: [] }),
+    (date) => phase2(date, 'Full DSA mock', [mockItem(date, 'Full DSA mock', 150)]),
+    (date) => phase2(date, 'HLD + LLD mock', [mockItem(date, 'HLD + LLD mock', 150)]),
+    (date) => phase2(date, 'Behavioral mock · Review', [
+      mockItem(date, 'Behavioral mock', 45, {
         slot: 'bmock',
         detail: 'Tell stories under follow-up questions',
         stepTitles: ['Do the mock', 'Record weak spots and missing details'],
       }),
-      reviewItem('2027-01-04'),
-      redoItem('2027-01-04', 1),
+      reviewItem(date),
+      redoItem(date, 1),
     ]),
   ];
+  return datesFrom(firstDate, entries.length).map((date, i) => entries[i](date));
 }
 
 function buildPlan(): PrepDay[] {
-  const days: PrepDay[] = [];
-  for (const b of BUNDLES) for (const [date, role] of b.days) days.push(studyDay(date, b, role));
+  const roles = BUNDLES.flatMap((b) => b.days.map((role) => ({ b, role })));
+  const dates = datesFrom(START, roles.length);
+  const days: PrepDay[] = roles.map(({ b, role }, i) => studyDay(dates[i], b, role));
   for (const date of WEDDING_BREAK) days.push({ date, week: null, focus: 'Wedding break · no catch-up', rest: true, items: [] });
-  days.push(...buildPhase2());
+  days.push(...buildPhase2(addDays(dates[dates.length - 1], 1)));
   return days.sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 

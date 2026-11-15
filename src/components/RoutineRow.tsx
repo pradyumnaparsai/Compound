@@ -11,6 +11,8 @@ import { useMealStore } from '@/store/useMealStore';
 import type { Routine } from '@/domain/types';
 import { radius, useTheme } from '@/theme';
 
+const LEAD = 40;
+
 type Props = {
   routine: Routine;
   date: string; // day this row represents (for health progress)
@@ -51,33 +53,36 @@ export function RoutineRow({ routine, date, done, disabled, onToggle, dragProps 
         },
       ]}
     >
-      {goal?.type === 'steps' ? (
-        <ProgressRing value={done ? 1 : checked ? stepFraction(goal, steps[date]) : 0} size={40} stroke={4}>
-          <Ionicons
-            name={done ? 'checkmark' : 'footsteps'}
-            size={done ? 22 : 16}
-            color={done ? t.success : t.textDim}
-          />
-        </ProgressRing>
-      ) : goal?.type === 'meal' ? (
-        <ProgressRing value={done ? 1 : mealFraction(goal, protein)} size={40} stroke={4}>
-          <Ionicons
-            name={done ? 'checkmark' : 'restaurant'}
-            size={done ? 22 : 16}
-            color={done ? t.success : t.textDim}
-          />
-        </ProgressRing>
-      ) : (
-        <View
-          ref={checkRef}
-          style={[
-            styles.check,
-            { borderColor: done ? t.success : t.textDim, backgroundColor: done ? t.success : 'transparent' },
-          ]}
-        >
-          {done && <Ionicons name="checkmark" size={18} color={t.bg} />}
-        </View>
-      )}
+      {/* Fixed-size slot: the 40 px progress ring and the 28 px check share one centre line and text edge. */}
+      <View style={styles.lead}>
+        {goal?.type === 'steps' ? (
+          <ProgressRing value={done ? 1 : checked ? stepFraction(goal, steps[date]) : 0} size={40} stroke={4}>
+            <Ionicons
+              name={done ? 'checkmark' : 'footsteps'}
+              size={done ? 22 : 16}
+              color={done ? t.success : t.textDim}
+            />
+          </ProgressRing>
+        ) : goal?.type === 'meal' ? (
+          <ProgressRing value={done ? 1 : mealFraction(goal, protein)} size={40} stroke={4}>
+            <Ionicons
+              name={done ? 'checkmark' : 'restaurant'}
+              size={done ? 22 : 16}
+              color={done ? t.success : t.textDim}
+            />
+          </ProgressRing>
+        ) : (
+          <View
+            ref={checkRef}
+            style={[
+              styles.check,
+              { borderColor: done ? t.success : t.textDim, backgroundColor: done ? t.success : 'transparent' },
+            ]}
+          >
+            {done && <Ionicons name="checkmark" size={18} color={t.bg} />}
+          </View>
+        )}
+      </View>
       <View style={{ flex: 1 }}>
         <Text
           style={[
@@ -109,6 +114,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 10,
   },
+  lead: { width: LEAD, height: LEAD, alignItems: 'center', justifyContent: 'center' },
   check: {
     width: 28,
     height: 28,

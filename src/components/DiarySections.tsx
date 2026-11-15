@@ -4,7 +4,8 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { onFail } from '@/components/notify';
-import { dayTotals, groupMeals, MEAL_SLOTS, type Meal, renameMeal, withoutIngredient } from '@/domain/meal';
+import { copyMealToDate, dayTotals, groupMeals, MEAL_SLOTS, type Meal, renameMeal, withoutIngredient } from '@/domain/meal';
+import { newId } from '@/domain/id';
 import { useMealStore } from '@/store/useMealStore';
 import { radius, useTheme } from '@/theme';
 
@@ -12,9 +13,10 @@ const tap = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch((
 const timeOf = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
 /** The day's Breakfast / Lunch / Snacks / Dinner cards: expand an entry, edit its name, remove items, move or delete it. */
-export function DiarySections({ meals }: { meals: Meal[] }) {
+export function DiarySections({ meals, today, date }: { meals: Meal[]; today: string; date: string }) {
   const t = useTheme();
-  const { update, remove } = useMealStore();
+  const { add, update, remove } = useMealStore();
+  const isPast = date < today; // past entries can be pulled into today to repeat them
   const [open, setOpen] = useState<string | null>(null);
   const [openGroups, setOpenGroups] = useState<string[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
@@ -69,6 +71,11 @@ export function DiarySections({ meals }: { meals: Meal[] }) {
       },
     ]);
 
+  const addToToday = (m: Meal) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    add(copyMealToDate(m, today, new Date(), newId())).catch(onFail());
+  };
+
   const removeItem = (m: Meal, index: number) => {
     tap();
     const next = withoutIngredient(m, index);
@@ -121,6 +128,11 @@ export function DiarySections({ meals }: { meals: Meal[] }) {
             </Text>
           </View>
           <Text style={{ color: t.text, fontSize: 16, fontWeight: '700' }}>{m.calories}</Text>
+          {isPast && (
+            <Pressable onPress={() => addToToday(m)} hitSlop={10} accessibilityLabel={`Add ${m.title} to today`}>
+              <Ionicons name="add-circle" size={26} color={t.accent} />
+            </Pressable>
+          )}
         </Pressable>
         {open === m.id && (
           <View style={styles.detail}>
@@ -145,6 +157,11 @@ export function DiarySections({ meals }: { meals: Meal[] }) {
               ) : (
                 <Pressable onPress={() => startEdit(m)} hitSlop={8} accessibilityLabel={`Edit ${m.title}`}>
                   <Text style={{ color: t.accent, fontSize: 13, fontWeight: '600' }}>Edit</Text>
+                </Pressable>
+              )}
+              {isPast && (
+                <Pressable onPress={() => addToToday(m)} hitSlop={8}>
+                  <Text style={{ color: t.accent, fontSize: 13, fontWeight: '700' }}>Add to today</Text>
                 </Pressable>
               )}
               <Pressable onPress={() => moveTo(m)} hitSlop={8}>

@@ -298,3 +298,15 @@ export function mealFromSaved(tpl: SavedMeal, slot: MealSlot, date: string, now:
     assumptions: ['Logged from a saved meal.'],
   };
 }
+
+/** A fresh diary entry repeating `meal` on `date` (same section, items and totals), stamped now. Never mutates. */
+export function copyMealToDate(meal: Meal, date: string, now: Date, id: string): Meal {
+  return {
+    ...meal,
+    id,
+    date,
+    loggedAt: now.toISOString(),
+    ingredients: meal.ingredients.map((i) => ({ ...i })),
+    assumptions: [...meal.assumptions],
+  };
+}

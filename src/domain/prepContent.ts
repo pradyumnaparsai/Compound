@@ -1,4 +1,4 @@
-/** Static content of the switch-prep plan (Nov 15, 2026 – Jan 4, 2027). Scheduling lives in `prepPlan.ts`. */
+/** Static content of the switch-prep plan (Nov 16, 2026 – Jan 5, 2027). Scheduling lives in `prepPlan.ts`. */
 
 export type Problem = { title: string; pattern: string };
 
@@ -192,7 +192,7 @@ export const FUNDAMENTALS: { subject: string; areas: string }[] = [
   { subject: 'Production Engineering', areas: 'Observability, incident response, debugging, RCA, reliability' },
 ];
 
-/** Eight STAR stories; drafted two at a time from Dec 21 onwards. */
+/** Eight STAR stories; drafted two at a time from Dec 22 onwards. */
 export const STAR_STORIES: string[] = [
   'Technically challenging project you owned',
   'Production incident and root-cause analysis',

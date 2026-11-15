@@ -1,6 +1,7 @@
 import {
   buildRefineText,
   cleanTitle,
+  copyMealToDate,
   dayTotals,
   groupMeals,
   mealTitle,
@@ -308,5 +309,40 @@ describe('groupMeals', () => {
 
   it('empty input', () => {
     expect(groupMeals([])).toEqual([]);
+  });
+});
+
+describe('copyMealToDate', () => {
+  const past: Meal = {
+    id: 'old',
+    date: '2026-11-08',
+    slot: 'breakfast',
+    loggedAt: '2026-11-08T08:00:00.000Z',
+    title: 'Oats',
+    inputType: 'image_only',
+    confidence: 7,
+    ingredients: [ing({ name: 'Oats', calories: 150 })],
+    calories: 150,
+    proteinG: 5,
+    carbsG: 27,
+    fatG: 3,
+    assumptions: ['Half a cup'],
+  };
+  const now = new Date(2026, 10, 15, 9, 30);
+
+  it('repeats the meal on the new date with a new id and time, same section and totals', () => {
+    const m = copyMealToDate(past, '2026-11-15', now, 'new');
+    expect(m).toMatchObject({ id: 'new', date: '2026-11-15', slot: 'breakfast', title: 'Oats', calories: 150, proteinG: 5 });
+    expect(m.loggedAt).toBe(now.toISOString());
+    expect(m.ingredients).toEqual(past.ingredients);
+    expect(m.assumptions).toEqual(['Half a cup']);
+  });
+
+  it('never mutates or shares references with the original', () => {
+    const m = copyMealToDate(past, '2026-11-15', now, 'new');
+    expect(past).toMatchObject({ id: 'old', date: '2026-11-08' });
+    expect(m.ingredients).not.toBe(past.ingredients);
+    expect(m.ingredients[0]).not.toBe(past.ingredients[0]);
+    expect(m.assumptions).not.toBe(past.assumptions);
   });
 });

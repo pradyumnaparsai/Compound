@@ -16,6 +16,18 @@ export const QUOTES: readonly Quote[] = [
   { text: 'Goals are good for setting a direction, but systems are best for making progress.' },
   { text: 'The goal is not to run a marathon. The goal is to become a runner.' },
   { text: 'You should be far more concerned with your current trajectory than your current results.' },
+  { text: 'The most effective form of motivation is progress.' },
+  { text: 'What is rewarded is repeated. What is punished is avoided.' },
+  { text: 'Your habits shape your identity, and your identity shapes your habits.' },
+  { text: 'True behavior change is identity change.' },
+  { text: 'Environment is the invisible hand that shapes human behavior.' },
+  { text: 'Be the designer of your world and not merely the consumer of it.' },
+  { text: 'Professionals stick to the schedule; amateurs let life get in the way.' },
+  { text: 'The purpose of setting goals is to win the game. The purpose of building systems is to continue playing the game.' },
+  { text: 'Success is not a goal to reach or a finish line to cross. It is a system to improve, an endless process to refine.' },
+  { text: 'When you start a new habit, it should take less than two minutes to do.' },
+  { text: 'Make it obvious. Make it attractive. Make it easy. Make it satisfying.' },
+  { text: 'A habit is a behavior that has been repeated enough times to become automatic.' },
 ];
 
 /** A random index that differs from `last` (so two launches in a row never show the same line). */

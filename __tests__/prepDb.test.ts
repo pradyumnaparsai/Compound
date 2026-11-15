@@ -22,7 +22,7 @@ const load = () => {
   return usePrepStore;
 };
 
-const items = PREP_PLAN.find((d) => d.date === '2026-11-15')!.items;
+const items = PREP_PLAN.find((d) => d.date === '2026-11-16')!.items;
 const lld = items.find((i) => i.kind === 'lld')!;
 const dsa = items.find((i) => i.kind === 'dsa')!;
 
