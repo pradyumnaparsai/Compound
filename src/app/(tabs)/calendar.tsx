@@ -108,7 +108,7 @@ export default function CalendarScreen() {
             />
             <View style={styles.legend}>
               <Legend color={t.doneFill} label="All done" t={t} />
-              <Legend color={t.successSoft} label="Partial" t={t} />
+              <Legend color={t.doneSoft} label="Partial" t={t} />
               <Legend color={t.surfaceAlt} label="Missed" t={t} />
             </View>
           </>
@@ -140,7 +140,7 @@ export default function CalendarScreen() {
               const isToday = key === today;
               const isSel = key === selected;
               const bg =
-                status === 'all' ? t.doneFill : status === 'partial' ? t.successSoft : 'transparent';
+                status === 'all' ? t.doneFill : status === 'partial' ? t.doneSoft : 'transparent';
               const fg = status === 'all' ? t.onDone : t.text;
               return (
                 <Pressable key={ci} style={styles.cell} onPress={() => setSelected(key)}>
@@ -177,7 +177,7 @@ export default function CalendarScreen() {
 
         <View style={styles.legend}>
           <Legend color={t.doneFill} label="All done" t={t} />
-          <Legend color={t.successSoft} label="Partial" t={t} />
+          <Legend color={t.doneSoft} label="Partial" t={t} />
           <Legend color={t.accent} label="Task due" t={t} />
           <View style={styles.legendItem}>
             <Ionicons name="barbell" size={12} color="#F5B800" />

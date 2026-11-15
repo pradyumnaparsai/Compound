@@ -49,7 +49,7 @@ function YearViewImpl({ year, routines, done, onPickMonth }: Props) {
                             cell.status === 'all'
                               ? t.doneFill
                               : cell.status === 'partial'
-                                ? t.successSoft
+                                ? t.doneSoft
                                 : cell.status === 'none'
                                   ? t.surfaceAlt
                                   : 'transparent',

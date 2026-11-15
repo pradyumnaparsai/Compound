@@ -14,6 +14,8 @@ export type Theme = {
   successSoft: string;
   /** Fill of a fully completed day in the calendars (calmer than `success`) and the text/icons on it. */
   doneFill: string;
+  /** Partially completed days in the calendars. */
+  doneSoft: string;
   onDone: string;
   danger: string;
 };
@@ -30,7 +32,8 @@ export const darkTheme: Theme = {
   accentSoft: 'rgba(124,92,255,0.18)',
   success: '#22D3A6',
   successSoft: 'rgba(34,211,166,0.18)',
-  doneFill: '#16A37F',
+  doneFill: '#3B7BF2',
+  doneSoft: 'rgba(59,123,242,0.26)',
   onDone: '#FFFFFF',
   danger: '#FF5C7A',
 };
@@ -47,7 +50,8 @@ export const lightTheme: Theme = {
   accentSoft: 'rgba(106,72,245,0.12)',
   success: '#0FB98C',
   successSoft: 'rgba(15,185,140,0.14)',
-  doneFill: '#0E9A74',
+  doneFill: '#2563EB',
+  doneSoft: 'rgba(37,99,235,0.18)',
   onDone: '#FFFFFF',
   danger: '#E5365A',
 };
