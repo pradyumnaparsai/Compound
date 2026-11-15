@@ -3,6 +3,16 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.31.0 — 2026-11-15
+### Added
+- **Add to today on past meals.** Viewing an earlier day in Meals, every entry has a + button (and an "Add to today" action when expanded) that logs a copy into today, same section, items and totals.
+- **More Atomic Habits quotes** on the greeting screen (13 new lines).
+### Changed
+- **Switch prep moved one day later.** The plan now runs Nov 16 – Jan 5. The wedding break stays Nov 23–26, so the LLD/HLD two-day exercises, the extra days and the 12 mocks each shift by a day (mocks Dec 19 – Jan 5, rest day Jan 2).
+- **Calmer color for fully completed days** in the month and year calendars: a deeper emerald with white numbers instead of the bright mint.
+### Fixed
+- **Today tab routine rows line up.** Progress-ring routines (steps, protein) and plain check routines now share one fixed-size slot, so the circles and titles align vertically.
+
 ## v1.30.3 — 2026-11-14
 ### Changed
 - **All mocks moved to the end.** Study runs Nov 15 – Dec 16 with no mock days; the 12 mocks now fall between Dec 18 and Jan 4, alternating with lighter revision days.
