@@ -3,6 +3,10 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.31.1 — 2026-11-15
+### Changed
+- **Calendar done-day color is now blue** (month and year views and legends): fully done days are solid blue with white numbers, partial days a soft blue tint, instead of green.
+
 ## v1.31.0 — 2026-11-15
 ### Added
 - **Add to today on past meals.** Viewing an earlier day in Meals, every entry has a + button (and an "Add to today" action when expanded) that logs a copy into today, same section, items and totals.
