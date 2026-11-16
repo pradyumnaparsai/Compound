@@ -3,6 +3,12 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.32.0 — 2026-11-16
+### Added
+- **Workout Live Activity.** While a workout is being logged, the lock screen and Dynamic Island show "Workout in progress" with the title, a running clock and sets done, so it is hard to forget to finish it. It ends when you finish or discard the workout, and survives an app kill. **Native change:** needs `npx expo prebuild -p ios --no-install` then `scripts/install-ios.sh release`; it adds an App Group, which a free Apple team may refuse to sign (see `docs/DESIGN.md` §10).
+### Changed
+- **Weight chart is now a line graph.** Weekly averages are plotted on shared axes: weight ticks on the y-axis, week dates on the x-axis, dots joined by a line (skipped weeks leave a gap), instead of bars.
+
 ## v1.31.1 — 2026-11-15
 ### Changed
 - **Calendar done-day color is now blue** (month and year views and legends): fully done days are solid blue with white numbers, partial days a soft blue tint, instead of green.
