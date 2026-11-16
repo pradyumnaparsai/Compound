@@ -12,6 +12,7 @@ import { ensureDefaultMealGoal, refreshMealGoals } from '@/services/mealGoalSync
 import { runMealSchedules } from '@/services/mealSchedule';
 import { applyUpdateNow } from '@/services/otaUpdate';
 import { syncWidget } from '@/services/widgetSync';
+import { syncWorkoutActivity } from '@/services/workoutActivity';
 import { useMealStore } from '@/store/useMealStore';
 import { useRoutineStore } from '@/store/useRoutineStore';
 import { usePrepStore } from '@/store/usePrepStore';
@@ -44,8 +45,29 @@ export default function RootLayout() {
     useMemoryStore.getState().load().catch((e) => console.error('Failed to load Atomic memory', e));
     useWorkoutLibraryStore.getState().load().catch((e) => console.error('Failed to load workouts', e));
     useWorkoutHistory.getState().load().catch((e) => console.error('Failed to load workout history', e));
-    useWorkoutSession.getState().load().catch((e) => console.error('Failed to resume workout', e)); // a workout in progress survives a kill
   }, [load]);
+
+  // A workout in progress survives a kill: resume it, then mirror it to a Live Activity (lock screen +
+  // Dynamic Island) so it can't be forgotten. Syncing waits for the resume, so a still-running activity is
+  // adopted instead of being ended and restarted.
+  useEffect(() => {
+    let loaded = false;
+    const sync = () => {
+      if (!loaded) return;
+      const { workout, mode } = useWorkoutSession.getState();
+      syncWorkoutActivity(mode === 'live' ? workout : null);
+    };
+    const unsubscribe = useWorkoutSession.subscribe(sync);
+    useWorkoutSession
+      .getState()
+      .load()
+      .catch((e) => console.error('Failed to resume workout', e))
+      .finally(() => {
+        loaded = true;
+        sync();
+      });
+    return unsubscribe;
+  }, []);
 
   // Apple Health → auto-check goal routines: on open, on every return to foreground, every minute while open,
   // and whenever goals change.

@@ -17,7 +17,7 @@ iOS app to track daily routines and todos. Local-only storage for now. Dark them
 | UC6 | JSON export/import backup | 2 | Idea |
 | UC7 | Lock-screen widget showing routines done today (n/total) | 2 | Code written; disabled — blocked on App Groups (see §10) |
 | UC8 | Yearly view of days completed | 1 | Built |
-| UC9 | Daily body-weight log + weekly average graph | 1 | Built |
+| UC9 | Daily body-weight log + weekly average line graph (shared week/weight axes) | 1 | Built |
 | UC10 | Food photo → calories/protein estimate via Gemini API (MyFitnessPal-style logging) | 4 | Built, untested on device (see §11) |
 | UC11 | Workout tracking (templates, live logging, history, PRs, Hevy import) | 5 | In progress: exercise catalog + templates built (see §13) |
 
@@ -122,6 +122,7 @@ A day's status = completed scheduled routines / scheduled routines for that date
 - Unblock option: enroll in the Apple Developer Program ($99/yr), which also removes the 7-day expiry.
 - **Changing team can change the bundle ID, which iOS treats as a different app → local data is not carried over. Build UC6 export/import before switching.**
 - Interim reminder options without App Groups: app icon badge = routines left today (needs `expo-notifications`, native; verify no push entitlement is added, since free teams cannot sign `aps-environment`), plus scheduled local notifications (UC5).
+- **Workout Live Activity (lock screen + Dynamic Island):** `src/widgets/WorkoutActivity.tsx` (layout, `createLiveActivity`), `src/services/workoutActivity.ts` (start/update/end, lazy-required and never throws), `src/domain/workoutActivity.ts` (props). `_layout.tsx` mirrors the live workout (resumed first, so a surviving activity is adopted) and ends it on finish/discard. Needs the `expo-widgets` plugin (now in `app.json`, `widgets: []`), which adds a widget extension **with an App Group entitlement**: a free Personal Team probably cannot sign it. Native change (`install-ios.sh` skips prebuild when `ios/` exists, so do it by hand): `npx expo prebuild -p ios --no-install`, then `scripts/install-ios.sh release`. If the App Group can't be signed the whole build fails (it also blocks the 7-day re-sign), so roll back: remove the `expo-widgets` plugin from `app.json`, run `npx expo prebuild -p ios --clean --no-install`, then `scripts/install-ios.sh release`. The JS is a silent no-op without the native pieces. `runtimeVersion` stays `"7"` because the JS tolerates binaries with and without the extension.
 - Running without the Mac: the Debug build needs Metro (same Wi-Fi). A Release build embeds the JS and runs standalone; still expires after 7 days on a free team.
 
 ## 11. Planned features (notes)
