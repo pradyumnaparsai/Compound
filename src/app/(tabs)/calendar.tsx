@@ -13,7 +13,7 @@ import { sqliteWorkoutRepo } from '@/data/sqliteWorkoutLogRepository';
 import { MONTH_NAMES, WEEKDAY_LABELS, fromKey, monthGrid } from '@/domain/date';
 import { useToday } from '@/hooks/useToday';
 import { completionKey, dayStatus, scheduledOn } from '@/domain/recurrence';
-import { taskCounts, tasksOn } from '@/domain/task';
+import { tasksOn } from '@/domain/task';
 import { useRoutineStore } from '@/store/useRoutineStore';
 import { formatDuration, workoutDurationSeconds, type Workout } from '@/domain/workout';
 import { useTaskStore } from '@/store/useTaskStore';
@@ -24,7 +24,6 @@ export default function CalendarScreen() {
   const t = useTheme();
   const { routines, done, toggle } = useRoutineStore();
   const { tasks, toggle: toggleTask, remove: removeTask } = useTaskStore();
-  const counts = useMemo(() => taskCounts(tasks), [tasks]);
   const workoutDates = useWorkoutHistory((s) => s.dates);
   const workoutDays = useMemo(() => new Set(workoutDates), [workoutDates]);
   const today = useToday();
@@ -160,14 +159,6 @@ export default function CalendarScreen() {
                     {workoutDays.has(key) && (
                       <Ionicons name="barbell" size={10} color={status === 'all' ? t.onDone : '#F5B800'} style={styles.workoutBadge} />
                     )}
-                    {counts.get(key) && (
-                      <View
-                        style={[
-                          styles.taskDot,
-                          { backgroundColor: counts.get(key)!.open > 0 ? t.accent : t.textDim },
-                        ]}
-                      />
-                    )}
                   </View>
                 </Pressable>
               );
@@ -178,7 +169,6 @@ export default function CalendarScreen() {
         <View style={styles.legend}>
           <Legend color={t.doneFill} label="All done" t={t} />
           <Legend color={t.doneSoft} label="Partial" t={t} />
-          <Legend color={t.accent} label="Task due" t={t} />
           <View style={styles.legendItem}>
             <Ionicons name="barbell" size={12} color="#F5B800" />
             <Text style={{ color: t.textDim, fontSize: 12 }}>Workout</Text>
@@ -268,6 +258,5 @@ const styles = StyleSheet.create({
   section: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
   workoutBadge: { position: 'absolute', top: 3, right: 4 },
   workoutRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: radius.md, borderWidth: 1, marginBottom: 8 },
-  taskDot: { position: 'absolute', bottom: 4, width: 5, height: 5, borderRadius: 3 },
   selTitle: { fontSize: 20, fontWeight: '700', marginBottom: 12 },
 });

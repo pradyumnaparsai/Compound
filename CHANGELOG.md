@@ -3,6 +3,11 @@
 Each release lists only what changed since the previous release. `npm run release` publishes the matching
 `## v<version>` section as the GitHub release notes.
 
+## v1.32.1 — 2026-11-16
+### Changed
+- **Calendar days no longer show the task-due dot.** Only the dumbbell marks workout days; the "Task due" legend entry is gone.
+- **Removed the "less than two minutes" Atomic Habits quote** from the greeting screen.
+
 ## v1.32.0 — 2026-11-16
 ### Added
 - **Workout Live Activity.** While a workout is being logged, the lock screen and Dynamic Island show "Workout in progress" with the title, a running clock and sets done, so it is hard to forget to finish it. It ends when you finish or discard the workout, and survives an app kill. **Native change:** needs `npx expo prebuild -p ios --no-install` then `scripts/install-ios.sh release`; it adds an App Group, which a free Apple team may refuse to sign (see `docs/DESIGN.md` §10).

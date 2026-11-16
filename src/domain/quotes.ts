@@ -25,7 +25,6 @@ export const QUOTES: readonly Quote[] = [
   { text: 'Professionals stick to the schedule; amateurs let life get in the way.' },
   { text: 'The purpose of setting goals is to win the game. The purpose of building systems is to continue playing the game.' },
   { text: 'Success is not a goal to reach or a finish line to cross. It is a system to improve, an endless process to refine.' },
-  { text: 'When you start a new habit, it should take less than two minutes to do.' },
   { text: 'Make it obvious. Make it attractive. Make it easy. Make it satisfying.' },
   { text: 'A habit is a behavior that has been repeated enough times to become automatic.' },
 ];
